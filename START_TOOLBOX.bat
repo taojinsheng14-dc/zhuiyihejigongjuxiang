@@ -7,4 +7,4 @@ if not exist ".venv\Scripts\pythonw.exe" (
   pause
   exit /b 1
 )
-start "" ".venv\Scripts\pythonw.exe" "清包工具.pyw"
+start "" "%~dp0.venv\Scripts\pythonw.exe" "%~dp0tools\fast-sale\launch_toolbox.py"
