@@ -1,0 +1,14 @@
+{
+  "status": "结构消息监听 · 分批定位 3950/4895 · PID 36520 · 29 条公告 · 本轮 0.51秒 / 64.1 MiB · 01:21:57",
+  "updated_at": 1792776117.6044147,
+  "baseline_count": 0,
+  "new_event_count": 5583,
+  "timer_count": 146,
+  "version": "3.0.6",
+  "connection": {
+    "state": "已连接",
+    "pid": 36520
+  },
+  "last_scan_at": 1792776117.3072033,
+  "last_notice_at": 1792776088.2742264
+}
