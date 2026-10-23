@@ -536,7 +536,7 @@ class App(tk.Tk):
         self.destroy()
 
 
-if __name__ == '__main__':
+def main():
     app=App(use=os.environ.get('MIR_TOOL_EMBED_PARENT'))
     if os.environ.get('MIR_TOOL_EMBED_PARENT'):
         Path(os.environ['MIR_TOOL_EMBED_READY']).write_text('ready',encoding='utf8')
@@ -547,3 +547,9 @@ if __name__ == '__main__':
             app.after(300,check_host)
         app.after(300,check_host)
     app.mainloop()
+
+
+if __name__=='__main__':
+    sys.path.insert(0,str(Path(__file__).resolve().parents[1]/'fast-sale'))
+    from ui_diagnostics import run_logged
+    run_logged(Path(os.environ.get('MIR_BOSS_TIMER_DATA',str(ROOT/'data')))/'界面.log',main)

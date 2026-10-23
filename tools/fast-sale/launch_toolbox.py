@@ -7,6 +7,11 @@ import sys
 
 
 def launch():
+    from ui_diagnostics import run_logged
+    return run_logged(Path(__file__).resolve().parents[2]/'outputs'/'工具箱'/'启动.log',_launch)
+
+
+def _launch():
     from toolbox_config import ensure_game_directory
     if not ensure_game_directory():return
     target=Path(__file__).with_name('dual_role_gui.py')

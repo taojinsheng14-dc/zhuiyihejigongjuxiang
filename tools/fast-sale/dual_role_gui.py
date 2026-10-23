@@ -84,4 +84,6 @@ class DualRoleApp(tk.Tk):
         (self.directory/'shutdown').write_text('close',encoding='utf8')
 
 
-if __name__=='__main__':DualRoleApp().mainloop()
+if __name__=='__main__':
+    from ui_diagnostics import run_logged
+    run_logged(SOURCE.parents[1]/'outputs'/'工具箱'/'合并窗口.log',lambda:DualRoleApp().mainloop())

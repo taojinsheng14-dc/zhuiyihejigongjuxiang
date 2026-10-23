@@ -22,7 +22,7 @@ from equipment import sale_plan
 from profit_tracker import ProfitTracker
 from random_hunt import load_settings,save_settings,RandomSettings
 
-BUILD='2026.10.23.11'
+BUILD='2026.10.24.2'
 
 def active_task(command,result,sample,now):
     step=command.get('step')
@@ -531,7 +531,7 @@ class App(tk.Tk):
         if self.busy or self.attached_step is not None:self.request_stop();self.status.set('正在停止，操作结束后可关闭')
         else:self.profit.stop();self.destroy()
 
-if __name__=='__main__':
+def main():
     import os
     embedded_parent=os.environ.get('MIR_TOOL_EMBED_PARENT')
     app=App(use=embedded_parent)
@@ -549,3 +549,8 @@ if __name__=='__main__':
             app.after(300,check_host)
         app.after(300,check_host)
     app.mainloop()
+
+
+if __name__=='__main__':
+    from ui_diagnostics import run_logged
+    run_logged(ROOT/'outputs'/'工具箱'/('账号'+instance_context.slot()+'界面.log'),main)
