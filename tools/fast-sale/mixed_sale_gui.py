@@ -22,7 +22,7 @@ from equipment import sale_plan
 from profit_tracker import ProfitTracker
 from random_hunt import load_settings,save_settings,RandomSettings
 
-BUILD='2026.10.24.3'
+BUILD='2026.10.24.4'
 
 def active_task(command,result,sample,now):
     step=command.get('step')
@@ -109,6 +109,26 @@ class App(tk.Tk):
         combat_panel=ttk.Frame(self.status_tabs,padding=10)
         self.status_tabs.add(profit_panel,text='状态与收益')
         self.status_tabs.add(combat_panel,text='经验／击杀')
+        profit_actions=ttk.Frame(profit_panel);profit_actions.pack(fill='x',pady=(0,8))
+        profit_actions.columnconfigure((0,1),weight=1)
+        self.profit_start_button=ttk.Button(profit_actions,text='开始／继续统计',command=self.start_profit)
+        self.profit_start_button.grid(row=0,column=0,sticky='ew',padx=(0,3),pady=3)
+        self.profit_reset_button=ttk.Button(profit_actions,text='重设收益起点',style='Primary.TButton',command=lambda:self.start_profit(reset=True))
+        self.profit_reset_button.grid(row=0,column=1,sticky='ew',padx=(3,0),pady=3)
+        ttk.Button(profit_actions,text='暂停统计',command=lambda:self.profit.stop()).grid(row=1,column=0,sticky='ew',padx=(0,3),pady=3)
+        ttk.Button(profit_actions,text='比例与费用设置',command=self.profit_settings).grid(row=1,column=1,sticky='ew',padx=(3,0),pady=3)
+        profit_scroller=ttk.Frame(profit_panel);profit_scroller.pack(fill='both',expand=True)
+        self.profit_canvas=tk.Canvas(profit_scroller,width=310,height=1,highlightthickness=0,background='#eef2f7')
+        profit_scrollbar=ttk.Scrollbar(profit_scroller,orient='vertical',command=self.profit_canvas.yview)
+        self.profit_canvas.configure(yscrollcommand=profit_scrollbar.set)
+        profit_scrollbar.pack(side='right',fill='y');self.profit_canvas.pack(side='left',fill='both',expand=True)
+        profit_body=ttk.Frame(self.profit_canvas)
+        profit_window=self.profit_canvas.create_window((0,0),window=profit_body,anchor='nw')
+        profit_body.bind('<Configure>',lambda event:self.profit_canvas.configure(scrollregion=self.profit_canvas.bbox('all')))
+        self.profit_canvas.bind('<Configure>',lambda event:self.profit_canvas.itemconfigure(profit_window,width=event.width))
+        def scroll_profit(event):
+            self.profit_canvas.yview_scroll(-int(event.delta/120),'units');return 'break'
+        self.profit_canvas.bind('<MouseWheel>',scroll_profit)
         self.combat_text=tk.StringVar(value='等待本号经验统计')
         ttk.Label(combat_panel,textvariable=self.combat_text,wraplength=330,justify='left',font=('Microsoft YaHei UI',10)).pack(anchor='nw')
         self.status_tabs.select(combat_panel)
@@ -117,21 +137,18 @@ class App(tk.Tk):
         self.live_detail=tk.StringVar(value='')
         self.live_status=tk.StringVar(value='采样复用管理员辅助，不启动独立监控窗口')
         self.random_status=tk.StringVar(value='无怪随机默认关闭')
-        ttk.Label(profit_panel,textvariable=self.live_position,font=('Microsoft YaHei UI',14)).pack(anchor='w')
-        ttk.Label(profit_panel,textvariable=self.live_count,font=('Microsoft YaHei UI',11)).pack(anchor='w',pady=3)
-        ttk.Label(profit_panel,textvariable=self.live_detail,wraplength=310).pack(anchor='w')
-        ttk.Label(profit_panel,textvariable=self.live_status,wraplength=310).pack(anchor='w',pady=3)
-        ttk.Label(profit_panel,textvariable=self.random_status,wraplength=310).pack(anchor='w',pady=3)
-        ttk.Separator(profit_panel).pack(fill='x',pady=6)
+        ttk.Label(profit_body,textvariable=self.live_position,font=('Microsoft YaHei UI',14)).pack(anchor='w')
+        ttk.Label(profit_body,textvariable=self.live_count,font=('Microsoft YaHei UI',11)).pack(anchor='w',pady=3)
+        ttk.Label(profit_body,textvariable=self.live_detail,wraplength=290).pack(anchor='w')
+        ttk.Label(profit_body,textvariable=self.live_status,wraplength=290).pack(anchor='w',pady=3)
+        ttk.Label(profit_body,textvariable=self.random_status,wraplength=290).pack(anchor='w',pady=3)
+        ttk.Separator(profit_body).pack(fill='x',pady=6)
         self.profit_text=tk.StringVar(value='点击开始统计建立余额起点\n默认：1元＝11元宝\n100万金币＝180元宝\n时费5元宝，进图5元宝')
         self.profit_status=tk.StringVar(value='等待读取实时金币和元宝')
-        ttk.Label(profit_panel,textvariable=self.profit_text,justify='left',wraplength=310,font=('Microsoft YaHei UI',11)).pack(anchor='w',pady=8)
-        ttk.Label(profit_panel,textvariable=self.profit_status,wraplength=310).pack(anchor='w',pady=8)
-        ttk.Button(profit_panel,text='开始／继续统计',command=self.start_profit).pack(fill='x',pady=4)
-        ttk.Button(profit_panel,text='暂停统计',command=lambda:self.profit.stop()).pack(fill='x',pady=4)
-        ttk.Button(profit_panel,text='重新统计（重设起点）',command=lambda:self.start_profit(reset=True)).pack(fill='x',pady=4)
-        ttk.Button(profit_panel,text='修改比例与挂机费用',command=self.profit_settings).pack(fill='x',pady=4)
-        ttk.Label(profit_panel,text='余额净收益含已扣款，不重复扣费。\n随机石消耗另按设置估值计入估算成本。\n未售装备不估值；人工交易后可重设起点。',wraplength=310,justify='left').pack(anchor='w',pady=8)
+        ttk.Label(profit_body,textvariable=self.profit_text,justify='left',wraplength=290,font=('Microsoft YaHei UI',11)).pack(anchor='w',pady=8)
+        ttk.Label(profit_body,textvariable=self.profit_status,wraplength=290).pack(anchor='w',pady=8)
+        ttk.Label(profit_body,text='余额净收益含已扣款，不重复扣费。\n随机石消耗另按设置估值计入估算成本。\n未售装备不估值；人工交易后可重设起点。',wraplength=290,justify='left').pack(anchor='w',pady=8)
+        for widget in profit_body.winfo_children():widget.bind('<MouseWheel>',scroll_profit)
         self.after(100,self.receive_results)
         self.after(500,self.refresh_profit)
         self.after(200,self.refresh_live)
@@ -530,6 +547,10 @@ class App(tk.Tk):
     def close_window(self):
         if self.busy or self.attached_step is not None:self.request_stop();self.status.set('正在停止，操作结束后可关闭')
         else:self.profit.stop();self.destroy()
+
+    def destroy(self):
+        for callback in self.tk.call('after','info'):self.after_cancel(callback)
+        super().destroy()
 
 def main():
     import os

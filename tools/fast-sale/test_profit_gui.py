@@ -7,6 +7,29 @@ from unittest.mock import patch
 
 
 class ProfitGuiTests(unittest.TestCase):
+    def test_reset_stays_visible_above_long_scrollable_statistics(self):
+        import mixed_sale_gui as gui
+        from unittest.mock import Mock
+        with tempfile.TemporaryDirectory() as folder,patch.object(gui,'ROOT',Path(folder)),patch.object(gui,'drive') as drive:
+            app=gui.App()
+            try:
+                for callback in app.tk.call('after','info'):app.after_cancel(callback)
+                app.geometry('1120x760');app.status_tabs.select(0)
+                app.profit_text.set('\n'.join('收益明细 '+str(i) for i in range(70)))
+                app.update()
+                button=app.profit_reset_button
+                self.assertTrue(button.winfo_viewable())
+                self.assertGreater(button.winfo_height(),20)
+                self.assertLess(button.winfo_rooty()+button.winfo_height(),app.profit_canvas.winfo_rooty())
+                self.assertLess(button.winfo_rooty()+button.winfo_height(),app.winfo_rooty()+app.winfo_height())
+                self.assertLess(app.profit_canvas.yview()[1],1)
+                app.profit_canvas.yview_moveto(1);app.update_idletasks()
+                self.assertTrue(button.winfo_viewable())
+                app.start_profit=Mock();button.invoke()
+                app.start_profit.assert_called_once_with(reset=True)
+                drive.assert_not_called()
+            finally:app.destroy()
+
     def test_attaches_current_loop_despite_previous_error_but_not_finished_or_stale(self):
         from mixed_sale_gui import active_task
         command={'step':50,'categories':['挂机清包循环']}
