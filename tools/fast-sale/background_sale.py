@@ -426,8 +426,8 @@ class BackgroundSession(Session):
     def right_click(self, point):
         return self.background_mouse(point,'right')
 
-    def _veteran_run_batch(self,tilemap,current,goals,occupied,header,ready):
-        from map_navigation import veteran_run_path,veteran_run_batch
+    def _veteran_run_batch(self,tilemap,current,goals,occupied,header,ready,boundary_origin=None):
+        from map_navigation import veteran_run_path,veteran_run_batch,validate_veteran_landing
         npc_tiles={tuple(n['map']) for n in self.npcs()}
         # Verified town safe-zone movement can overlap players; only NPCs block it.
         path=veteran_run_path(tilemap,current,goals,npc_tiles)
@@ -458,11 +458,19 @@ class BackgroundSession(Session):
             self.background_mouse(point,'right',track_movement=False);sent.append(destination);previous=destination
             self.pause(.15)
         after=tuple(self.stable_player())
-        if any(not min(current[i],320)<=after[i]<=max(current[i],320) for i in (0,1)):
-            raise RuntimeError('老兵跑动偏离同侧边界，停止继续移动')
+        self.check()
+        if self.login_stage()!='playing':raise GameSessionLost('靠近老兵后角色死亡或掉线')
+        if self.read(self.uint(self.uint(self.base+0x2ba608))+4,52)!=header:
+            raise RuntimeError('靠近老兵后地图变化，停止移动')
+        try:landing=validate_veteran_landing(tilemap,current,after,len(sent),origin=boundary_origin)
+        except RuntimeError as error:
+            if getattr(self,'_stats_enabled',False):
+                self.write_stats({'event':'veteran_move_rejected','from':current,'to':after,
+                    'expected':sent,'runs':len(sent),'boundary_origin':boundary_origin or current,'reason':str(error)})
+            raise
         if getattr(self,'_stats_enabled',False):
             self.write_stats({'event':'veteran_move','from':current,'to':after,'expected':sent,
-                              'runs':len(sent),'button':'right','seconds':round(time.monotonic()-started,3)})
+                              'runs':len(sent),'button':'right','landing':landing,'seconds':round(time.monotonic()-started,3)})
         return after,len(sent)
 
     def approach_veteran_running(self,npc,progress=lambda message:None):
@@ -478,10 +486,10 @@ class BackgroundSession(Session):
         goals=[(x,y) for x in range(300,341) for y in range(300,341)
                if self.veteran_click_point((draw[0]+(320-x)*48,draw[1]+(320-y)*32)) is not None]
         progress('同侧靠近老兵；远处连续跑两次后校验，可点击即停')
-        actions=[];stuck=0
+        actions=[];stuck=0;boundary_origin=current
         for _ in range(16):
             if ready():return {'position':current,'runs':sum(a['runs'] for a in actions),'actions':actions}
-            after,count=self._veteran_run_batch(tilemap,current,goals,occupied,header,ready)
+            after,count=self._veteran_run_batch(tilemap,current,goals,occupied,header,ready,boundary_origin=boundary_origin)
             actions.append({'from':current,'to':after,'runs':count})
             stuck=stuck+1 if after==current else 0
             if stuck>=3:
@@ -714,7 +722,7 @@ class BackgroundSession(Session):
         if tilemap.name.lower()!='3.map' or max(abs(current[0]-320),abs(current[1]-320))>50:
             raise RuntimeError('未确认盟重回城区域，不执行寻找老兵的移动')
         progress('老兵尚未加载，按固定坐标右键靠近；对象加载后即停止寻路')
-        stuck=0
+        stuck=0;boundary_origin=current
         for _ in range(16):
             self.check()
             self.dismiss_town_hunt_notice()
@@ -733,7 +741,7 @@ class BackgroundSession(Session):
                    if tilemap.free((x,y)) and (x,y) not in occupied]
             def ready():
                 return any(n['name']=='盟重老兵' and tuple(n['map'])==(320,320) for n in self.npcs())
-            after,_=self._veteran_run_batch(tilemap,current,goals,occupied,header,ready)
+            after,_=self._veteran_run_batch(tilemap,current,goals,occupied,header,ready,boundary_origin=boundary_origin)
             if after==current:
                 stuck+=1
                 if stuck>=3:

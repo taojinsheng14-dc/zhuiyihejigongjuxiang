@@ -1,7 +1,7 @@
 import struct,unittest
 from types import SimpleNamespace
 from unittest.mock import Mock
-from map_navigation import veteran_run_path,veteran_run_batch
+from map_navigation import veteran_run_path,veteran_run_batch,validate_veteran_landing
 from background_sale import BackgroundSession
 
 class VeteranBoundsTests(unittest.TestCase):
@@ -65,7 +65,41 @@ class VeteranBoundsTests(unittest.TestCase):
         s.background_mouse.assert_not_called();s.stable_player.assert_not_called()
     def test_unexpected_axis_crossing_stops(self):
         s,tile,ready=self.session(lambda:False);s.stable_player.return_value=(319,336)
-        with self.assertRaisesRegex(RuntimeError,'偏离同侧边界'):s._veteran_run_batch(tile,(340,340),[(324,324)],[],b'map',ready)
+        with self.assertRaisesRegex(RuntimeError,'越过目标坐标轴'):s._veteran_run_batch(tile,(340,340),[(324,324)],[],b'map',ready)
+
+    def test_one_tile_lateral_drift_is_accepted_for_replanning(self):
+        s,tile,ready=self.session(lambda:False);s.stable_player.return_value=(328,336)
+        after,count=s._veteran_run_batch(tile,(327,338),[(327,328)],[],b'map',ready)
+        self.assertEqual(after,(328,336));self.assertEqual(count,2)
+        path=veteran_run_path(tile,after,[(324,324)])
+        self.assertEqual(path[0],after)
+
+    def test_backward_one_tile_still_same_side_can_replan(self):
+        tile=SimpleNamespace(free=lambda xy:True)
+        result=validate_veteran_landing(tile,(327,338),(328,339),1)
+        self.assertTrue(result['replan'])
+
+    def test_drift_tolerance_does_not_accumulate_across_batches(self):
+        tile=SimpleNamespace(free=lambda xy:True)
+        with self.assertRaisesRegex(RuntimeError,'本次靠近容差'):
+            validate_veteran_landing(tile,(329,336),(330,334),1,origin=(327,338))
+
+    def test_same_side_large_jump_and_wall_still_stop(self):
+        tile=SimpleNamespace(free=lambda xy:True)
+        with self.assertRaisesRegex(RuntimeError,'位移异常'):validate_veteran_landing(tile,(340,340),(329,336),1)
+        with self.assertRaisesRegex(RuntimeError,'可走格'):validate_veteran_landing(SimpleNamespace(free=lambda xy:False),(327,338),(328,336),1)
+
+    def test_post_move_map_change_stops_before_accepting_landing(self):
+        s,tile,ready=self.session(lambda:False)
+        original=s.read;reads=[0]
+        def read(addr,size):
+            if size==52:
+                reads[0]+=1
+                if reads[0]>2:return b'other_map'
+            return original(addr,size)
+        s.read=read
+        with self.assertRaisesRegex(RuntimeError,'后地图变化'):
+            s._veteran_run_batch(tile,(340,340),[(324,324)],[],b'map',ready)
 
     def test_north_run_aims_above_own_sprite_without_crossing_npc(self):
         s,tile,ready=self.session(lambda:False);s.stable_player.return_value=(327,334)

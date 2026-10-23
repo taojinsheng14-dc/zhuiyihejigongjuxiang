@@ -124,3 +124,21 @@ def veteran_run_batch(path,target=(320,320)):
     if len(path)>2 and max(abs(path[0][i]-target[i]) for i in (0,1))>8:
         if tuple(path[1][i]-path[0][i] for i in (0,1))==tuple(path[2][i]-path[1][i] for i in (0,1)):count=2
     return path[1:count+1]
+
+
+def validate_veteran_landing(tilemap,start,after,runs,origin=None,target=(320,320),tolerance=2):
+    """Accept bounded observed drift; these NPC-axis checks are not a safe-zone map."""
+    start=tuple(start);after=tuple(after);origin=tuple(origin or start);target=tuple(target)
+    for i in (0,1):
+        if ((origin[i]>=target[i] and after[i]<target[i]) or
+                (origin[i]<=target[i] and after[i]>target[i])):
+            raise RuntimeError('老兵跑动越过目标坐标轴，停止继续移动：起点%s，落点%s，目标%s' % (start,after,target))
+    if not tilemap.free(after):raise RuntimeError('老兵跑动落点不是已核对可走格：'+str(after))
+    if max(abs(after[i]-start[i]) for i in (0,1))>2*runs+tolerance:
+        raise RuntimeError('老兵跑动位移异常：起点%s，落点%s，已发送%s次跑动' % (start,after,runs))
+    if any(not min(origin[i],target[i])-tolerance<=after[i]<=max(origin[i],target[i])+tolerance for i in (0,1)):
+        raise RuntimeError('老兵跑动偏移超过本次靠近容差：原点%s，落点%s' % (origin,after))
+    if any(abs(after[i]-target[i])>abs(start[i]-target[i])+tolerance for i in (0,1)):
+        raise RuntimeError('老兵跑动偏移超过单批容差：起点%s，落点%s' % (start,after))
+    drift=any(not min(start[i],target[i])<=after[i]<=max(start[i],target[i]) for i in (0,1))
+    return {'replan':drift,'origin':origin,'target':target,'tolerance':tolerance}
