@@ -16,6 +16,8 @@ import inventory_flow
 importlib.reload(inventory_flow)
 import map_navigation
 importlib.reload(map_navigation)
+import recovery_ledger
+importlib.reload(recovery_ledger)
 from fast_sale import Session, Input, button_center, grid_center, DEFAULT_GUARD_NAMES, CONTROLS
 from equipment import CATEGORIES, WEAPONS, sale_plan
 
@@ -2397,25 +2399,19 @@ class BackgroundSession(Session):
         return {'entered':True,'room':'普通房间','position':self.player(),'entry_clicks':1}
 
     def saved_hunt_recovery_used(self):
-        from recovery_ledger import used_for_session
         path=instance_context.runtime_root()/'outputs'/'挂机统计'/'当前挂机恢复计数.json'
-        try:saved=json.loads(path.read_text(encoding='utf8'))
-        except FileNotFoundError:return 0
-        return used_for_session(saved,self.reader.pid,getattr(self,'_expected_character',None),instance_context.slot())
+        return recovery_ledger.load_for_character(path,self.reader.pid,getattr(self,'_expected_character',None),instance_context.slot())['used']
 
     def reserve_hunt_recovery(self,reason):
         used=getattr(self,'_hunt_recoveries',0)
         path=instance_context.runtime_root()/'outputs'/'挂机统计'/'当前挂机恢复计数.json'
-        if hasattr(self,'reader'):used=max(used,self.saved_hunt_recovery_used())
-        if used>=2:raise RuntimeError('本轮恢复额度已用完，停止反复重登')
         if hasattr(self,'reader'):
-            path.parent.mkdir(parents=True,exist_ok=True)
-            saved={'game_pid':self.reader.pid,'used':used+1,'reason':reason,
-                   'character':getattr(self,'_expected_character',None),'instance':instance_context.slot()}
-            temporary=path.with_suffix('.tmp')
-            temporary.write_text(json.dumps(saved,ensure_ascii=False),encoding='utf8');temporary.replace(path)
-        self._hunt_recoveries=used+1
-        return used+1
+            used=recovery_ledger.reserve_for_character(path,self.reader.pid,getattr(self,'_expected_character',None),instance_context.slot(),used,reason)
+        else:
+            if used>=2:raise RuntimeError('本角色累计恢复额度已用完，停止反复重登')
+            used+=1
+        self._hunt_recoveries=used
+        return used
 
     def finish_hunt_before_reentry(self,progress,cycles):
         # A one-shot request belongs to this bound client, independently per slot.
