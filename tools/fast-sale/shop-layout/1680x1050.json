@@ -1,0 +1,168 @@
+{
+  "client_size": [
+    1680,
+    1050
+  ],
+  "merchant_size": [
+    416,
+    176
+  ],
+  "menus": {
+    "shop_transfer": {
+      "point": [
+        68,
+        93
+      ],
+      "box": [
+        44,
+        85,
+        96,
+        100
+      ],
+      "template": "shop-transfer.png"
+    },
+    "weapon_transfer": {
+      "point": [
+        70,
+        89
+      ],
+      "box": [
+        26,
+        81,
+        113,
+        98
+      ],
+      "template": "weapon-transfer.png"
+    },
+    "sell_weapon": {
+      "point": [
+        27,
+        64
+      ],
+      "box": [
+        14,
+        57,
+        53,
+        71
+      ],
+      "template": "sell-weapon.png"
+    },
+    "jewelry_transfer": {
+      "point": [
+        309,
+        89
+      ],
+      "box": [
+        266,
+        81,
+        353,
+        98
+      ],
+      "template": "jewelry_transfer.png"
+    },
+    "clothes_transfer": {
+      "point": [
+        189,
+        89
+      ],
+      "box": [
+        146,
+        81,
+        233,
+        98
+      ],
+      "template": "clothes_transfer.png"
+    },
+    "sell_wrist": {
+      "point": [
+        27,
+        64
+      ],
+      "box": [
+        14,
+        57,
+        78,
+        72
+      ],
+      "template": "sell-wrist.png"
+    },
+    "sell_jewelry": {
+      "point": [
+        27,
+        64
+      ],
+      "box": [
+        14,
+        57,
+        40,
+        72
+      ],
+      "template": "sell-jewelry.png"
+    },
+    "sell_clothes": {
+      "point": [
+        27,
+        80
+      ],
+      "box": [
+        14,
+        72,
+        76,
+        88
+      ],
+      "template": "sell-clothes.png"
+    },
+    "cangyue_sell_clothes": {
+      "point": [
+        21,
+        80
+      ],
+      "box": [
+        14,
+        72,
+        65,
+        88
+      ],
+      "template": "cangyue_sell_clothes-1680.png"
+    },
+    "cangyue_sell_jewelry": {
+      "point": [
+        21,
+        80
+      ],
+      "box": [
+        14,
+        72,
+        80,
+        88
+      ],
+      "template": "cangyue_sell_jewelry-1680.png"
+    },
+    "cangyue_transfer": {
+      "point": [
+        69,
+        123
+      ],
+      "box": [
+        14,
+        116,
+        98,
+        131
+      ],
+      "template": "cangyue_transfer.png"
+    },
+    "mengzhong_transfer": {
+      "point": [
+        70,
+        92
+      ],
+      "box": [
+        20,
+        83,
+        119,
+        100
+      ],
+      "template": "mengzhong_transfer.png"
+    }
+  }
+}

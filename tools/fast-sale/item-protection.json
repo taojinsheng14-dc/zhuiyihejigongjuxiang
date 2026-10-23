@@ -1,0 +1,10 @@
+{
+  "enabled": false,
+  "attribute_reader_verified": false,
+  "necklace_luck_min": 1,
+  "jewelry_extra_class_attribute_min": 2,
+  "wargod_armor_extra_class_attribute_min": 1,
+  "class_attribute": "pending_confirmation",
+  "unknown_attribute_action": "block_sale",
+  "note": "幸运项链保留；本职业及额外属性字段待验证。禁止用名称代替极品判断。"
+}
