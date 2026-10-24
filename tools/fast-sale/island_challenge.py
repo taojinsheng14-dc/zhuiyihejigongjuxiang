@@ -160,7 +160,10 @@ def loot_island(session,combat=False,blocked_ids=None):
         session.check()
         if session.read(session.uint(session.uint(session.base+0x2ba608))+4,52)!=current_header:
             raise RuntimeError('地图变化，停止孤岛拾取')
-        result=pickup_current_test(session,excluded=excluded,names=None,**({'radius':25,'max_steps':8} if combat else {'radius':None}))
+        result=pickup_current_test(session,excluded=excluded,names=None,cooperative=True,**({'radius':25,'max_steps':8} if combat else {'radius':None}))
+        if result.get('status')=='combat_required':return {'status':'waiting_for_monsters','results':results}
+        if result.get('status') in ('hero_moved','hero_wait','approaching','actor_occluded'):
+            results.append(result);continue
         if result.get('status')=='no_target':
             if excluded and retry_pass<3:
                 retry_pass+=1;excluded.clear();session.pause(.6);continue
@@ -355,6 +358,7 @@ def run_island(session,seconds=600,player_spells=False):
         from ground_item_probe import ground_snapshot
         if session.visible('merchant') and ground_snapshot(session)['ground_maps'][0]['items']:session.close_panels()
         result=loot_island(session);record({'event':'loot','result':result})
+        if result['status']=='waiting_for_monsters':continue
         if result['status']!='complete':return {'status':'loot_incomplete','levels':levels,'casts':casts,'result':result}
         result=open_corner(session);record({'event':'npc','result':result})
         if not result['merchant_visible']:return {'status':'npc_not_open','levels':levels,'casts':casts}

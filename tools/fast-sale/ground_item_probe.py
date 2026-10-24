@@ -288,7 +288,12 @@ def pickup_current_test(session,excluded=None,names=('木剑',),radius=6,max_ste
     first=ground_snapshot(session);rows=first['ground_maps'][0]
     candidates=[r for r in rows['items'] if (names is None or r['name'] in names) and r['id'] not in (excluded or set()) and (target_id is None or r['id']==target_id) and r['key_matches'] and (radius is None or max(abs(r['x']-first['position'][0]),abs(r['y']-first['position'][1]))<=radius)]
     if not candidates:return {'status':'no_target','game_input_sent':False}
-    chosen=min(candidates,key=lambda r:max(abs(r['x']-first['position'][0]),abs(r['y']-first['position'][1])))
+    from pickup_strategy import context,choose,lead_hero
+    scene=context(session)
+    action,chosen=choose(candidates,scene['monsters'],scene['hero'],scene['position'])
+    if action=='combat':return {'status':'combat_required','verified':False,'game_input_sent':False}
+    if action=='lead_hero':return lead_hero(session,chosen,scene)
+    if chosen is None:return {'status':'no_target','game_input_sent':False}
     uid=chosen['id'];target=(chosen['x'],chosen['y']);item_name=chosen['name']
     gold_before=session.currency_snapshot()['gold'] if item_name=='金币' else None
     stored_before=stored_item_count(session,item_name)
@@ -389,7 +394,9 @@ def pickup_loop(session,seconds=120):
         obj=session.uint(session.uint(session.base+0x2ba608))
         if session.read(obj+4,52)!=header:
             record({'event':'stop','reason':'map_changed'});return {'status':'map_changed','verified':verified}
-        result=pickup_current_test(session,excluded=excluded)
+        result=pickup_current_test(session,excluded=excluded,cooperative=True)
+        if result.get('status') in ('combat_required','hero_moved','hero_wait','approaching','actor_occluded'):
+            record({'event':'deferred_or_progress','result':result});session.pause(.3);continue
         if result.get('status')=='no_target':
             session.pause(.5);continue
         attempts+=1;record({'event':'attempt','result':result})

@@ -97,14 +97,15 @@ class BoundedMageTests(unittest.TestCase):
             nearby_monsters=lambda **k:{'read_errors':0,'monsters':monsters or []},clear_background_mouse=Mock())
         with tempfile.TemporaryDirectory() as folder,ExitStack() as stack:
             stack.enter_context(patch('mage_dungeon.guard'))
+            stack.enter_context(patch('pickup_strategy.context',return_value={'monsters':monsters or [],'hero':None,'position':(20,20),'npcs':[]}))
             stack.enter_context(patch('dungeon_route.CoverageRoute',return_value=SimpleNamespace(snapshot=lambda:{},next_goal=lambda *a:(30,30),visited=set(),points={(30,30)},defer_goal=lambda now:None)))
             stack.enter_context(patch('mage_dungeon.probe_once',side_effect=spell))
             stack.enter_context(patch('warrior_combat.patrol_plan',return_value=(object(),{'waypoints':[(20,20),(30,30)]})))
             stack.enter_context(patch('inventory_flow.ensure_loot_capacity'))
             stack.enter_context(patch('warrior_combat.patrol_move',return_value={'from':(20,20),'to':(20,20)}))
-            stack.enter_context(patch('ground_item_probe.ground_snapshot',return_value={'ground_maps':[{'items':drops or []}]}))
+            stack.enter_context(patch('ground_item_probe.ground_snapshot',**({'side_effect':drops} if callable(drops) else {'return_value':{'ground_maps':[{'items':drops or []}]}})))
             stack.enter_context(patch('island_pickup_policy.filter_drops',side_effect=lambda rows:(rows,[])))
-            stack.enter_context(patch('ground_item_probe.pickup_current_test',return_value=pickup))
+            stack.enter_context(patch('ground_item_probe.pickup_current_test',**({'side_effect':pickup} if callable(pickup) else {'return_value':pickup})))
             stack.enter_context(patch('instance_context.runtime_root',return_value=Path(folder)))
             result=run_bounded(s,max_casts=max_casts,continuous=continuous)
         self.assertIs(s.navigation_map,original);s.clear_background_mouse.assert_called_once()
@@ -125,6 +126,26 @@ class BoundedMageTests(unittest.TestCase):
             drops=[{'id':7,'name':'金币','x':20,'y':20}],pickup={'status':'removed_at_target','verified':False})
         self.assertEqual(r['status'],'pickup_unverified');self.assertEqual(r['verified_pickups'],0)
 
+
+    def test_accessible_drop_interrupts_a_live_locked_target(self):
+        reads=[0];target={'address':1,'name':'蜈蚣','dead':False,'position':(22,20)}
+        def drops(*args):
+            reads[0]+=1
+            return {'ground_maps':[{'items':[] if reads[0]==1 else [{'id':7,'name':'金币','x':20,'y':20}]}]}
+        r=self.run_case(lambda *a,**k:{'f1_sent':True,'target':target},monsters=[target],drops=drops,
+                        pickup={'status':'unverified','verified':False},max_casts=2)
+        self.assertEqual(r['casts_sent'],1)
+        self.assertEqual(r['status'],'pickup_unverified')
+
+    def test_hero_leading_does_not_exhaust_three_pickup_attempts(self):
+        attempts=[0]
+        def pickup(*args,**kwargs):
+            attempts[0]+=1
+            return {'status':'hero_moved' if attempts[0]<=4 else 'unverified','verified':False}
+        r=self.run_case(lambda *a,**k:(_ for _ in ()).throw(AssertionError('must not cast')),
+                        drops=[{'id':7,'name':'金币','x':20,'y':20}],pickup=pickup)
+        self.assertEqual(attempts[0],5)
+        self.assertEqual(r['status'],'pickup_unverified')
 
     def test_zero_health_then_removal_is_observation_not_precise_kill(self):
         calls=[0]

@@ -89,10 +89,9 @@ class Scheduler:
         occupied={tuple(m['position']) for m in alive}
         eligible=[d for d in drops if d.get('key_matches') and (d['x'],d['y']) not in occupied
                   and self.failures.get(d['id'],0)<3 and now>=self.retry_at.get(d['id'],0)]
-        if alive:eligible=[d for d in eligible if not hero_blocks_pickup(sample,d)]
-        if eligible:
-            selected=next((d for d in eligible if d['id']==self.target),None)
-            selected=selected or min(eligible,key=lambda d:((d['x']-position[0])**2+(d['y']-position[1])**2,d['id']))
+        from pickup_strategy import choose
+        loot_action,selected=choose(eligible,alive,sample.get('hero'),position,preferred=self.target)
+        if loot_action in ('pickup','lead_hero'):
             self.target=selected['id'];return ('pickup',selected)
         if alive:
             # Drop blockers first, then unactivated sculpture, then a distant live monster.
@@ -115,12 +114,12 @@ class Scheduler:
         uid=drop['id'];status=result.get('status')
         if result.get('verified'):
             self.target=None;self.progress_at=now;self.failures.pop(uid,None);self.retry_at.pop(uid,None)
-        elif status=='approaching':
+        elif status in ('approaching','hero_moved'):
             self.progress_at=now
         elif status=='blocked':
             self.target=None;count=self.failures.get(uid,0)+1;self.failures[uid]=count
             self.retry_at[uid]=now+min(3,count)
-        elif status in ('hero_occupied','actor_occluded'):
+        elif status in ('hero_occupied','actor_occluded','hero_wait','combat_required'):
             self.target=None;self.retry_at[uid]=now+1
         elif status in ('removed_at_target','unverified') and not result.get('ground_remaining',True):
             # Gone without inventory proof may be another player/expiry. Never count as picked.
@@ -129,29 +128,7 @@ class Scheduler:
         else:raise RuntimeError('拾取结果未核对，停止：'+str(status or result.get('error_detail')))
 
 
-def hero_blocks_pickup(sample,drop):
-    """A hero one/two rows below a drop can cover its click without sharing a tile."""
-    if not sample.get('hero'):return False
-    hx,hy=sample['hero']
-    px,py=48*(drop['x']-hx),64+32*(drop['y']-hy)
-    return -28<=px<=28 and -16<=py<=80
-
-
-def hero_follow_goal(sample,tilemap,drop=None,excluded=()):
-    current=tuple(sample['position']);hero=tuple(sample['hero'])
-    anchor=(drop['x'],drop['y']) if drop else hero
-    if drop is None and max(abs(current[i]-hero[i]) for i in (0,1))>=4:return current
-    blocked={tuple(m['position']) for m in sample['monsters']}|{tuple(n['map']) for n in sample['npcs']}|{hero}
-    candidates=[]
-    for x in range(anchor[0]-6,anchor[0]+7):
-        for y in range(anchor[1]-6,anchor[1]+7):
-            goal=(x,y);distance=max(abs(x-anchor[0]),abs(y-anchor[1]))
-            if not (distance==6 if drop else 4<=distance<=6) or goal in blocked or goal in excluded or not tilemap.free(goal):continue
-            if drop and max(abs(goal[i]-hero[i]) for i in (0,1))<4:continue
-            try:path=tilemap.path(current,goal,blocked)
-            except RuntimeError:continue
-            if 1<len(path)<=12:candidates.append((len(path),distance,goal))
-    return min(candidates)[2] if candidates else None
+from pickup_strategy import hero_blocks_pickup,hero_follow_goal
 
 
 def clickable_move(current,goals,tilemap,blocked,draw,size,boxes):
@@ -286,31 +263,6 @@ def run_loop(session,progress=lambda text:None,seconds=7200,transitions=0,on_tra
         if action=='pickup':
             if melee is not None:melee.reset()
             if session.visible('merchant') or session.visible('bag'):session.close_panels()
-            if hero_blocks_pickup(sample,target):
-                scheduler.feedback(target,{'status':'hero_occupied'},time.monotonic())
-                state=hero_unblocks.setdefault(target['id'],{'moves':0,'goal':None,'waits':0,'excluded':[]})
-                if state['goal'] is not None and tuple(sample['hero'])==state['goal']:
-                    state['excluded'].append(state['goal']);state['goal']=None
-                if state['goal'] is None:
-                    state['goal']=hero_follow_goal(sample,session.navigation_map(ISLAND_HEADER),drop=target,excluded=state['excluded'])
-                    if state['goal'] is None:raise RuntimeError('目标被英雄遮挡，但没有已核对的带离路线')
-                if state['moves']<6:
-                    if state['goal'] is not None and tuple(sample['position'])!=state['goal']:
-                        state['moves']+=1
-                        moved=move_one(session,sample,state['goal'],stand_radius=0)
-                        log('hero_unblock',goal=state['goal'],attempt=state['moves'],drop=target,hero=sample['hero'],result=moved)
-                        if moved['status']=='blocked':
-                            state['excluded'].append(state['goal']);state['goal']=None
-                    else:state['waits']+=1
-                session.pause(1)
-                if state['moves']>=6 or state['waits']>=3:
-                    fresh=observe(session)
-                    remains=any(d['id']==target['id'] for d in fresh.get('drops',[]))
-                    if remains and hero_blocks_pickup(fresh,target):
-                        if fresh.get('monsters'):
-                            hero_unblocks.pop(target['id'],None);log('hero_unblock_deferred_for_combat',drop=target);continue
-                        raise RuntimeError('英雄模型仍遮挡目标，有限带离及跟随等待已用完；保留现场')
-                continue
             hero_unblocks.pop(target['id'],None);combat_deferred.discard(target['id'])
             result=pick_one(session,target);scheduler.feedback(target,result,time.monotonic())
             picked+=int(bool(result.get('verified')));log('pickup',result=result)

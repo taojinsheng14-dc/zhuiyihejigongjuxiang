@@ -1215,6 +1215,9 @@ class BackgroundSession(Session):
                 'shop_exits':exits,'foreground_used':False}
 
     def run_shop_route(self,categories=None,progress=lambda message:None):
+        # Reload shared policy only at a new command boundary, never inside an active loop.
+        import pickup_strategy
+        importlib.reload(pickup_strategy)
         self._stalled_route_recoveries=0
         if hasattr(self,'reader'):self._stats_enabled=True
         if categories in (['双包混合路线'],['混合路线'],['苍月出售']):

@@ -228,8 +228,14 @@ def run_bounded(session,progress=lambda message:None,seconds=30,max_casts=6,cont
                     deaths+=1;log('target_death_observed',target=current);locked=None
             drops,_=filter_drops(ground_snapshot(session)['ground_maps'][0]['items'])
             nearby=[d for d in drops if deferred_drops.get(d['id'],0)<=time.monotonic() and max(abs(d['x']-session.player()[0]),abs(d['y']-session.player()[1]))<=6]
-            if nearby and locked is None:
-                chosen=min(nearby,key=lambda d:max(abs(d['x']-session.player()[0]),abs(d['y']-session.player()[1])))
+            from pickup_strategy import choose,context
+            loot_action,chosen=('clear',None)
+            if nearby:
+                scene=context(session)
+                loot_action,chosen=choose(nearby,scene['monsters'],scene['hero'],scene['position'])
+            if loot_action in ('pickup','lead_hero'):
+                if locked:log('target_interrupted_for_loot',target=locked)
+                locked=None;last_zero_health=False;failed_aims=0
                 pickup_attempts[chosen['id']]=pickup_attempts.get(chosen['id'],0)+1
                 if pickup_attempts[chosen['id']]>3:
                     if continuous:
@@ -244,8 +250,9 @@ def run_bounded(session,progress=lambda message:None,seconds=30,max_casts=6,cont
                 result=pickup_current_test(session,names=(chosen['name'],),radius=6,max_steps=2,cooperative=True,target_id=chosen['id'])
                 log('pickup',result=result)
                 if result.get('verified'):verified_pickups+=1
-                elif result.get('status') not in ('approaching','actor_occluded','blocked','no_target'):
+                elif result.get('status') not in ('approaching','actor_occluded','blocked','no_target','combat_required','hero_moved','hero_wait'):
                     status='pickup_unverified';break
+                if result.get('status') in ('combat_required','hero_moved','hero_wait'):pickup_attempts[chosen['id']]=0
                 position_anchor=tuple(session.player());session.pause(.2);continue
             excluded={a:t for a,t in excluded.items() if t>time.monotonic()}
             result=probe_once(session,progress,locked=locked,**({'excluded':set(excluded)} if continuous else {}));log('spell_probe',result=result)

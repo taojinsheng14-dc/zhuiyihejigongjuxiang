@@ -20,7 +20,8 @@ class PickupLoopTests(unittest.TestCase):
 
     def test_blocked_item_does_not_stop_other_items(self):
         seen=[]
-        def pickup(session,excluded):
+        def pickup(session,excluded,cooperative=False):
+            self.assertTrue(cooperative)
             seen.append(set(excluded))
             if len(seen)==1:return {'status':'blocked','id':7,'verified':False}
             return {'status':'completed','id':len(seen)+10,'verified':True}
@@ -30,7 +31,7 @@ class PickupLoopTests(unittest.TestCase):
         self.assertEqual(seen[1],{7})
 
     def test_unverified_disappearance_stops(self):
-        result=self.run_loop(lambda session,excluded:{'status':'unverified','verified':False})
+        result=self.run_loop(lambda session,excluded,cooperative=False:{'status':'unverified','verified':False})
         self.assertEqual(result['status'],'stopped_unverified')
         self.assertEqual(result['attempts'],1)
 

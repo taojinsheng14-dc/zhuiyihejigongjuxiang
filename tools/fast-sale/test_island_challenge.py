@@ -61,7 +61,8 @@ class LootRetryTests(unittest.TestCase):
             def player(self):return (21,15)
             def nearby_monsters(self,radius):return {'loaded_monster_alive':0}
         seen=[]
-        def pickup(session,excluded,names,radius):
+        def pickup(session,excluded,names,radius,cooperative=False):
+            self.assertTrue(cooperative)
             seen.append(set(excluded))
             return [ {'status':'blocked','id':7,'verified':False}, {'status':'no_target'},
                      {'status':'completed','id':7,'verified':True}, {'status':'no_target'} ][len(seen)-1]
