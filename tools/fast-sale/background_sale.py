@@ -1729,6 +1729,8 @@ class BackgroundSession(Session):
             returned=self.restore_held_to_bag()
             return {'returned':returned,'moved_bag':self.arrange_sale_layout()}
         if categories==['老兵固定菜单点击测试（不传送）']:return self.test_veteran_fixed_menu(progress)
+        if categories==['固定位置传送武器店测试']:return self.test_fixed_veteran_transfer('weapon',progress)
+        if categories==['固定位置传送苍月测试']:return self.test_fixed_veteran_transfer('cangyue',progress)
         if categories==['打开普通房间菜单']:return self.open_hunt_menu()
         if categories==['进入普通房间']:return self.enter_ordinary_room(progress)
         if categories==['挂机清包循环']:return self.hunt_cycle(progress)
@@ -3189,6 +3191,66 @@ class BackgroundSession(Session):
             if not blank: return capture
             if attempt < 3: self.pause(.25)
         raise RuntimeError('商人菜单截图连续3次为空白，已安全停止；未点击菜单，请检查游戏窗口渲染后再接续')
+
+    def test_fixed_veteran_transfer(self, destination, progress=lambda message: None):
+        """Fresh NPC sequence, fixed relative clicks, then map/NPC confirmation."""
+        targets = {'weapon': ('0159.map', '铁匠铺老板', (5,9)),
+                   'cangyue': ('5.map', '苍月老兵', (139,333))}
+        if destination not in targets: raise RuntimeError('未知传送测试目标')
+        if self.login_stage() != 'playing': raise RuntimeError('当前状态未确认正常，未传送')
+        if self.held_item() or self.sale_item() or self.inflight_item():
+            raise RuntimeError('存在手持、待售或传输物品，未传送')
+        target_map, npc_name, npc_tile = targets[destination]
+        before = self.state()
+        current_map = before.get('map_identity', {}).get('name', '').lower()
+        if current_map == target_map:
+            self.unique_npc(npc_name, npc_tile)
+            return {'destination': destination, 'already_at_destination': True,
+                    'menu_clicks': 0, 'entry_clicks': 0, 'fee_gold': 0}
+        if current_map != '3.map': raise RuntimeError('本测试从土城开始；请先自行回到土城')
+        wallet_before = self.currency_snapshot()
+        if destination == 'cangyue' and (wallet_before.get('gold') is None or wallet_before['gold'] < 2000):
+            raise RuntimeError('无法确认至少2000金币，未点击苍月传送')
+        self.open_mengzhong_veteran(progress)
+        self.profile()
+        initial_bounds = self.bounds('merchant')
+        if self.active_merchant != '盟重老兵' or not self.visible('merchant'):
+            raise RuntimeError('未确认新打开的老兵窗口，未点击')
+        position = tuple(self.player())
+        points = []
+        def click_link(name):
+            self.check()
+            if (self.login_stage() != 'playing' or not self.visible('merchant')
+                    or self.bounds('merchant') != initial_bounds or tuple(self.player()) != position):
+                raise RuntimeError('老兵窗口或人物状态变化，停止固定点击')
+            entry = self.profile()['menus'][name]
+            point = (initial_bounds[0]+entry['point'][0], initial_bounds[1]+entry['point'][1])
+            if self.hero_covers((point[0]-3,point[1]-3,point[0]+3,point[1]+3)):
+                raise RuntimeError('英雄头像遮挡菜单，未点击')
+            self.click(point)
+            points.append({'menu': name, 'point': point})
+        if destination == 'weapon':
+            progress('固定位置点击商店传送一次')
+            click_link('shop_transfer')
+            self.pause(.8)
+        progress('固定位置传送'+('武器店' if destination == 'weapon' else '苍月岛（2000金币）'))
+        click_link('weapon_transfer' if destination == 'weapon' else 'cangyue_transfer')
+        self.wait(lambda: not self.visible('merchant') and
+                  self.state().get('map_identity', {}).get('name', '').lower() == target_map, timeout=8)
+        self.stable_player()
+        after = self.state()
+        if after.get('map_identity', {}).get('name', '').lower() != target_map:
+            raise RuntimeError('点击后未确认目标地图，保留现场；不重复传送')
+        self.unique_npc(npc_name, npc_tile)
+        wallet_after = self.currency_snapshot()
+        report = {'destination': destination, 'target_map': target_map, 'verified_npc': npc_name,
+                  'points': points, 'menu_clicks': len(points), 'image_matching': False,
+                  'wallet_before': wallet_before, 'wallet_after': wallet_after,
+                  'gold_change': (wallet_after['gold']-wallet_before['gold']
+                                  if wallet_after.get('gold') is not None and wallet_before.get('gold') is not None else None),
+                  'position': after.get('player'), 'entry_clicks': 0, 'unattended_cycle': False}
+        self.write_stats({'event': 'fixed_veteran_transfer_test', **report})
+        return report
 
     def test_veteran_fixed_menu(self, progress=lambda message: None):
         """One fresh veteran link click; no destination, purchase or entry click."""
