@@ -5,6 +5,8 @@ from ctypes import wintypes as w
 from mage_skills import inspect_current
 from warrior_combat import HEADER, NAMES
 
+AIM_OFFSETS=((0,32),(0,48),(0,16),(0,56),(-16,48),(16,48),(-24,64),(24,64),(0,72))
+
 
 def guard(session):
     session.check()
@@ -43,7 +45,7 @@ def probe_once(session, progress=lambda message:None, locked=None):
         raw=rows.get(m['address'])
         if raw is None:return False
         x,y=struct.unpack_from('<2i',raw,0x17c)
-        return 70<x<width-70 and any(60<y+o<height-180 for o in (32,48,16,56))
+        return 70<x<width-70 and any(70<x+ox<width-70 and 60<y+oy<height-180 for ox,oy in AIM_OFFSETS)
     choices=[m for m in choices if aimable(m)]
     if not choices:return {'status':'target_outside_input_area','f1_sent':False}
     if locked:
@@ -55,7 +57,7 @@ def probe_once(session, progress=lambda message:None, locked=None):
         raise RuntimeError('施法前怪物身份或位置变化')
     x,y=struct.unpack_from('<2i',raw,0x17c);point=(x,y+32)
     width,height=session.client_size()
-    if not (70<point[0]<width-70 and any(60<y+o<height-180 for o in (32,48,16,56))):
+    if not (70<point[0]<width-70 and any(70<x+ox<width-70 and 60<y+oy<height-180 for ox,oy in AIM_OFFSETS)):
         return {'status':'target_outside_input_area','f1_sent':False}
     own=session.uint(session.uint(session.base+0x2bac2c));hero=session.uint(own+0x358)
     for address,actor in rows.items():
@@ -85,7 +87,7 @@ def probe_once(session, progress=lambda message:None, locked=None):
         session.begin_background_input()
         send(0x6,1,0);send(0x7,0,0)
         result['hover_observations']=[]
-        for offset in (32,48,16,56):
+        for offset_x,offset_y in AIM_OFFSETS:
             fresh=dict(session.scene_actor_snapshot()).get(target['address'])
             if not same_actor(raw,fresh):
                 result['status']='target_changed_during_hover';return result
@@ -95,7 +97,7 @@ def probe_once(session, progress=lambda message:None, locked=None):
             target=dict(target,position=list(struct.unpack_from('<2i',fresh,0x68)))
             result['target']=target
             dx,dy=struct.unpack_from('<2i',fresh,0x17c)
-            candidate=(dx,dy+offset)
+            candidate=(dx+offset_x,dy+offset_y)
             if not (70<candidate[0]<width-70 and 60<candidate[1]<height-180):continue
             mx,my=(round(candidate[0]*physical[0]/width),round(candidate[1]*physical[1]/height))
             if getattr(session,'_ui_logical_messages',False):mx,my=candidate
@@ -177,7 +179,7 @@ def run_bounded(session,progress=lambda message:None,seconds=30,max_casts=6):
     from island_pickup_policy import filter_drops
     from warrior_combat import patrol_plan,patrol_move
     guard(session);tilemap,plan=patrol_plan(session)
-    deadline=time.monotonic()+min(120,max(1,seconds));limit=min(60,max(1,max_casts))
+    started=time.monotonic();deadline=started+min(120,max(1,seconds));limit=min(60,max(1,max_casts))
     path=instance_context.runtime_root()/'outputs'/'法师地牢验证.jsonl'
     path.parent.mkdir(parents=True,exist_ok=True)
     def log(event,**data):
@@ -187,11 +189,15 @@ def run_bounded(session,progress=lambda message:None,seconds=30,max_casts=6):
         if header!=HEADER:raise RuntimeError('拾取地图变化')
         return tilemap
     session.navigation_map=navigation
-    locked=None;last_zero_health=False;casts=deaths=verified_pickups=0;status='bounded_end';failed_aims=0;waypoint=1;pickup_attempts={}
+    locked=None;last_zero_health=False;casts=deaths=verified_pickups=unverified_losses=0;status='bounded_end';failed_aims=0;waypoint=1;pickup_attempts={};movement_segments=0;position_anchor=tuple(session.player())
     try:
-        log('start',position=session.player(),max_casts=limit,seconds=seconds)
+        log('start',position=session.player(),max_casts=limit,seconds=seconds,waypoints=plan['waypoints'])
         while time.monotonic()<deadline and casts<limit:
-            guard(session);ensure_loot_capacity(session,progress);guard(session)
+            guard(session)
+            current_position=tuple(session.player())
+            if max(abs(current_position[i]-position_anchor[i]) for i in (0,1))>2:
+                status='external_position_change';log(status,previous=position_anchor,current=current_position);break
+            ensure_loot_capacity(session,progress);guard(session)
             if locked:
                 sample=session.nearby_monsters(radius=12)
                 current=next((m for m in sample['monsters'] if m['address']==locked['address'] and m['name']==locked['name']),None)
@@ -200,7 +206,7 @@ def run_bounded(session,progress=lambda message:None,seconds=30,max_casts=6):
                     if last_zero_health:
                         deaths+=1;log('target_removed_after_zero_health',target=locked);locked=None
                     else:
-                        status='target_disappeared_unverified';log(status,target=locked);break
+                        unverified_losses+=1;log('target_disappeared_unverified',target=locked);locked=None;last_zero_health=False;failed_aims=0
                 elif current['dead']:
                     deaths+=1;log('target_death_observed',target=current);locked=None
             drops,_=filter_drops(ground_snapshot(session)['ground_maps'][0]['items'])
@@ -215,7 +221,7 @@ def run_bounded(session,progress=lambda message:None,seconds=30,max_casts=6):
                 if result.get('verified'):verified_pickups+=1
                 elif result.get('status') not in ('approaching','actor_occluded','blocked','no_target'):
                     status='pickup_unverified';break
-                session.pause(.2);continue
+                position_anchor=tuple(session.player());session.pause(.2);continue
             result=probe_once(session,progress,locked=locked);log('spell_probe',result=result)
             if result.get('f1_sent'):
                 casts+=1;locked=result['target'];failed_aims=0
@@ -223,7 +229,10 @@ def run_bounded(session,progress=lambda message:None,seconds=30,max_casts=6):
                 last_zero_health=hp.get('0x11a',0)>0 and hp.get('0x112')==0
                 session.pause(.6)
             elif result.get('status') in ('no_verified_target','target_outside_input_area'):
-                if locked:status='locked_target_not_aimable';break
+                if locked:
+                    if last_zero_health:
+                        session.pause(.15);continue
+                    status='locked_target_not_aimable';break
                 move=approach_once(session,progress)
                 if not move.get('movement'):
                     if len(plan['waypoints'])<2:status='no_patrol_route';break
@@ -231,7 +240,7 @@ def run_bounded(session,progress=lambda message:None,seconds=30,max_casts=6):
                     if max(abs(session.player()[i]-goal[i]) for i in (0,1))<=2:
                         waypoint+=1;goal=tuple(plan['waypoints'][waypoint%len(plan['waypoints'])])
                     guard(session);move=patrol_move(session,tilemap,goal)
-                log('movement',result=move)
+                movement_segments+=1;log('movement',result=move)
             elif result.get('status')=='target_death_observed':
                 deaths+=1;log('target_death_observed',target=result['target']);locked=None;last_zero_health=False;failed_aims=0
                 session.pause(.15)
@@ -243,11 +252,13 @@ def run_bounded(session,progress=lambda message:None,seconds=30,max_casts=6):
                 failed_aims+=1
                 if failed_aims>=2:status='aim_unconfirmed_twice';break
                 if locked:
-                    session.pause(.2);continue
-                move=approach_once(session,progress);log('aim_reposition',result=move)
+                    position_anchor=tuple(session.player());session.pause(.2);continue
+                move=approach_once(session,progress);movement_segments+=int(bool(move.get('movement')));log('aim_reposition',result=move)
                 session.pause(.3)
+            position_anchor=tuple(session.player())
         summary={'status':status,'casts_sent':casts,'observed_deaths':deaths,
-                 'verified_pickups':verified_pickups,'unattended_acceptance':False,'position':session.player()}
+                 'verified_pickups':verified_pickups,'unverified_target_losses':unverified_losses,'movement_segments':movement_segments,
+                 'elapsed_seconds':round(time.monotonic()-started,2),'unattended_acceptance':False,'position':session.player()}
         log('end',**summary);return summary
     finally:
         session.navigation_map=before_navigation

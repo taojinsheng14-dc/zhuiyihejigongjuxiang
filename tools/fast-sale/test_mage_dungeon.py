@@ -47,6 +47,17 @@ class MageDungeonTests(unittest.TestCase):
             [(0x100,0x70,0x3b0001),(0x101,0x70,0xc03b0001)])
         self.assertFalse(any(a in (0x201,0x204) for a,_,_ in m))
 
+    def test_horizontal_hover_alternative_still_requires_same_actor(self):
+        s,m=self.session();original=s.uint
+        def uint(address):
+            if address==0x801b8:
+                moves=sum(msg==0x200 for msg,_,_ in m)
+                return 0x90000 if moves>=5 else 0
+            return original(address)
+        s.uint=uint;r=self.invoke(s)
+        self.assertTrue(r['f1_sent']);self.assertEqual(r['point'],[574,208])
+        self.assertEqual(len(r['hover_observations']),5)
+
     def test_wrong_map_stops_before_any_input(self):
         s,m=self.session();s.read=lambda a,n:bytes(n)
         with self.assertRaisesRegex(RuntimeError,'地牢'):self.invoke(s)
@@ -68,13 +79,13 @@ class MageDungeonTests(unittest.TestCase):
 
 
 class BoundedMageTests(unittest.TestCase):
-    def run_case(self,spell,monsters=None,drops=None,pickup=None,max_casts=1):
+    def run_case(self,spell,monsters=None,drops=None,pickup=None,max_casts=1,player=None):
         import tempfile
         from pathlib import Path
         from contextlib import ExitStack
         from mage_dungeon import run_bounded
         original=lambda header:'original'
-        s=SimpleNamespace(navigation_map=original,player=lambda:(20,20),pause=lambda n:None,
+        s=SimpleNamespace(navigation_map=original,player=player or (lambda:(20,20)),pause=lambda n:None,
             nearby_monsters=lambda **k:{'read_errors':0,'monsters':monsters or []},clear_background_mouse=Mock())
         with tempfile.TemporaryDirectory() as folder,ExitStack() as stack:
             stack.enter_context(patch('mage_dungeon.guard'))
@@ -96,7 +107,8 @@ class BoundedMageTests(unittest.TestCase):
 
     def test_disappearing_target_is_not_counted_as_dead(self):
         r=self.run_case(lambda *a,**k:{'f1_sent':True,'target':{'address':1,'name':'蜈蚣'}},max_casts=2)
-        self.assertEqual(r['status'],'target_disappeared_unverified');self.assertEqual(r['observed_deaths'],0)
+        self.assertEqual(r['status'],'bounded_end');self.assertEqual(r['observed_deaths'],0)
+        self.assertEqual(r['unverified_target_losses'],1);self.assertEqual(r['casts_sent'],2)
 
     def test_removed_drop_without_inventory_evidence_stops(self):
         r=self.run_case(lambda *a,**k:(_ for _ in ()).throw(AssertionError('must not cast')),
@@ -114,6 +126,28 @@ class BoundedMageTests(unittest.TestCase):
         self.assertEqual(r['observed_deaths'],1)
         self.assertNotIn('kills',r)
         self.assertFalse(r['unattended_acceptance'])
+
+
+    def test_zero_health_transition_without_aimable_target_waits(self):
+        calls=[0];target={'address':1,'name':'蜈蚣','dead':False}
+        def spell(*args,**kwargs):
+            calls[0]+=1
+            if calls[0]==2:return {'status':'no_verified_target','f1_sent':False}
+            return {'f1_sent':True,'target':target,'target_vitals_after':{'0x11a':230,'0x112':0}}
+        r=self.run_case(spell,monsters=[target],max_casts=2)
+        self.assertEqual(calls[0],3);self.assertEqual(r['casts_sent'],2)
+        self.assertEqual(r['observed_deaths'],0)
+
+
+    def test_large_position_change_between_actions_stops(self):
+        reads=[0]
+        def player():
+            reads[0]+=1
+            return (20,20) if reads[0]<=4 else (100,100)
+        r=self.run_case(lambda *a,**k:{'f1_sent':True,'target':{'address':1,'name':'蜈蚣'}},
+            monsters=[{'address':1,'name':'蜈蚣','dead':False}],max_casts=3,player=player)
+        self.assertEqual(r['status'],'external_position_change')
+        self.assertEqual(r['casts_sent'],1)
 
 
 class ActorIdentityTests(unittest.TestCase):

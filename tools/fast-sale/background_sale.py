@@ -1736,6 +1736,11 @@ class BackgroundSession(Session):
             import ground_item_probe
             __import__('importlib').reload(ground_item_probe)
             return ground_item_probe.pickup_test(self)
+        if categories==['法师地牢沿图挂机测试']:
+            import mage_skills,mage_dungeon
+            __import__('importlib').reload(mage_skills)
+            __import__('importlib').reload(mage_dungeon)
+            return mage_dungeon.run_bounded(self,progress,seconds=120,max_casts=60)
         if categories==['法师地牢短时打怪拾取验证']:
             import mage_skills,mage_dungeon
             __import__('importlib').reload(mage_skills)
