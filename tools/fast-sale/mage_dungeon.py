@@ -192,12 +192,18 @@ def run_bounded(session,progress=lambda message:None,seconds=30,max_casts=6,cont
     probe_options={'scene_guard':profile.guard,'target_names':profile.names,'target_classes':{'TCatMon'},'prefer_nearby':True} if profile else {}
     approach=profile.approach if profile else approach_once
     started=time.monotonic();deadline=started+(43200 if continuous else min(120,max(1,seconds)));limit=float('inf') if continuous else min(60,max(1,max_casts))
-    from dungeon_route import CoverageRoute
+    from dungeon_route import CoverageRoute,PatrolObstruction
     base_tilemap=tilemap
     route=CoverageRoute(tilemap,tuple(session.player()),spacing=getattr(profile,'route_spacing',8)) if continuous else None
     if continuous and profile and getattr(profile,'center_route',False):
         tilemap=route.navigation_map();profile.tilemap=tilemap
     move_options=profile.move_options() if profile and hasattr(profile,'move_options') else {'allow_hold':False}
+    obstruction=PatrolObstruction()
+    def coverage_move(goal):
+        options=dict(move_options,blocked_tiles=obstruction.blocked(time.monotonic()))
+        result=patrol_move(session,tilemap,goal,**options)
+        obstruction.observe(result,time.monotonic())
+        return result
     excluded={};deferred_drops={};stalled=0;last_progress=0
     original_progress=progress
     def report(message):
@@ -268,7 +274,7 @@ def run_bounded(session,progress=lambda message:None,seconds=30,max_casts=6,cont
                         else:status='pickup_progress_unconfirmed';break
                     if not nearby:
                         goal=route.next_goal(tuple(session.player()),time.monotonic())
-                        if goal is not None:patrol_move(session,tilemap,goal,**move_options)
+                        if goal is not None:coverage_move(goal)
                         position_anchor=tuple(session.player());session.pause(.2);continue
                     check_scene(session)
                     result=pickup_current_test(session,names=(chosen['name'],),radius=6,max_steps=2,cooperative=True,target_id=chosen['id'])
@@ -304,7 +310,7 @@ def run_bounded(session,progress=lambda message:None,seconds=30,max_casts=6,cont
                         if continuous:
                             goal=route.next_goal(tuple(session.player()),time.monotonic())
                             if goal is None:session.pause(.3);continue
-                            try:move=patrol_move(session,tilemap,goal,**move_options)
+                            try:move=coverage_move(goal)
                             except RuntimeError as error:
                                 if str(error)!='巡逻目标当前没有可走路径':raise
                                 route.defer_goal(time.monotonic());log('route_temporarily_blocked',goal=goal);continue
@@ -350,6 +356,7 @@ def run_bounded(session,progress=lambda message:None,seconds=30,max_casts=6,cont
                 locked=None;last_zero_health=False;failed_aims=0;excluded.clear()
                 position_anchor=tuple(session.player())
                 if result.get('random_used'):
+                    obstruction=PatrolObstruction()
                     route=CoverageRoute(base_tilemap,position_anchor,spacing=getattr(profile,'route_spacing',8))
                     if getattr(profile,'center_route',False):
                         tilemap=route.navigation_map();profile.tilemap=tilemap

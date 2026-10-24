@@ -64,3 +64,31 @@ class CenterRouteTests(unittest.TestCase):
         route=CoverageRoute(self.rectangle(72,72),(35,35),spacing=24)
         self.assertGreater(len(route.points),9)
         self.assertTrue(all(route.clearance[p]>=8 for p in route.points))
+
+
+class ObstructionTests(unittest.TestCase):
+    def test_failed_first_step_is_avoided_across_different_goals_and_expires(self):
+        from dungeon_route import PatrolObstruction
+        policy=PatrolObstruction();failed={'from':(10,10),'to':(10,10),'planned_step':(10,11)}
+        policy.observe(dict(failed,waypoint=(20,20)),0)
+        policy.observe(dict(failed,waypoint=(30,30)),1)
+        self.assertEqual(policy.blocked(2),{(10,11)})
+        route=CoverageRoute(CenterRouteTests().rectangle(30,30),(10,10),24)
+        path=route.navigation_map().path((10,10),(10,20),policy.blocked(2))
+        self.assertNotEqual(path[1],(10,11));self.assertNotIn((10,11),path)
+        self.assertEqual(policy.blocked(22),set())
+
+    def test_movement_resets_failure_budget_and_arrival_is_not_failure(self):
+        from dungeon_route import PatrolObstruction
+        policy=PatrolObstruction()
+        policy.observe({'from':(1,1),'to':(1,1),'planned_step':(1,2)},0)
+        policy.observe({'from':(1,1),'to':(2,1),'planned_step':(2,1)},1)
+        self.assertEqual(policy.failures,0)
+        policy.observe({'from':(2,1),'to':(2,1),'arrived':True},2)
+        self.assertEqual(policy.failures,0)
+
+    def test_finite_failed_attempt_budget_never_calls_relogin(self):
+        from dungeon_route import PatrolObstruction
+        policy=PatrolObstruction()
+        with self.assertRaisesRegex(RuntimeError,'有限尝试'):
+            for n in range(12):policy.observe({'from':(1,1),'to':(1,1),'planned_step':(n,2)},n)

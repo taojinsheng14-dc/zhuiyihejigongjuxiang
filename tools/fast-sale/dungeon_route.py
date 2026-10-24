@@ -98,3 +98,20 @@ class CenterPathMap:
         path=[]
         while found is not None:path.append(found[0]);found=parents[found]
         return path[::-1]
+
+
+class PatrolObstruction:
+    """Remember failed first steps across goals; never infer the game's cause."""
+    def __init__(self):self.until={};self.repeats={};self.failures=0
+    def blocked(self,now):
+        self.until={p:t for p,t in self.until.items() if t>now}
+        return set(self.until)
+    def observe(self,result,now):
+        if tuple(result.get('from',()))!=tuple(result.get('to',())):
+            self.failures=0;self.repeats.clear();return
+        if result.get('arrived'):return
+        step=result.get('planned_step')
+        if step is None:return
+        step=tuple(step);self.failures+=1;self.repeats[step]=self.repeats.get(step,0)+1
+        if self.repeats[step]>=2:self.until[step]=now+20
+        if self.failures>=12:raise RuntimeError('巡逻多方向有限尝试仍无位移，保留现场停止；未自动重登')

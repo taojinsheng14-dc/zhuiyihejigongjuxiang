@@ -157,10 +157,10 @@ def continuous_run(session,tilemap,current,direction,point,max_tiles,expected_he
     return {'from':current,'to':tuple(session.player()),'button':'right_hold','release_reason':reason}
 
 
-def patrol_move(session,tilemap,waypoint,allow_hold=True,expected_header=HEADER,hold_guard=None,drop_check=None):
+def patrol_move(session,tilemap,waypoint,allow_hold=True,expected_header=HEADER,hold_guard=None,drop_check=None,blocked_tiles=()):
     current=tuple(session.player());rows=session.scene_actor_snapshot()
     blocked={struct.unpack_from('<2i',raw,0x68) for address,raw in rows if raw[0xac]==0}
-    blocked.discard(current);path=tilemap.path(current,waypoint,blocked)
+    blocked.update(map(tuple,blocked_tiles));blocked.discard(current);path=tilemap.path(current,waypoint,blocked)
     if len(path)<2:return {'from':current,'to':current,'arrived':True}
     dx,dy=path[1][0]-current[0],path[1][1]-current[1]
     run=len(path)>2 and path[2]==(current[0]+2*dx,current[1]+2*dy)
@@ -168,20 +168,22 @@ def patrol_move(session,tilemap,waypoint,allow_hold=True,expected_header=HEADER,
     width,height=session.client_size();point=None
     for reach in (3,2) if run else (1,):
         aim=(current[0]+dx*reach,current[1]+dy*reach)
-        if not all(tilemap.free((current[0]+dx*n,current[1]+dy*n)) for n in range(1,reach+1)) or aim in blocked:continue
+        if not all(tilemap.free((current[0]+dx*n,current[1]+dy*n)) and (current[0]+dx*n,current[1]+dy*n) not in blocked for n in range(1,reach+1)):continue
         p=(draw[0]+dx*48*reach,draw[1]+64+dy*32*reach)
         if not (80<=p[0]<width-80 and 60<=p[1]<height-180):continue
         if any(ax-28<=p[0]<=ax+28 and ay-16<=p[1]<=ay+80
                for address,raw in rows if address!=own for ax,ay in [struct.unpack_from('<2i',raw,0x17c)]):continue
         point=p;break
-    if point is None:return {'from':current,'to':current,'occluded':True}
+    if point is None:return {'from':current,'to':current,'occluded':True,'planned_step':path[1]}
     if run:
         straight=0
         for n,p in enumerate(path[1:33],1):
             if p!=(current[0]+dx*n,current[1]+dy*n):break
             straight=n
-        if allow_hold and straight>=4:return continuous_run(session,tilemap,current,(dx,dy),point,straight,
-            expected_header=expected_header,hold_guard=hold_guard,drop_check=drop_check)
+        if allow_hold and straight>=4:
+            result=continuous_run(session,tilemap,current,(dx,dy),point,straight,
+                expected_header=expected_header,hold_guard=hold_guard,drop_check=drop_check)
+            return dict(result,planned_step=path[1])
     session.background_mouse(point,'right' if run else 'left',track_movement=False)
     previous=None;stable=0;settle_deadline=time.monotonic()+3
     while time.monotonic()<settle_deadline:
@@ -191,7 +193,7 @@ def patrol_move(session,tilemap,waypoint,allow_hold=True,expected_header=HEADER,
     else:raise RuntimeError('巡逻移动未稳定，停止')
     if not tilemap.free(after) or max(abs(after[i]-current[i]) for i in (0,1))>2:
         raise RuntimeError('巡逻实际移动超出已核对步长，停止')
-    return {'from':current,'to':after,'waypoint':waypoint,'button':'right' if run else 'left'}
+    return {'from':current,'to':after,'waypoint':waypoint,'button':'right' if run else 'left','planned_step':path[1]}
 
 
 def run(session,progress,seconds=60,patrol=False):
