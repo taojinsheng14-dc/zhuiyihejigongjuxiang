@@ -16,11 +16,12 @@ NAMES={'蜈蚣','跳跳蜂','巨型蠕虫','钳虫','黑色恶蛆','蠕虫'}
 
 
 class DungeonMap(TileMap):
-    def __init__(self,width,height,flags):
-        self.width=width;self.height=height;self.flags=flags;self.name='d601.map'
+    def __init__(self,width,height,flags,name='d601.map',center=None,radius=None):
+        self.width=width;self.height=height;self.flags=flags;self.name=name;self.center=center;self.radius=radius
     def free(self,xy):
         x,y=xy
-        return 8<=x<self.width-8 and 8<=y<self.height-8 and self.flags[x][y]&255==0
+        return (8<=x<self.width-8 and 8<=y<self.height-8 and self.flags[x][y]&255==0
+                and (self.center is None or max(abs(x-self.center[0]),abs(y-self.center[1]))<=self.radius))
     def path(self,start,goal,blocked=()):
         start,goal=tuple(start),tuple(goal);blocked=set(blocked)-{start}
         queue=deque([start]);parents={start:None}
@@ -38,11 +39,13 @@ class DungeonMap(TileMap):
         return result[::-1]
 
 
-def patrol_plan(session):
+def patrol_plan(session,expected_header=HEADER,expected_name='d601.map',radius=None):
     obj=session.uint(session.uint(session.base+0x2ba608))
-    if session.read(obj+4,52)!=HEADER:raise RuntimeError('不是已核对的地牢地图')
-    width,height=struct.unpack('<HH',HEADER[:4]);start=tuple(session.player())
-    file=matching_map_file(HEADER);data=file.read_bytes();stride=(len(data)-52)//(width*height)
+    if session.read(obj+4,52)!=expected_header:raise RuntimeError('不是已核对的地牢地图')
+    width,height=struct.unpack('<HH',expected_header[:4]);start=tuple(session.player())
+    file=matching_map_file(expected_header)
+    if file.name.lower()!=expected_name:raise RuntimeError('当前地图文件名称与授权地图不符')
+    data=file.read_bytes();stride=(len(data)-52)//(width*height)
     if stride!=14:raise RuntimeError('地牢文件格式不符')
     historical=Path(__file__).resolve().parents[1]/'game-chat-inspect'/'sale-runtime-code.bin'
     code=historical.read_bytes()
@@ -66,7 +69,7 @@ def patrol_plan(session):
             offset=52+(x*height+y)*14;back,_,front=struct.unpack_from('<HHH',data,offset)
             flags[x][y]=int(bool((back|front)&0x8000) or bool(data[offset+6]&128 and not data[offset+7]&128))
     if session.uint(session.uint(session.base+0x2ba608))!=obj:raise RuntimeError('读取路网时地图变化')
-    tilemap=DungeonMap(width,height,flags)
+    tilemap=DungeonMap(width,height,flags,name=expected_name,center=start if radius is not None else None,radius=radius)
     if not tilemap.free(start):raise RuntimeError('路网未确认当前位置可走')
     queue=deque([start]);reachable={start}
     while queue:
@@ -89,9 +92,9 @@ def patrol_plan(session):
     while waypoints:
         paths=[tilemap.path(ordered[-1],p) for p in waypoints]
         index=min(range(len(paths)),key=lambda i:len(paths[i]));ordered.append(waypoints.pop(index))
-    plan={'map':'d601.map','file_stride':stride,'client_grid_compared':compared,'mismatch':mismatch,
+    plan={'map':expected_name,'file_stride':stride,'client_grid_compared':compared,'mismatch':mismatch,
           'reachable_tiles':len(reachable),'waypoints':ordered,'start':start,'game_input_sent':False}
-    path=instance_context.runtime_root()/'outputs'/'地牢一层东巡逻路线.json'
+    path=instance_context.runtime_root()/'outputs'/('地牢一层东巡逻路线.json' if expected_name=='d601.map' else '当前地图巡逻路线.json')
     path.write_text(json.dumps(plan,ensure_ascii=False,indent=2),encoding='utf8')
     return tilemap,plan
 

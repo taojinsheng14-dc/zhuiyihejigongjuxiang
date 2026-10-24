@@ -27,7 +27,7 @@ BUILD='2026.10.24.11'
 def active_task(command,result,sample,now):
     step=command.get('step')
     if not isinstance(step,int) or step<=result.get('step',0):return None
-    if command.get('categories') not in (['挂机清包循环'],['接续当前挂机图循环'],['监测并回城出售'],['监测双包'],['孤岛每日自动挑战'],['接续孤岛自动挑战'],['法师地牢持续清怪拾取']):return None
+    if command.get('categories') not in (['挂机清包循环'],['接续当前挂机图循环'],['监测并回城出售'],['监测双包'],['孤岛每日自动挑战'],['接续孤岛自动挑战'],['法师地牢持续清怪拾取'],['法师当前地图持续挂机']):return None
     if not sample.get('ok') or not 0<=now-sample.get('observed_epoch',0)<=3:return None
     if sample.get('game_pid')!=result.get('state',{}).get('game_pid'):return None
     return step
@@ -62,13 +62,13 @@ class App(tk.Tk):
         island_tab=ttk.Frame(self.tabs,padding=10);self.tabs.add(island_tab,text='孤岛挑战')
         self.tabs.insert(1,island_tab)
         settings_tab=ttk.Frame(self.tabs,padding=10);self.tabs.insert(2,settings_tab,text='角色设置')
-        dungeon_tab=ttk.Frame(self.tabs,padding=10);self.tabs.insert(2,dungeon_tab,text='地牢挂机')
-        ttk.Label(dungeon_tab,text='法师主体 · 地牢东一层',font=('Microsoft YaHei UI',14,'bold')).pack(anchor='w')
-        ttk.Label(dungeon_tab,text='厚礼蟹 · F1雷电术 · 后台沿可达路线清怪、按名单拾取。\n需自己到地牢东一层；启动不会传送或购买。',wraplength=560,style='Subtitle.TLabel').pack(anchor='w',pady=(8,12))
-        self.dungeon_start_button=ttk.Button(dungeon_tab,text='启动／接续地牢挂机',style='Primary.TButton',command=lambda:self.run('mage_dungeon'))
+        dungeon_tab=ttk.Frame(self.tabs,padding=10);self.tabs.insert(2,dungeon_tab,text='地图挂机')
+        ttk.Label(dungeon_tab,text='法师主体 · 当前已核对地图',font=('Microsoft YaHei UI',14,'bold')).pack(anchor='w')
+        ttk.Label(dungeon_tab,text='厚礼蟹 · F1雷电术 · 后台沿可达路线清怪、按名单拾取。\n支持地牢东一层、石墓五层；需自行到图，启动不会传送或购买。',wraplength=560,style='Subtitle.TLabel').pack(anchor='w',pady=(8,12))
+        self.dungeon_start_button=ttk.Button(dungeon_tab,text='启动／接续当前地图挂机',style='Primary.TButton',command=lambda:self.run('mage_dungeon'))
         self.dungeon_start_button.pack(fill='x',pady=(0,10))
         ttk.Label(dungeon_tab,text='持续运行，单次最长12小时；沿图走完一圈继续巡逻。\n打开背包、未知提示或双包满时会安全停止。关闭面板后可重新启动；停止使用下方“停止本号任务”。',wraplength=560).pack(anchor='w',pady=(0,12))
-        self.dungeon_status=tk.StringVar(value='尚无地牢运行记录')
+        self.dungeon_status=tk.StringVar(value='尚无地图挂机运行记录')
         ttk.Label(dungeon_tab,textvariable=self.dungeon_status,wraplength=560,style='Status.TLabel').pack(fill='x')
         self.last_dungeon_refresh=0
         self.last_binding_refresh=0
@@ -180,7 +180,9 @@ class App(tk.Tk):
         if time.monotonic()-self.last_dungeon_refresh<1:return
         self.last_dungeon_refresh=time.monotonic()
         try:
-            data=json.loads((ROOT/'outputs'/'法师地牢挂机状态.json').read_text(encoding='utf8'))
+            paths=[ROOT/'outputs'/name for name in ('法师地牢挂机状态.json','当前地图挂机状态.json')]
+            path=max((p for p in paths if p.exists()),key=lambda p:p.stat().st_mtime)
+            data=json.loads(path.read_text(encoding='utf8'))
             route=data.get('route',{});position=data.get('position',[])
             phase={'running':'运行中','stopped':'已停止','finished':'已结束'}.get(data.get('phase'),'记录')
             age=time.time()-data.get('observed_epoch',0)
@@ -191,7 +193,7 @@ class App(tk.Tk):
             if data.get('reason'):text+='\n停止原因：'+str(data['reason'])
             self.dungeon_status.set(text)
         except FileNotFoundError:pass
-        except (OSError,ValueError,TypeError):self.dungeon_status.set('地牢状态暂不可读')
+        except (OSError,ValueError,TypeError):self.dungeon_status.set('地图状态暂不可读')
 
     def receive_results(self):
         self.refresh_dungeon_status()
@@ -550,7 +552,7 @@ class App(tk.Tk):
         def work():
             try:
                 if execute=='mage_dungeon':
-                    response=drive([{'action':'shop_route','categories':['法师地牢持续清怪拾取'],'foreground':False}],self.cancel)
+                    response=drive([{'action':'shop_route','categories':['法师当前地图持续挂机'],'foreground':False}],self.cancel)
                     result=response.get('result',{})
                 elif execute in ('island_start','island_resume','island_status'):
                     category={'island_start':'孤岛每日自动挑战','island_resume':'接续孤岛自动挑战','island_status':'孤岛自动状态只读'}[execute]
