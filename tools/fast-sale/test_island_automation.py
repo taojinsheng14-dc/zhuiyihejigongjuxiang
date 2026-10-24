@@ -231,7 +231,7 @@ class EntryAndMenuTests(unittest.TestCase):
             p=Path(folder)/'daily.json'
             session=SimpleNamespace(reader=SimpleNamespace(pid=42),in_mengzhong_return_area=lambda:True,
                 close_panels=Mock(),unique_npc=Mock(return_value={'name':'孤岛挑战'}),open_npc=Mock(),hero_ready=lambda:True)
-            def enter(s,verified_npc=None):
+            def enter(s,verified_npc=None,manual_request=False):
                 p.write_text(json.dumps({'role|today':{'status':'entered','map_header':island.ISLAND_HEADER.hex()}}),encoding='utf8')
                 return {'status':'entered'}
             with patch.object(island.legacy,'STATE',p),patch.object(island,'role_key',return_value='role|today'),patch.object(island.legacy,'enter_once',side_effect=enter) as entered,patch.object(island,'header',return_value=island.ISLAND_HEADER),patch.object(island,'run_loop',return_value={'status':'completed','completion_verified':True}),patch.object(island,'log'):
@@ -239,6 +239,10 @@ class EntryAndMenuTests(unittest.TestCase):
                 entered.assert_called_once()
                 with self.assertRaisesRegex(RuntimeError,'禁止重复进入'):island.run(session)
                 entered.assert_called_once()
+                with patch.object(island,'locate_town_entrance',return_value={'name':'孤岛挑战'}):
+                    island.run(session,manual_request=True)
+                self.assertEqual(entered.call_count,2)
+                self.assertTrue(entered.call_args.kwargs['manual_request'])
             self.assertEqual(json.loads(p.read_text(encoding='utf8'))['role|today']['status'],'completed')
 
     def test_stop_keeps_entry_for_resume_without_recovering(self):

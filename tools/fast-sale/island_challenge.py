@@ -51,7 +51,7 @@ def confirm_entry_npc(session,verified_npc=None):
     raise RuntimeError('当前未确认孤岛NPC')
 
 
-def enter_once(session,verified_npc=None):
+def enter_once(session,verified_npc=None,manual_request=False):
     import time
     today=datetime.now(timezone(timedelta(hours=8))).date().isoformat()
     actor=session.uint(session.uint(session.base+0x2bac2c));ptr=session.uint(actor+0xc);length=session.uint(ptr-4)
@@ -59,12 +59,16 @@ def enter_once(session,verified_npc=None):
     role=session.read(ptr,length).decode('gb18030')
     state=json.loads(STATE.read_text(encoding='utf8')) if STATE.exists() else {}
     key=role+'|'+today
-    if key in state:raise RuntimeError('今日已记录挑战进入或尝试，避免重复消耗次数')
+    if key in state and not manual_request:raise RuntimeError('今日已记录挑战进入或尝试，避免重复消耗次数')
     if not session.visible('merchant'):raise RuntimeError('挑战菜单未打开')
     confirm_entry_npc(session,verified_npc)
     if session.held_item() or session.sale_item() or session.inflight_item():raise RuntimeError('物品状态不空')
     header=session.read(session.uint(session.uint(session.base+0x2ba608))+4,52)
-    state[key]={'status':'entry_requested','date':today,'time':time.time(),'before':session.player()}
+    previous=state.get(key)
+    history=list(previous.get('previous_attempts',[])) if previous else []
+    if previous:history.append({k:v for k,v in previous.items() if k!='previous_attempts'})
+    state[key]={'status':'entry_requested','date':today,'time':time.time(),'before':session.player(),
+                'manual_request':manual_request,'previous_attempts':history}
     def save():
         temp=STATE.with_suffix('.tmp');temp.write_text(json.dumps(state,ensure_ascii=False,indent=2),encoding='utf8');temp.replace(STATE)
     save()
@@ -74,7 +78,7 @@ def enter_once(session,verified_npc=None):
         after=session.read(session.uint(session.uint(session.base+0x2ba608))+4,52)
         if after!=header:
             state[key].update(status='entered',position=session.player(),map_header=after.hex());save()
-            return {'status':'entered','position':session.player(),'daily_limit':1,'path':str(STATE)}
+            return {'status':'entered','position':session.player(),'manual_request':manual_request,'path':str(STATE)}
     state[key]['status']='entry_unconfirmed';save()
     return {'status':'entry_unconfirmed','position':session.player(),'retry':False}
 

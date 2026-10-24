@@ -93,3 +93,27 @@ class CornerUiExclusionTests(unittest.TestCase):
         r=island_challenge.open_corner(s)
         s.open_npc.assert_called_once_with(npc)
         self.assertTrue(r['merchant_visible'])
+
+
+class ManualEntryTests(unittest.TestCase):
+    def test_manual_entry_preserves_previous_unconfirmed_attempt(self):
+        import json
+        from datetime import datetime,timezone,timedelta
+        from types import SimpleNamespace
+        key='厚礼蟹|'+datetime.now(timezone(timedelta(hours=8))).date().isoformat()
+        role='厚礼蟹'.encode('gb18030')
+        session=SimpleNamespace(base=0,uint=lambda address:len(role),read=lambda address,n:role if n==len(role) else b'x'*n,
+            visible=lambda key:True,held_item=lambda:'',sale_item=lambda:'',inflight_item=lambda:'',player=lambda:(329,328),pause=lambda n:None)
+        with tempfile.TemporaryDirectory() as folder:
+            p=Path(folder)/'state.json';previous={'status':'entry_unconfirmed','time':123}
+            p.write_text(json.dumps({key:previous}),encoding='utf8')
+            with patch.object(island,'STATE',p),patch.object(island,'confirm_entry_npc'),patch.object(island,'click_start_link') as click:
+                with self.assertRaisesRegex(RuntimeError,'今日已记录'):island.enter_once(session)
+                click.assert_not_called()
+                result=island.enter_once(session,manual_request=True)
+                click.assert_called_once()
+                data=json.loads(p.read_text(encoding='utf8'))[key]
+                self.assertEqual(data['previous_attempts'],[previous])
+                self.assertTrue(data['manual_request'])
+                self.assertEqual(result['status'],'entry_unconfirmed')
+                self.assertFalse(result['retry'])

@@ -370,7 +370,7 @@ def locate_town_entrance(session,progress=lambda text:None):
     raise RuntimeError('孤岛入口靠近达到有限次数，未入场')
 
 
-def run(session,progress=lambda text:None,resume=False):
+def run(session,progress=lambda text:None,resume=False,manual_request=False):
     import importlib,ground_item_probe,island_pickup_policy
     importlib.reload(ground_item_probe);importlib.reload(island_pickup_policy)
     key=role_key(session);state=json.loads(legacy.STATE.read_text(encoding='utf8')) if legacy.STATE.exists() else {}
@@ -387,11 +387,11 @@ def run(session,progress=lambda text:None,resume=False):
         if header(session)!=ISLAND_HEADER:raise RuntimeError('当前不在孤岛，未输入')
         if old.get('game_pid') not in (None,session.reader.pid):raise RuntimeError('进入记录属于旧客户端，先核对身份；未自动改绑')
     else:
-        if old:raise RuntimeError('本角色今日已记录进入或尝试，禁止重复进入')
+        if old and not manual_request:raise RuntimeError('本角色今日已记录进入或尝试，禁止重复进入')
         if not session.in_mengzhong_return_area():raise RuntimeError('每日孤岛请从土城开始，不会退出当前挂机图')
         session.close_panels()
         npc=locate_town_entrance(session,progress);session.open_npc(npc)
-        entry=legacy.enter_once(session,verified_npc=npc)
+        entry=legacy.enter_once(session,verified_npc=npc,**({'manual_request':True} if manual_request else {}))
         if entry['status']!='entered' or header(session)!=ISLAND_HEADER:raise RuntimeError('孤岛进入未确认；已保留每日记录，不重复点击')
         state=json.loads(legacy.STATE.read_text(encoding='utf8'));old=state[key]
     old.update(game_pid=session.reader.pid,instance=instance_context.slot())

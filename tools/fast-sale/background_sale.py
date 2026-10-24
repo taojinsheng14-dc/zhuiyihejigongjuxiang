@@ -1693,7 +1693,8 @@ class BackgroundSession(Session):
             import island_automation
             importlib.reload(island_automation)
             if categories==['孤岛自动状态只读']:return island_automation.status(self)
-            return island_automation.run(self,progress,resume=categories==['接续孤岛自动挑战'])
+            return island_automation.run(self,progress,resume=categories==['接续孤岛自动挑战'],
+                                         manual_request=categories==['孤岛每日自动挑战'])
         if categories==['孤岛雷电术单次']:
             import island_challenge
             __import__('importlib').reload(island_challenge)

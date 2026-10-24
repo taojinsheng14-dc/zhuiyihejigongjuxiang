@@ -74,9 +74,9 @@ class App(tk.Tk):
         self.last_binding_refresh=0
         self.available_roles=tk.StringVar(value='正在读取当前角色…')
         ttk.Label(settings_tab,textvariable=self.available_roles,wraplength=580).pack(anchor='w',pady=(0,8))
-        ttk.Label(island_tab,text='每日一次 · 优先拾取\n微笑战士：主体单击近战＋英雄；其他角色沿用英雄战斗。\n接续挑战不会重新入场，完整无人干预流程仍待验证。',wraplength=560,style='Subtitle.TLabel').pack(anchor='w',pady=10)
+        ttk.Label(island_tab,text='手动开始 · 优先拾取\n微笑战士：主体单击近战＋英雄；其他角色沿用英雄战斗。\n手动开始不受本机日期记录阻挡；游戏是否允许入场由服务器决定。\n接续挑战不会重新入场，完整无人干预流程仍待验证。',wraplength=560,style='Subtitle.TLabel').pack(anchor='w',pady=10)
         self.island_buttons=[]
-        for label,action in [('从土城进入并自动挑战（每日一次）','island_start'),('接续已进入的孤岛','island_resume'),('只读检查孤岛记录','island_status')]:
+        for label,action in [('从土城进入并自动挑战（手动开始）','island_start'),('接续已进入的孤岛','island_resume'),('只读检查孤岛记录','island_status')]:
             button=ttk.Button(island_tab,text=label,command=lambda selected=action:self.run(selected))
             button.pack(fill='x',pady=4);self.island_buttons.append(button)
 
