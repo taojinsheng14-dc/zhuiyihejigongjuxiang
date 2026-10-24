@@ -381,8 +381,8 @@ class BackgroundSession(Session):
             message_x=round(x*physical[0]/logical[0]);message_y=round(y*physical[1]/logical[1])
         lp=(message_y<<16)|(message_x&0xffff)
         output=ctypes.c_size_t()
-        def send(message,flags):
-            if not self.u.SendMessageTimeoutW(self.hwnd,message,flags,lp,2,500,ctypes.byref(output)):
+        def send(message,flags,position=None):
+            if not self.u.SendMessageTimeoutW(self.hwnd,message,flags,lp if position is None else position,2,500,ctypes.byref(output)):
                 raise RuntimeError('后台鼠标消息未完成，停止')
         cursor=w.POINT();self.u.GetCursorPos(ctypes.byref(cursor))
         before=[cursor.x,cursor.y]
@@ -408,10 +408,25 @@ class BackgroundSession(Session):
             send(0x200,0)
             try:
                 send(down,key)
-                if button_hold:self.pause(min(.3,max(0,button_hold)))
+                if button_hold:
+                    if getattr(self,'_opening_npc_actor',False):
+                        # Release before check() can reject a newly opened dialog.
+                        time.sleep(min(.3,max(0,button_hold)))
+                    else:self.pause(min(.3,max(0,button_hold)))
             finally:
-                send(0x200,key)
-                send(up,0)
+                if button=='left' and getattr(self,'_opening_npc_actor',False):
+                    # The down edge may already have opened the NPC menu over
+                    # the actor. Never send a held move into that new menu.
+                    # If the visibility read fails, release outside as well.
+                    release_position=0xffffffff
+                    try:
+                        if not self.visible('merchant'):release_position=lp
+                    finally:
+                        send(0x200,0,release_position)
+                        send(up,0,release_position)
+                else:
+                    send(0x200,key)
+                    send(up,0)
             self.clear_background_mouse()
             self.events.append({'point':[x,y],'message_point':[message_x,message_y],
                                 'message_coordinates':'logical' if logical_messages else 'physical' if dpi_scaled else 'logical',
@@ -3185,6 +3200,12 @@ class BackgroundSession(Session):
             if stuck>=2:raise RuntimeError('靠近NPC连续两次未移动，停止重试')
         raise RuntimeError('靠近NPC达到有限次数后仍不可点击，停止')
 
+    def click_npc_actor(self,point):
+        previous=getattr(self,'_opening_npc_actor',False)
+        self._opening_npc_actor=True
+        try:return self.click(point)
+        finally:self._opening_npc_actor=previous
+
     def open_npc(self, npc):
         veteran=npc['name']=='盟重老兵' and tuple(npc['map'])==(320,320)
         if veteran:self.approach_veteran_running(npc)
@@ -3207,7 +3228,7 @@ class BackgroundSession(Session):
         if getattr(self,'_stats_enabled',False):
             self.write_stats({'event':'npc_open_attempt','npc':npc['name'],'npc_map':npc['map'],
                               'position':standing,'draw':point,'click':target,'attempt':1})
-        self.click(target)
+        self.click_npc_actor(target)
         self.events[-1]['npc']=npc['name']
         try:self.wait(lambda: self.visible('merchant'), timeout=3)
         except RuntimeError:
@@ -3222,7 +3243,7 @@ class BackgroundSession(Session):
             if getattr(self,'_stats_enabled',False):
                 self.write_stats({'event':'npc_open_attempt','npc':npc['name'],'npc_map':npc['map'],
                                   'position':standing,'draw':point,'click':alternate,'attempt':2})
-            self.click(alternate)
+            self.click_npc_actor(alternate)
             self.events[-1]['npc']=npc['name']
             self.events[-1]['npc_retry']='same_verified_actor_body_anchor_once'
             self.wait(lambda:self.visible('merchant'),timeout=3)

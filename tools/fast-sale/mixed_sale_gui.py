@@ -22,7 +22,7 @@ from equipment import sale_plan
 from profit_tracker import ProfitTracker
 from random_hunt import load_settings,save_settings,RandomSettings
 
-BUILD='2026.10.24.7'
+BUILD='2026.10.24.8'
 
 def active_task(command,result,sample,now):
     step=command.get('step')
