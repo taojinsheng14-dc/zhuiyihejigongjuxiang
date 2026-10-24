@@ -1728,6 +1728,7 @@ class BackgroundSession(Session):
         if categories==['整理售卖布局']:
             returned=self.restore_held_to_bag()
             return {'returned':returned,'moved_bag':self.arrange_sale_layout()}
+        if categories==['老兵固定菜单点击测试（不传送）']:return self.test_veteran_fixed_menu(progress)
         if categories==['打开普通房间菜单']:return self.open_hunt_menu()
         if categories==['进入普通房间']:return self.enter_ordinary_room(progress)
         if categories==['挂机清包循环']:return self.hunt_cycle(progress)
@@ -3188,6 +3189,39 @@ class BackgroundSession(Session):
             if not blank: return capture
             if attempt < 3: self.pause(.25)
         raise RuntimeError('商人菜单截图连续3次为空白，已安全停止；未点击菜单，请检查游戏窗口渲染后再接续')
+
+    def test_veteran_fixed_menu(self, progress=lambda message: None):
+        """One fresh veteran link click; no destination, purchase or entry click."""
+        if self.login_stage() != 'playing': raise RuntimeError('当前不在正常游戏状态，未测试')
+        if self.held_item() or self.sale_item() or self.inflight_item():
+            raise RuntimeError('存在手持、待售或传输物品，未测试')
+        before = self.state()
+        if before.get('map_identity', {}).get('name', '').lower() != '3.map':
+            raise RuntimeError('未确认土城地图，未测试')
+        self.open_mengzhong_veteran(progress)
+        if self.active_merchant != '盟重老兵' or not self.visible('merchant'):
+            raise RuntimeError('未确认新打开的老兵窗口，未点击菜单')
+        profile = self.profile()
+        bounds = self.bounds('merchant')
+        point = (bounds[0]+profile['menus']['shop_transfer']['point'][0],
+                 bounds[1]+profile['menus']['shop_transfer']['point'][1])
+        if self.hero_covers((point[0]-3,point[1]-3,point[0]+3,point[1]+3)):
+            raise RuntimeError('英雄头像遮挡菜单，未点击')
+        if not self.visible('merchant') or self.bounds('merchant') != bounds:
+            raise RuntimeError('老兵窗口已变化，未点击菜单')
+        progress('内存确认新打开的老兵窗口；固定位置点击商店传送一次，不预先截图识别')
+        self.click(point)
+        self.pause(.8)
+        # Post-click evidence only; failure must never cause a second click.
+        matched = self.menu_matches('weapon_transfer')
+        report = {'test': 'veteran_fixed_menu', 'point': point,
+                  'preclick_image_matching': False, 'menu_clicks': 1,
+                  'postclick_weapon_menu_verified': matched,
+                  'position_before': before.get('player'), 'position_after': self.player(),
+                  'destination_clicks': 0, 'entry_clicks': 0}
+        self.write_stats({'event': 'veteran_fixed_menu_test', **report})
+        if not matched: raise RuntimeError('固定菜单已点击一次，但未确认传送子菜单；保留现场，不重复点击')
+        return report
 
     def menu_matches(self, name):
         from PIL import Image
