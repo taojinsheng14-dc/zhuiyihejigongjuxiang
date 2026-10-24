@@ -3,7 +3,7 @@ from combat_metrics import read_experience
 from warrior_combat import HEADER as DUNGEON_HEADER
 
 STONE_HEADER=bytes.fromhex('900190010f4c6567656e64206f66206d69720d0a908df227205ce640020b2e2e474d474a582e434f4d0000000000000000000000')
-STONE_NAMES={'黑野猪','红野猪','白野猪','蝙蝠','角蝇','蝎蛇','楔蛾'}
+STONE_NAMES={'黑野猪','红野猪','白野猪','蝙蝠','角蝇','蝎蛇','楔蛾','黑色恶蛆'}
 
 
 def header(session):return session.read(session.uint(session.uint(session.base+0x2ba608))+4,52)
@@ -47,7 +47,9 @@ class StoneTomb:
 
     def plan(self,session):
         from warrior_combat import patrol_plan
-        return patrol_plan(session,expected_header=self.header,expected_name='d715.map',radius=None)
+        result=patrol_plan(session,expected_header=self.header,expected_name='d715.map',radius=None)
+        self.tilemap=result[0]
+        return result
 
     def has_loot(self,session):
         from ground_item_probe import ground_snapshot
@@ -61,8 +63,28 @@ class StoneTomb:
         return {'allow_hold':True,'expected_header':self.header,'hold_guard':self.guard,'drop_check':self.has_loot}
 
     def approach(self,session,progress):
-        # Continuous coverage takes the next validated route when an aim cannot be confirmed.
-        return {'movement':False}
+        import struct
+        from warrior_combat import patrol_move
+        self.guard(session)
+        scene=session.nearby_monsters(radius=8)
+        if scene['read_errors']:raise RuntimeError('近怪站位采样不完整')
+        targets=[m for m in scene['monsters'] if not m['dead'] and m['class']=='TCatMon' and m['name'] in self.names and m['distance']<=8]
+        if not targets:return {'movement':False,'nearby_combat':False}
+        target=min(targets,key=lambda m:m['distance']);current=tuple(session.player())
+        blocked={struct.unpack_from('<2i',raw,0x68) for address,raw in session.scene_actor_snapshot() if raw[0xac]==0}
+        blocked.discard(current);options=[]
+        for dx,dy in ((0,-1),(1,0),(0,1),(-1,0),(-1,-1),(1,-1),(1,1),(-1,1)):
+            goal=(current[0]+dx,current[1]+dy)
+            distance=max(abs(goal[i]-target['position'][i]) for i in (0,1))
+            if goal in blocked or not self.tilemap.free(goal) or not 2<=distance<=8:continue
+            if dx and dy and (not self.tilemap.free((goal[0],current[1])) or not self.tilemap.free((current[0],goal[1]))):continue
+            options.append((abs(distance-4),goal))
+        if not options:return {'movement':False,'nearby_combat':True,'target':target}
+        goal=min(options)[1]
+        moved=patrol_move(session,self.tilemap,goal,allow_hold=False)
+        self.guard(session)
+        return dict(moved,movement=tuple(moved['to'])!=current,nearby_combat=True,target=target)
+
 
 
 def run(session,progress=lambda message:None):

@@ -26,7 +26,7 @@ def same_actor(before, after):
             and all(before[a:b] == after[a:b] for a,b in ((0,4),(0xc,0x10),(0x40,0x44))))
 
 
-def probe_once(session, progress=lambda message:None, locked=None, excluded=None, scene_guard=None, target_names=None, target_classes=None):
+def probe_once(session, progress=lambda message:None, locked=None, excluded=None, scene_guard=None, target_names=None, target_classes=None,prefer_nearby=False):
     check_scene=scene_guard or guard
     names=NAMES if target_names is None else target_names
     classes={'TCatMon'} if target_classes is None else target_classes
@@ -52,8 +52,12 @@ def probe_once(session, progress=lambda message:None, locked=None, excluded=None
     choices=[m for m in choices if aimable(m)]
     if not choices:return {'status':'target_outside_input_area','f1_sent':False}
     if locked:
-        choices=[m for m in choices if m['address']==locked['address'] and m['name']==locked['name']]
-        if not choices:return {'status':'locked_target_unavailable','f1_sent':False}
+        previous=next((m for m in choices if m['address']==locked['address'] and m['name']==locked['name']),None)
+        if prefer_nearby:
+            if previous and previous['distance']<=choices[0]['distance']:choices=[previous]
+        else:
+            if previous is None:return {'status':'locked_target_unavailable','f1_sent':False}
+            choices=[previous]
     target=choices[0]
     raw = rows.get(target['address'])
     if raw is None or raw[0xac] != 0 or tuple(struct.unpack_from('<2i',raw,0x68)) != tuple(target['position']):
@@ -185,7 +189,7 @@ def run_bounded(session,progress=lambda message:None,seconds=30,max_casts=6,cont
     (profile.check_state(session) if profile else check_scene(session))
     tilemap,plan=profile.plan(session) if profile else patrol_plan(session)
     expected_header=profile.header if profile else HEADER
-    probe_options={'scene_guard':profile.guard,'target_names':profile.names,'target_classes':{'TCatMon'}} if profile else {}
+    probe_options={'scene_guard':profile.guard,'target_names':profile.names,'target_classes':{'TCatMon'},'prefer_nearby':True} if profile else {}
     approach=profile.approach if profile else approach_once
     started=time.monotonic();deadline=started+(43200 if continuous else min(120,max(1,seconds)));limit=float('inf') if continuous else min(60,max(1,max_casts))
     from dungeon_route import CoverageRoute
@@ -288,7 +292,9 @@ def run_bounded(session,progress=lambda message:None,seconds=30,max_casts=6,cont
                         if continuous:
                             excluded[locked['address']]=time.monotonic()+15;locked=None;failed_aims=0
                         else:status='locked_target_not_aimable';break
-                    move={'movement':False} if continuous else approach(session,progress)
+                    move=approach(session,progress) if profile or not continuous else {'movement':False}
+                    if move.get('nearby_combat') and not move.get('movement'):
+                        log('nearby_combat_wait',result=move);session.pause(.3);continue
                     if not move.get('movement'):
                         if not continuous and len(plan['waypoints'])<2:status='no_patrol_route';break
                         if continuous:

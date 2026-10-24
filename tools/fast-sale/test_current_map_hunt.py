@@ -66,3 +66,12 @@ class CurrentMapTests(unittest.TestCase):
         self.assertTrue(options['allow_hold']);self.assertEqual(options['expected_header'],hunt.STONE_HEADER)
         self.assertEqual(profile.route_spacing,24)
         self.assertEqual(options['hold_guard'],profile.guard)
+
+    def test_near_black_maggot_prevents_leaving_for_patrol_if_local_route_blocked(self):
+        profile=hunt.StoneTomb();profile.guard=Mock();profile.tilemap=SimpleNamespace(free=lambda xy:False)
+        target={'name':'黑色恶蛆','class':'TCatMon','dead':False,'position':(52,50),'distance':2}
+        s=SimpleNamespace(nearby_monsters=lambda **k:{'read_errors':0,'monsters':[target]},player=lambda:(50,50),scene_actor_snapshot=lambda:[])
+        with patch('warrior_combat.patrol_move') as move:
+            result=profile.approach(s,Mock())
+        self.assertTrue(result['nearby_combat']);self.assertFalse(result['movement'])
+        self.assertEqual(result['target']['name'],'黑色恶蛆');move.assert_not_called()

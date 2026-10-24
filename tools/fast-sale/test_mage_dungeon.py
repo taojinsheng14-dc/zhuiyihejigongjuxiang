@@ -35,6 +35,17 @@ class MageDungeonTests(unittest.TestCase):
         with patch('mage_dungeon.inspect_current',return_value={'f1_skill':{'name':'雷电术'}}):
             return probe_once(s)
 
+    def test_near_monster_preempts_distant_locked_target_when_enabled(self):
+        s,m=self.session();near=s.nearby_monsters()['monsters'][0]
+        far=dict(near,address=0xb0000,distance=7,position=[209,226])
+        raw=bytearray(s.scene_actor_snapshot()[0][1]);struct.pack_into('<2i',raw,0x68,209,226)
+        rows=s.scene_actor_snapshot()+[(far['address'],bytes(raw))]
+        s.scene_actor_snapshot=lambda:rows
+        s.nearby_monsters=lambda **kwargs:{'read_errors':0,'monsters':[far,near]}
+        with patch('mage_dungeon.inspect_current',return_value={'f1_skill':{'name':'雷电术'}}):
+            r=probe_once(s,locked=far,prefer_nearby=True)
+        self.assertEqual(r['target']['address'],near['address']);self.assertTrue(r['f1_sent'])
+
     def test_unconfirmed_hover_never_sends_f1(self):
         s,m=self.session(hover=False);r=self.invoke(s)
         self.assertFalse(r['f1_sent']);self.assertEqual(r['status'],'hover_target_unconfirmed')
