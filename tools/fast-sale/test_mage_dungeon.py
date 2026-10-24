@@ -46,6 +46,16 @@ class MageDungeonTests(unittest.TestCase):
             r=probe_once(s,locked=far,prefer_nearby=True)
         self.assertEqual(r['target']['address'],near['address']);self.assertTrue(r['f1_sent'])
 
+    def test_moving_or_dead_candidate_cancels_cast_before_any_input(self):
+        for changed in ('position','dead'):
+            s,m=self.session();rows=s.scene_actor_snapshot();raw=bytearray(rows[0][1])
+            if changed=='position':struct.pack_into('<2i',raw,0x68,202,224)
+            else:raw[0xac]=1
+            s.scene_actor_snapshot=lambda:[(0x90000,bytes(raw))]
+            r=self.invoke(s)
+            self.assertEqual(r['status'],'target_changed_before_aim');self.assertFalse(r['f1_sent'])
+            self.assertEqual(m,[])
+
     def test_unconfirmed_hover_never_sends_f1(self):
         s,m=self.session(hover=False);r=self.invoke(s)
         self.assertFalse(r['f1_sent']);self.assertEqual(r['status'],'hover_target_unconfirmed')
@@ -142,6 +152,17 @@ class BoundedMageTests(unittest.TestCase):
         r=self.run_case(Mock(side_effect=AssertionError('must not attack')),profile=profile,capacity_error=DualBagsFull('both full'))
         self.assertEqual(r['status'],'bags_full');self.assertEqual(r['casts_sent'],0)
         with self.assertRaises(DualBagsFull):self.run_case(Mock(),capacity_error=DualBagsFull('both full'))
+
+    def test_transient_target_changes_resample_without_movement_or_stopping(self):
+        calls=[0]
+        def spell(*args,**kwargs):
+            calls[0]+=1
+            if calls[0]<=3:return {'status':'target_changed_before_aim','f1_sent':False,'target':{'address':1,'name':'蜈蚣'}}
+            self.assertIsNone(kwargs['locked'])
+            return {'f1_sent':True,'target':{'address':2,'name':'蜈蚣'}}
+        r=self.run_case(spell)
+        self.assertEqual(calls[0],4);self.assertEqual(r['casts_sent'],1)
+        self.assertEqual(r['movement_segments'],0);self.assertEqual(r['status'],'bounded_end')
 
     def test_cast_limit_is_finite_and_not_a_kill_claim(self):
         r=self.run_case(lambda *a,**k:{'f1_sent':True,'target':{'address':1,'name':'蜈蚣'}})

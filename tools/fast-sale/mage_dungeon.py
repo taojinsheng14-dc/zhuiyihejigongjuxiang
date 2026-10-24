@@ -61,7 +61,7 @@ def probe_once(session, progress=lambda message:None, locked=None, excluded=None
     target=choices[0]
     raw = rows.get(target['address'])
     if raw is None or raw[0xac] != 0 or tuple(struct.unpack_from('<2i',raw,0x68)) != tuple(target['position']):
-        raise RuntimeError('施法前怪物身份或位置变化')
+        return {'status':'target_changed_before_aim','f1_sent':False,'target':target}
     x,y=struct.unpack_from('<2i',raw,0x17c);point=(x,y+32)
     width,height=session.client_size()
     if not (70<point[0]<width-70 and any(70<x+ox<width-70 and 60<y+oy<height-180 for ox,oy in AIM_OFFSETS)):
@@ -324,6 +324,11 @@ def run_bounded(session,progress=lambda message:None,seconds=30,max_casts=6,cont
                                 waypoint+=1;goal=tuple(plan['waypoints'][waypoint%len(plan['waypoints'])])
                             check_scene(session);move=patrol_move(session,tilemap,goal)
                     movement_segments+=1;log('movement',result=move)
+                elif result.get('status') in ('target_changed_before_aim','target_changed_during_hover',
+                        'target_changed_before_key','target_moved_out_of_range','hover_changed_before_key'):
+                    # Scene objects move between reads. Cancel this cast and acquire
+                    # a freshly verified target; never continue using stale aim.
+                    locked=None;last_zero_health=False;failed_aims=0;session.pause(.12)
                 elif result.get('status')=='target_death_observed':
                     deaths+=1;log('target_death_observed',target=result['target']);locked=None;last_zero_health=False;failed_aims=0
                     session.pause(.15)
