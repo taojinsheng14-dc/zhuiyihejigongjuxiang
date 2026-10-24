@@ -26,17 +26,20 @@ def same_actor(before, after):
             and all(before[a:b] == after[a:b] for a,b in ((0,4),(0xc,0x10),(0x40,0x44))))
 
 
-def probe_once(session, progress=lambda message:None, locked=None, excluded=None):
-    guard(session)
+def probe_once(session, progress=lambda message:None, locked=None, excluded=None, scene_guard=None, target_names=None, target_classes=None):
+    check_scene=scene_guard or guard
+    names=NAMES if target_names is None else target_names
+    classes={'TCatMon'} if target_classes is None else target_classes
+    check_scene(session)
     skills = inspect_current(session,'厚礼蟹')
     if not skills.get('f1_skill') or skills['f1_skill']['name'] != '雷电术':
         raise RuntimeError('F1实际绑定不是唯一雷电术，未施法')
     session.wait_shortcut_modifiers_released()
-    guard(session)
+    check_scene(session)
     sample = session.nearby_monsters(radius=8)
     if sample['read_errors']:raise RuntimeError('怪物列表不完整')
-    choices = sorted((m for m in sample['monsters'] if m['name'] in NAMES
-        and m['class']=='TCatMon' and not m['dead'] and m['on_screen']
+    choices = sorted((m for m in sample['monsters'] if m['name'] in names
+        and m['class'] in classes and not m['dead'] and m['on_screen']
         and m['distance'] <= 8 and m['address'] not in (excluded or set())),key=lambda m:m['distance'])
     if not choices:return {'status':'no_verified_target','f1_sent':False}
     rows = dict(session.scene_actor_snapshot())
@@ -101,7 +104,7 @@ def probe_once(session, progress=lambda message:None, locked=None, excluded=None
             if not (70<candidate[0]<width-70 and 60<candidate[1]<height-180):continue
             mx,my=(round(candidate[0]*physical[0]/width),round(candidate[1]*physical[1]/height))
             if getattr(session,'_ui_logical_messages',False):mx,my=candidate
-            guard(session);send(0x200,0,(my<<16)|(mx&0xffff));session.pause(.12)
+            check_scene(session);send(0x200,0,(my<<16)|(mx&0xffff));session.pause(.12)
             after=context()
             result['hover_observations'].append({'point':candidate,'hover_actor':after['0x1b8']})
             if after['0x1b8']==target['address']:
@@ -113,7 +116,7 @@ def probe_once(session, progress=lambda message:None, locked=None, excluded=None
         # selected this exact actor before sending the spell key.
         if after['0x1b8'] != target['address']:
             result['status']='hover_target_unconfirmed';return result
-        guard(session)
+        check_scene(session)
         fresh=dict(session.scene_actor_snapshot()).get(target['address'])
         if not same_actor(raw,fresh):
             result['status']='target_changed_before_key';return result

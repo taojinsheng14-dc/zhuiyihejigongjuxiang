@@ -251,6 +251,8 @@ def run_loop(session,progress=lambda text:None,seconds=7200,transitions=0,on_tra
         if melee is not None and action in ('approach','wait') and sample.get('monsters'):
             if session.visible('merchant') or session.visible('bag'):session.close_panels()
             result=melee.step(session,sample)
+            if result.get('f1_sent'):
+                progress('孤岛：厚礼蟹主体F1雷电术，目标已核对');log('main_lightning_cast',result=result);scheduler.progress_at=time.monotonic()
             if result.get('clicked'):progress('孤岛：微笑主体单击选怪近战，等待游戏持续攻击');log('main_melee_click',result=result)
             if result.get('clicked') or result.get('health_progress'):scheduler.progress_at=now
             if result.get('engaged'):session.pause(.2);continue
@@ -258,7 +260,7 @@ def run_loop(session,progress=lambda text:None,seconds=7200,transitions=0,on_tra
             progress({'pickup':'孤岛：优先拾取掉落','approach':'孤岛：靠近激活或带英雄接敌',
                       'advance':'孤岛：已核对清场，准备换关','wait':'孤岛：等待英雄战斗或现场稳定',
                       'completed':'孤岛：确认返回土城','stop':'孤岛：保留现场停止'}[action]);last_action=action
-        if action=='completed':return {'status':'completed','completion_verified':True,'transitions':transitions,'picked_verified':picked,'main_melee_clicks':melee.clicks if melee is not None else 0}
+        if action=='completed':return {'status':'completed','completion_verified':True,'transitions':transitions,'picked_verified':picked,'main_melee_clicks':melee.clicks if melee is not None else 0,'main_lightning_casts':getattr(melee,'casts',0)}
         if action=='stop':raise RuntimeError(str(target))
         if action=='pickup':
             if melee is not None:melee.reset()
@@ -287,7 +289,7 @@ def run_loop(session,progress=lambda text:None,seconds=7200,transitions=0,on_tra
             if result['status']=='left_island':
                 if not session.in_mengzhong_return_area():raise RuntimeError('退出地图但未确认土城')
                 transitions+=1;on_transition(transitions)
-                return {'status':'completed','completion_verified':True,'transitions':transitions,'picked_verified':picked,'main_melee_clicks':melee.clicks if melee is not None else 0}
+                return {'status':'completed','completion_verified':True,'transitions':transitions,'picked_verified':picked,'main_melee_clicks':melee.clicks if melee is not None else 0,'main_lightning_casts':getattr(melee,'casts',0)}
             if result['status']!='transition_confirmed':raise RuntimeError('换关结果不明，停止；不重复掷骰')
             transitions+=1;on_transition(transitions);scheduler=Scheduler();last_action=None
         session.pause(.2)
@@ -413,6 +415,14 @@ def run(session,progress=lambda text:None,resume=False,manual_request=False):
             importlib.reload(island_melee)
             melee=island_melee.Melee()
             progress('孤岛微笑战士：主体后台单击选怪近战＋英雄，沿用本轮入场与拾取换关记录')
+        elif key.rsplit('|',1)[0]=='厚礼蟹':
+            import mage_skills,mage_dungeon,island_mage
+            importlib.reload(mage_skills);importlib.reload(mage_dungeon);importlib.reload(island_mage)
+            melee=island_mage.Mage()
+            island_mage.guard(session)
+            skills=mage_skills.inspect_current(session,'厚礼蟹')
+            if not skills.get('f1_skill') or skills['f1_skill']['name']!='雷电术':raise RuntimeError('F1不是唯一雷电术，未启动孤岛法师')
+            progress('孤岛厚礼蟹：主体后台F1雷电术＋英雄，沿用本轮入场与拾取换关记录')
         result=run_loop(session,progress,transitions=old.get('transitions',0),on_transition=transitioned,melee=melee)
         old.update(status='completed',completion_verified=True,updated=time.time());save();log('completed',result=result);return result
     except Exception as error:
@@ -426,4 +436,5 @@ def status(session):
     return {'game_input_sent':False,'instance':instance_context.slot(),'in_island':current==ISLAND_HEADER,
             'today_entry':saved.get(key),'native_autoplay_in_island_verified':False,
             'scripted_main_melee_enabled':key.rsplit('|',1)[0]=='微笑',
-            'mode':('微笑主体后台单击近战＋英雄＋掉落优先，不发送玩家F1' if key.rsplit('|',1)[0]=='微笑' else '英雄战斗＋掉落优先分步调度，未发送玩家F1')}
+            'scripted_main_lightning_enabled':key.rsplit('|',1)[0]=='厚礼蟹',
+            'mode':('微笑主体后台单击近战＋英雄＋掉落优先，不发送玩家F1' if key.rsplit('|',1)[0]=='微笑' else '厚礼蟹主体F1雷电术＋英雄＋掉落优先' if key.rsplit('|',1)[0]=='厚礼蟹' else '英雄战斗＋掉落优先分步调度，未发送玩家F1')}
