@@ -1736,6 +1736,26 @@ class BackgroundSession(Session):
             import ground_item_probe
             __import__('importlib').reload(ground_item_probe)
             return ground_item_probe.pickup_test(self)
+        if categories==['法师地牢短时打怪拾取验证']:
+            import mage_skills,mage_dungeon
+            __import__('importlib').reload(mage_skills)
+            __import__('importlib').reload(mage_dungeon)
+            return mage_dungeon.run_bounded(self,progress)
+        if categories==['法师地牢有限靠近']:
+            import mage_skills,mage_dungeon
+            __import__('importlib').reload(mage_skills)
+            __import__('importlib').reload(mage_dungeon)
+            return mage_dungeon.approach_once(self,progress)
+        if categories==['法师地牢单次雷电验证']:
+            import mage_skills
+            __import__('importlib').reload(mage_skills)
+            import mage_dungeon
+            __import__('importlib').reload(mage_dungeon)
+            return mage_dungeon.probe_once(self,progress)
+        if categories==['法师技能只读研究']:
+            import mage_skills
+            __import__('importlib').reload(mage_skills)
+            return mage_skills.inspect_target_context(self)
         if categories==['地面物品只读分析']:
             import ground_item_probe
             __import__('importlib').reload(ground_item_probe)

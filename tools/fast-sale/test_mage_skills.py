@@ -39,3 +39,29 @@ class MageSkillsTests(unittest.TestCase):
     def test_invalid_name_does_not_guess_a_skill(self):
         s, raw = self.session();raw[10] = 30
         with self.assertRaisesRegex(RuntimeError, '名称'):read_skill_records(s)
+
+
+class CurrentSkillTests(unittest.TestCase):
+    def session(self):
+        fragments={0x572984:bytes.fromhex('a1b0ad6b008b008bd7e87a98eaff8bf066837e08'),
+                   0x60e5e8:bytes.fromhex('68940000008b4c24048b'),
+                   0x5e7e19:bytes.fromhex('0fb6437c2c700431e882f80300')}
+        return SimpleNamespace(base=0x400000,check=lambda:None,login_stage=lambda:'playing',
+            player=lambda:(20,20),nearby_monsters=lambda **k:{},
+            read=lambda address,size:fragments[address])
+
+    def test_current_code_maps_f1_to_49(self):
+        from unittest.mock import patch
+        from mage_skills import inspect_current
+        records={'skills':[{'name':'雷电术','binding_code_raw':49}]}
+        with patch('combat_metrics.read_experience',return_value={'character':'厚礼蟹'}),patch('mage_skills.read_skill_records',return_value=records):
+            r=inspect_current(self.session(),'厚礼蟹')
+        self.assertEqual(r['f1_skill']['name'],'雷电术');self.assertTrue(r['live_build_verified'])
+
+    def test_different_key_translation_signature_is_rejected(self):
+        from unittest.mock import patch
+        from mage_skills import inspect_current
+        s=self.session();original=s.read
+        s.read=lambda address,size:bytes(size) if address==0x5e7e19 else original(address,size)
+        with patch('combat_metrics.read_experience',return_value={'character':'厚礼蟹'}):
+            with self.assertRaisesRegex(RuntimeError,'键码'):inspect_current(s,'厚礼蟹')
