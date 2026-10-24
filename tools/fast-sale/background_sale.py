@@ -1677,6 +1677,13 @@ class BackgroundSession(Session):
             npc=island_automation.locate_town_entrance(self,progress)
             self.open_npc(npc)
             return {'npc':npc,'menu_open':self.visible('merchant'),'entered':False,'entry_clicks':0,'position':self.player()}
+        if categories==['孤岛战士单击验证']:
+            import island_automation,island_melee
+            importlib.reload(island_automation);importlib.reload(island_melee)
+            sample=island_automation.observe(self)
+            targets=[m for m in sample.get('monsters',[]) if m.get('class') in island_melee.CLASSES and m.get('on_screen') and m.get('distance',99)<=8]
+            if not targets:return {'clicked':False,'status':'no_clickable_target','sample':sample}
+            return island_melee.click_target(self,min(targets,key=lambda m:m['distance']))
         if categories in (['孤岛每日自动挑战'],['接续孤岛自动挑战'],['孤岛自动状态只读']):
             import island_challenge
             importlib.reload(island_challenge)

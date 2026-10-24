@@ -164,7 +164,7 @@ class LedgerTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as folder:
             p=self.setup_ledger(folder,{'status':'entered','map_header':island.ISLAND_HEADER.hex(),'transitions':9,'game_pid':10})
             s=SimpleNamespace(reader=SimpleNamespace(pid=10),_sale_recovery_enabled=True,hero_ready=lambda:True)
-            def run_loop(session,progress,transitions,on_transition):
+            def run_loop(session,progress,transitions,on_transition,melee=None):
                 self.assertEqual(transitions,9);self.assertFalse(session._sale_recovery_enabled);on_transition(10)
                 return {'status':'completed','completion_verified':True}
             with patch.object(island.legacy,'STATE',p),patch.object(island,'role_key',return_value='role|today'),patch.object(island,'header',return_value=island.ISLAND_HEADER),patch.object(island,'run_loop',side_effect=run_loop),patch.object(island,'log'),patch.object(island.legacy,'enter_once') as enter:

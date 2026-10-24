@@ -239,7 +239,7 @@ def pick_one(session,drop):
     return pickup_current_test(session,names=None,radius=25,max_steps=1,cooperative=True,target_id=drop['id'])
 
 
-def run_loop(session,progress=lambda text:None,seconds=7200,transitions=0,on_transition=lambda n:None):
+def run_loop(session,progress=lambda text:None,seconds=7200,transitions=0,on_transition=lambda n:None,melee=None):
     from inventory_flow import ensure_loot_capacity
     scheduler=Scheduler();deadline=time.monotonic()+seconds;picked=0;last_action=None;unstable_since=None;hero_unblocks={}
     if session.visible('merchant') and not getattr(session,'_island_open_corner',None):session.close_panels()
@@ -258,13 +258,20 @@ def run_loop(session,progress=lambda text:None,seconds=7200,transitions=0,on_tra
                 continue
             sample['free']=capacity['main_free']
         now=time.monotonic();action,target=scheduler.choose(sample,now)
+        if melee is not None and action in ('approach','wait') and sample.get('monsters'):
+            if session.visible('merchant') or session.visible('bag'):session.close_panels()
+            result=melee.step(session,sample)
+            if result.get('clicked'):progress('孤岛：微笑主体单击选怪近战，等待游戏持续攻击');log('main_melee_click',result=result)
+            if result.get('clicked') or result.get('health_progress'):scheduler.progress_at=now
+            if result.get('engaged'):session.pause(.2);continue
         if action!=last_action:
             progress({'pickup':'孤岛：优先拾取掉落','approach':'孤岛：靠近激活或带英雄接敌',
                       'advance':'孤岛：已核对清场，准备换关','wait':'孤岛：等待英雄战斗或现场稳定',
                       'completed':'孤岛：确认返回土城','stop':'孤岛：保留现场停止'}[action]);last_action=action
-        if action=='completed':return {'status':'completed','completion_verified':True,'transitions':transitions,'picked_verified':picked}
+        if action=='completed':return {'status':'completed','completion_verified':True,'transitions':transitions,'picked_verified':picked,'main_melee_clicks':melee.clicks if melee is not None else 0}
         if action=='stop':raise RuntimeError(str(target))
         if action=='pickup':
+            if melee is not None:melee.reset()
             if session.visible('merchant') or session.visible('bag'):session.close_panels()
             if hero_blocks_pickup(sample,target):
                 scheduler.feedback(target,{'status':'hero_occupied'},time.monotonic())
@@ -293,9 +300,11 @@ def run_loop(session,progress=lambda text:None,seconds=7200,transitions=0,on_tra
             result=pick_one(session,target);scheduler.feedback(target,result,time.monotonic())
             picked+=int(bool(result.get('verified')));log('pickup',result=result)
         elif action=='approach':
+            if melee is not None:melee.reset()
             if session.visible('merchant') or session.visible('bag'):session.close_panels()
             result=move_one(session,sample,target['position']);log('approach',target=target['position'],result=result)
         elif action=='advance':
+            if melee is not None:melee.reset()
             # A final NPC request is still needed on floor 60. Request counts
             # are not floor numbers, and completion requires verified town.
             if transitions>=128:raise RuntimeError('已确认128次换关仍未返回土城，停止核对；次数不当作层数')
@@ -311,7 +320,7 @@ def run_loop(session,progress=lambda text:None,seconds=7200,transitions=0,on_tra
             if result['status']=='left_island':
                 if not session.in_mengzhong_return_area():raise RuntimeError('退出地图但未确认土城')
                 transitions+=1;on_transition(transitions)
-                return {'status':'completed','completion_verified':True,'transitions':transitions,'picked_verified':picked}
+                return {'status':'completed','completion_verified':True,'transitions':transitions,'picked_verified':picked,'main_melee_clicks':melee.clicks if melee is not None else 0}
             if result['status']!='transition_confirmed':raise RuntimeError('换关结果不明，停止；不重复掷骰')
             transitions+=1;on_transition(transitions);scheduler=Scheduler();last_action=None
         session.pause(.2)
@@ -431,7 +440,13 @@ def run(session,progress=lambda text:None,resume=False):
             if header(session)!=ISLAND_HEADER or session.login_stage()!='playing':raise RuntimeError('召唤英雄前孤岛现场未核对')
             if session.held_item() or session.sale_item() or session.inflight_item():raise RuntimeError('召唤英雄前物品状态不空')
             session.ensure_hero_available()
-        result=run_loop(session,progress,transitions=old.get('transitions',0),on_transition=transitioned)
+        melee=None
+        if key.rsplit('|',1)[0]=='微笑':
+            import island_melee
+            importlib.reload(island_melee)
+            melee=island_melee.Melee()
+            progress('孤岛微笑战士：主体后台单击选怪近战＋英雄，沿用本轮入场与拾取换关记录')
+        result=run_loop(session,progress,transitions=old.get('transitions',0),on_transition=transitioned,melee=melee)
         old.update(status='completed',completion_verified=True,updated=time.time());save();log('completed',result=result);return result
     except Exception as error:
         old.update(last_error=str(error),updated=time.time());save();log('stopped',reason=str(error));raise
@@ -443,4 +458,5 @@ def status(session):
     saved=json.loads(legacy.STATE.read_text(encoding='utf8')) if legacy.STATE.exists() else {}
     return {'game_input_sent':False,'instance':instance_context.slot(),'in_island':current==ISLAND_HEADER,
             'today_entry':saved.get(key),'native_autoplay_in_island_verified':False,
-            'mode':'英雄战斗＋掉落优先分步调度，未发送玩家F1'}
+            'scripted_main_melee_enabled':key.rsplit('|',1)[0]=='微笑',
+            'mode':('微笑主体后台单击近战＋英雄＋掉落优先，不发送玩家F1' if key.rsplit('|',1)[0]=='微笑' else '英雄战斗＋掉落优先分步调度，未发送玩家F1')}
