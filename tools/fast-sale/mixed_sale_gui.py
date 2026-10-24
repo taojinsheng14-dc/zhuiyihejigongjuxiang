@@ -27,7 +27,7 @@ BUILD='2026.10.24.8'
 def active_task(command,result,sample,now):
     step=command.get('step')
     if not isinstance(step,int) or step<=result.get('step',0):return None
-    if command.get('categories') not in (['挂机清包循环'],['接续当前挂机图循环'],['监测并回城出售'],['监测双包'],['孤岛每日自动挑战'],['接续孤岛自动挑战']):return None
+    if command.get('categories') not in (['挂机清包循环'],['接续当前挂机图循环'],['监测并回城出售'],['监测双包'],['孤岛每日自动挑战'],['接续孤岛自动挑战'],['法师地牢持续清怪拾取']):return None
     if not sample.get('ok') or not 0<=now-sample.get('observed_epoch',0)<=3:return None
     if sample.get('game_pid')!=result.get('state',{}).get('game_pid'):return None
     return step

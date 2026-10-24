@@ -26,6 +26,22 @@ class WarriorCombatTests(unittest.TestCase):
         flags=[[1]*30 for _ in range(30)];flags[10][10]=flags[15][15]=0
         with self.assertRaises(RuntimeError):DungeonMap(30,30,flags).path((10,10),(15,15))
 
+    def test_short_route_step_does_not_hold_until_monster_interrupt(self):
+        import struct
+        from unittest.mock import Mock,patch
+        from warrior_combat import patrol_move
+        raw=bytearray(0x184);struct.pack_into('<2i',raw,0x68,10,10);struct.pack_into('<2i',raw,0x17c,640,300)
+        positions=[(10,10),(12,10),(12,10),(12,10)]
+        session=SimpleNamespace(scene_actor_snapshot=lambda:[(1,bytes(raw))],
+            player=lambda:positions.pop(0) if len(positions)>1 else positions[0],
+            uint=lambda a:1,base=0,read=lambda a,n:struct.pack('<2i',640,300),
+            client_size=lambda:(1280,800),background_mouse=Mock(),pause=lambda n:None)
+        tilemap=DungeonMap(40,40,[[0]*40 for _ in range(40)])
+        with patch('warrior_combat.continuous_run') as hold:
+            result=patrol_move(session,tilemap,(20,10),allow_hold=False)
+        hold.assert_not_called();session.background_mouse.assert_called_once()
+        self.assertEqual(result['to'],(12,10))
+
     def hold_session(self):
         messages=[]
         def send(hwnd,message,*args):messages.append(message);return 1

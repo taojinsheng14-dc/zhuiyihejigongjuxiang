@@ -146,7 +146,7 @@ def continuous_run(session,tilemap,current,direction,point,max_tiles):
     return {'from':current,'to':tuple(session.player()),'button':'right_hold','release_reason':reason}
 
 
-def patrol_move(session,tilemap,waypoint):
+def patrol_move(session,tilemap,waypoint,allow_hold=True):
     current=tuple(session.player());rows=session.scene_actor_snapshot()
     blocked={struct.unpack_from('<2i',raw,0x68) for address,raw in rows if raw[0xac]==0}
     blocked.discard(current);path=tilemap.path(current,waypoint,blocked)
@@ -169,7 +169,7 @@ def patrol_move(session,tilemap,waypoint):
         for n,p in enumerate(path[1:9],1):
             if p!=(current[0]+dx*n,current[1]+dy*n):break
             straight=n
-        if straight>=4:return continuous_run(session,tilemap,current,(dx,dy),point,straight)
+        if allow_hold and straight>=4:return continuous_run(session,tilemap,current,(dx,dy),point,straight)
     session.background_mouse(point,'right' if run else 'left',track_movement=False)
     previous=None;stable=0;settle_deadline=time.monotonic()+3
     while time.monotonic()<settle_deadline:

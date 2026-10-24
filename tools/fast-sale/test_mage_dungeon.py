@@ -58,6 +58,14 @@ class MageDungeonTests(unittest.TestCase):
         self.assertTrue(r['f1_sent']);self.assertEqual(r['point'],[574,208])
         self.assertEqual(len(r['hover_observations']),5)
 
+    def test_occluded_target_keeps_identity_for_bounded_avoidance(self):
+        s,m=self.session();rows=s.scene_actor_snapshot();raw=bytearray(rows[0][1])
+        struct.pack_into('<2i',raw,0x17c,590,160)
+        s.scene_actor_snapshot=lambda:rows+[(0xa0000,bytes(raw))]
+        r=self.invoke(s)
+        self.assertEqual(r['status'],'target_occluded');self.assertEqual(r['target']['address'],0x90000)
+        self.assertFalse(any(msg==0x100 for msg,_,_ in m))
+
     def test_wrong_map_stops_before_any_input(self):
         s,m=self.session();s.read=lambda a,n:bytes(n)
         with self.assertRaisesRegex(RuntimeError,'地牢'):self.invoke(s)
@@ -79,7 +87,7 @@ class MageDungeonTests(unittest.TestCase):
 
 
 class BoundedMageTests(unittest.TestCase):
-    def run_case(self,spell,monsters=None,drops=None,pickup=None,max_casts=1,player=None):
+    def run_case(self,spell,monsters=None,drops=None,pickup=None,max_casts=1,player=None,continuous=False):
         import tempfile
         from pathlib import Path
         from contextlib import ExitStack
@@ -89,14 +97,16 @@ class BoundedMageTests(unittest.TestCase):
             nearby_monsters=lambda **k:{'read_errors':0,'monsters':monsters or []},clear_background_mouse=Mock())
         with tempfile.TemporaryDirectory() as folder,ExitStack() as stack:
             stack.enter_context(patch('mage_dungeon.guard'))
+            stack.enter_context(patch('dungeon_route.CoverageRoute',return_value=SimpleNamespace(snapshot=lambda:{},next_goal=lambda *a:(30,30),visited=set(),points={(30,30)},defer_goal=lambda now:None)))
             stack.enter_context(patch('mage_dungeon.probe_once',side_effect=spell))
             stack.enter_context(patch('warrior_combat.patrol_plan',return_value=(object(),{'waypoints':[(20,20),(30,30)]})))
             stack.enter_context(patch('inventory_flow.ensure_loot_capacity'))
+            stack.enter_context(patch('warrior_combat.patrol_move',return_value={'from':(20,20),'to':(20,20)}))
             stack.enter_context(patch('ground_item_probe.ground_snapshot',return_value={'ground_maps':[{'items':drops or []}]}))
             stack.enter_context(patch('island_pickup_policy.filter_drops',side_effect=lambda rows:(rows,[])))
             stack.enter_context(patch('ground_item_probe.pickup_current_test',return_value=pickup))
             stack.enter_context(patch('instance_context.runtime_root',return_value=Path(folder)))
-            result=run_bounded(s,max_casts=max_casts)
+            result=run_bounded(s,max_casts=max_casts,continuous=continuous)
         self.assertIs(s.navigation_map,original);s.clear_background_mouse.assert_called_once()
         return result
 
@@ -148,6 +158,32 @@ class BoundedMageTests(unittest.TestCase):
             monsters=[{'address':1,'name':'蜈蚣','dead':False}],max_casts=3,player=player)
         self.assertEqual(r['status'],'external_position_change')
         self.assertEqual(r['casts_sent'],1)
+
+
+    def test_continuous_mode_does_not_stop_at_60_casts(self):
+        calls=[0];target={'address':1,'name':'蜈蚣','dead':False}
+        def spell(*args,**kwargs):
+            calls[0]+=1
+            if calls[0]==62:raise RuntimeError('test cancellation')
+            return {'f1_sent':True,'target':target}
+        with self.assertRaisesRegex(RuntimeError,'test cancellation'):
+            self.run_case(spell,monsters=[target],continuous=True)
+        self.assertEqual(calls[0],62)
+
+
+    def test_continuous_unconfirmed_target_is_deferred_then_route_resumes(self):
+        calls=[0];target={'address':1,'name':'蜈蚣','dead':False}
+        def spell(*args,**kwargs):
+            calls[0]+=1
+            if calls[0]<=2:return {'status':'hover_target_unconfirmed','f1_sent':False,'target':target}
+            if calls[0]==3:
+                self.assertIn(1,kwargs['excluded'])
+                return {'status':'no_verified_target','f1_sent':False}
+            raise RuntimeError('test cancellation')
+        with patch('mage_dungeon.approach_once',return_value={'movement':False}):
+            with self.assertRaisesRegex(RuntimeError,'test cancellation'):
+                self.run_case(spell,continuous=True)
+        self.assertEqual(calls[0],4)
 
 
 class ActorIdentityTests(unittest.TestCase):

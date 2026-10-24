@@ -40,6 +40,13 @@ class ProfitGuiTests(unittest.TestCase):
         self.assertIsNone(active_task(command,result,sample,105))
         self.assertIsNone(active_task(command,result,dict(sample,game_pid=1),101))
 
+    def test_attaches_continuous_mage_command(self):
+        from mixed_sale_gui import active_task
+        command={'step':72,'categories':['法师地牢持续清怪拾取']}
+        result={'step':71,'state':{'game_pid':3528}}
+        sample={'ok':True,'observed_epoch':100,'game_pid':3528}
+        self.assertEqual(active_task(command,result,sample,101),72)
+
     def test_attached_stop_writes_current_command_without_game_input(self):
         import mixed_sale_gui as gui
         from types import SimpleNamespace

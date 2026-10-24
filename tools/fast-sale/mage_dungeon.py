@@ -26,7 +26,7 @@ def same_actor(before, after):
             and all(before[a:b] == after[a:b] for a,b in ((0,4),(0xc,0x10),(0x40,0x44))))
 
 
-def probe_once(session, progress=lambda message:None, locked=None):
+def probe_once(session, progress=lambda message:None, locked=None, excluded=None):
     guard(session)
     skills = inspect_current(session,'厚礼蟹')
     if not skills.get('f1_skill') or skills['f1_skill']['name'] != '雷电术':
@@ -37,7 +37,7 @@ def probe_once(session, progress=lambda message:None, locked=None):
     if sample['read_errors']:raise RuntimeError('怪物列表不完整')
     choices = sorted((m for m in sample['monsters'] if m['name'] in NAMES
         and m['class']=='TCatMon' and not m['dead'] and m['on_screen']
-        and m['distance'] <= 8),key=lambda m:m['distance'])
+        and m['distance'] <= 8 and m['address'] not in (excluded or set())),key=lambda m:m['distance'])
     if not choices:return {'status':'no_verified_target','f1_sent':False}
     rows = dict(session.scene_actor_snapshot())
     width,height=session.client_size()
@@ -65,7 +65,7 @@ def probe_once(session, progress=lambda message:None, locked=None):
         if address in (own,hero) or struct.unpack_from('<I',actor)[0]==session.base+0x24991c:
             ax,ay=struct.unpack_from('<2i',actor,0x17c)
             if ax-24<=point[0]<=ax+24 and ay<=point[1]<=ay+64:
-                return {'status':'target_occluded','f1_sent':False}
+                return {'status':'target_occluded','f1_sent':False,'target':target}
     physical=session.physical_client_size()
     px,py=(round(point[0]*physical[0]/width),round(point[1]*physical[1]/height))
     if getattr(session,'_ui_logical_messages',False):px,py=point
@@ -169,7 +169,7 @@ def approach_once(session,progress=lambda message:None):
         'target':target,'result':patrol_move(session,tilemap,path[-1])}
 
 
-def run_bounded(session,progress=lambda message:None,seconds=30,max_casts=6):
+def run_bounded(session,progress=lambda message:None,seconds=30,max_casts=6,continuous=False):
     """Finite field validation, not a claim of unattended farming acceptance."""
     import json,time
     from pathlib import Path
@@ -179,11 +179,27 @@ def run_bounded(session,progress=lambda message:None,seconds=30,max_casts=6):
     from island_pickup_policy import filter_drops
     from warrior_combat import patrol_plan,patrol_move
     guard(session);tilemap,plan=patrol_plan(session)
-    started=time.monotonic();deadline=started+min(120,max(1,seconds));limit=min(60,max(1,max_casts))
+    started=time.monotonic();deadline=started+(43200 if continuous else min(120,max(1,seconds)));limit=float('inf') if continuous else min(60,max(1,max_casts))
+    from dungeon_route import CoverageRoute
+    route=CoverageRoute(tilemap,tuple(session.player())) if continuous else None
+    excluded={};deferred_drops={};stalled=0;last_progress=0
+    original_progress=progress
+    def report(message):
+        nonlocal last_progress
+        if not continuous or time.monotonic()-last_progress>=15:
+            last_progress=time.monotonic();original_progress(message)
+    progress=report
     path=instance_context.runtime_root()/'outputs'/'法师地牢验证.jsonl'
     path.parent.mkdir(parents=True,exist_ok=True)
     def log(event,**data):
         with path.open('a',encoding='utf-8') as f:f.write(json.dumps(dict(time=time.time(),event=event,**data),ensure_ascii=False)+'\n')
+    status_path=path.with_name('法师地牢挂机状态.json')
+    def state(phase,**extra):
+        if not continuous:return
+        data=dict(observed_epoch=time.time(),mode='continuous',phase=phase,position=session.player(),
+                  casts=casts,observed_deaths=deaths,verified_pickups=verified_pickups,
+                  route=route.snapshot(),**extra)
+        temp=status_path.with_suffix('.tmp');temp.write_text(json.dumps(data,ensure_ascii=False),encoding='utf-8');temp.replace(status_path)
     before_navigation=session.navigation_map
     def navigation(header):
         if header!=HEADER:raise RuntimeError('拾取地图变化')
@@ -191,9 +207,10 @@ def run_bounded(session,progress=lambda message:None,seconds=30,max_casts=6):
     session.navigation_map=navigation
     locked=None;last_zero_health=False;casts=deaths=verified_pickups=unverified_losses=0;status='bounded_end';failed_aims=0;waypoint=1;pickup_attempts={};movement_segments=0;position_anchor=tuple(session.player())
     try:
-        log('start',position=session.player(),max_casts=limit,seconds=seconds,waypoints=plan['waypoints'])
+        log('start',position=session.player(),max_casts=None if continuous else limit,seconds=43200 if continuous else seconds,continuous=continuous,waypoints=plan['waypoints'])
         while time.monotonic()<deadline and casts<limit:
             guard(session)
+            state('running')
             current_position=tuple(session.player())
             if max(abs(current_position[i]-position_anchor[i]) for i in (0,1))>2:
                 status='external_position_change';log(status,previous=position_anchor,current=current_position);break
@@ -210,11 +227,19 @@ def run_bounded(session,progress=lambda message:None,seconds=30,max_casts=6):
                 elif current['dead']:
                     deaths+=1;log('target_death_observed',target=current);locked=None
             drops,_=filter_drops(ground_snapshot(session)['ground_maps'][0]['items'])
-            nearby=[d for d in drops if max(abs(d['x']-session.player()[0]),abs(d['y']-session.player()[1]))<=6]
+            nearby=[d for d in drops if deferred_drops.get(d['id'],0)<=time.monotonic() and max(abs(d['x']-session.player()[0]),abs(d['y']-session.player()[1]))<=6]
             if nearby and locked is None:
                 chosen=min(nearby,key=lambda d:max(abs(d['x']-session.player()[0]),abs(d['y']-session.player()[1])))
                 pickup_attempts[chosen['id']]=pickup_attempts.get(chosen['id'],0)+1
-                if pickup_attempts[chosen['id']]>3:status='pickup_progress_unconfirmed';break
+                if pickup_attempts[chosen['id']]>3:
+                    if continuous:
+                        deferred_drops[chosen['id']]=time.monotonic()+20;pickup_attempts[chosen['id']]=0
+                        log('drop_temporarily_blocked',id=chosen['id']);nearby=[]
+                    else:status='pickup_progress_unconfirmed';break
+                if not nearby:
+                    goal=route.next_goal(tuple(session.player()),time.monotonic())
+                    if goal is not None:patrol_move(session,tilemap,goal,allow_hold=False)
+                    position_anchor=tuple(session.player());session.pause(.2);continue
                 guard(session)
                 result=pickup_current_test(session,names=(chosen['name'],),radius=6,max_steps=2,cooperative=True,target_id=chosen['id'])
                 log('pickup',result=result)
@@ -222,7 +247,8 @@ def run_bounded(session,progress=lambda message:None,seconds=30,max_casts=6):
                 elif result.get('status') not in ('approaching','actor_occluded','blocked','no_target'):
                     status='pickup_unverified';break
                 position_anchor=tuple(session.player());session.pause(.2);continue
-            result=probe_once(session,progress,locked=locked);log('spell_probe',result=result)
+            excluded={a:t for a,t in excluded.items() if t>time.monotonic()}
+            result=probe_once(session,progress,locked=locked,**({'excluded':set(excluded)} if continuous else {}));log('spell_probe',result=result)
             if result.get('f1_sent'):
                 casts+=1;locked=result['target'];failed_aims=0
                 hp=result.get('target_vitals_after',{})
@@ -232,25 +258,48 @@ def run_bounded(session,progress=lambda message:None,seconds=30,max_casts=6):
                 if locked:
                     if last_zero_health:
                         session.pause(.15);continue
-                    status='locked_target_not_aimable';break
-                move=approach_once(session,progress)
+                    if continuous:
+                        excluded[locked['address']]=time.monotonic()+15;locked=None;failed_aims=0
+                    else:status='locked_target_not_aimable';break
+                move={'movement':False} if continuous else approach_once(session,progress)
                 if not move.get('movement'):
-                    if len(plan['waypoints'])<2:status='no_patrol_route';break
-                    goal=tuple(plan['waypoints'][waypoint%len(plan['waypoints'])])
-                    if max(abs(session.player()[i]-goal[i]) for i in (0,1))<=2:
-                        waypoint+=1;goal=tuple(plan['waypoints'][waypoint%len(plan['waypoints'])])
-                    guard(session);move=patrol_move(session,tilemap,goal)
+                    if not continuous and len(plan['waypoints'])<2:status='no_patrol_route';break
+                    if continuous:
+                        goal=route.next_goal(tuple(session.player()),time.monotonic())
+                        if goal is None:session.pause(.3);continue
+                        try:move=patrol_move(session,tilemap,goal,allow_hold=False)
+                        except RuntimeError as error:
+                            if str(error)!='巡逻目标当前没有可走路径':raise
+                            route.defer_goal(time.monotonic());log('route_temporarily_blocked',goal=goal);continue
+                        moved=tuple(move.get('from',()))!=tuple(move.get('to',()))
+                        stalled=0 if moved else stalled+1
+                        if stalled>=3:route.defer_goal(time.monotonic());stalled=0
+                        progress('地牢持续清怪拾取：沿可达路线前往%s，已走访%d/%d个路点' % (goal,len(route.visited),len(route.points)))
+                    else:
+                        goal=tuple(plan['waypoints'][waypoint%len(plan['waypoints'])])
+                        if max(abs(session.player()[i]-goal[i]) for i in (0,1))<=2:
+                            waypoint+=1;goal=tuple(plan['waypoints'][waypoint%len(plan['waypoints'])])
+                        guard(session);move=patrol_move(session,tilemap,goal)
                 movement_segments+=1;log('movement',result=move)
             elif result.get('status')=='target_death_observed':
                 deaths+=1;log('target_death_observed',target=result['target']);locked=None;last_zero_health=False;failed_aims=0
                 session.pause(.15)
             elif result.get('status')=='locked_target_unavailable':
                 failed_aims+=1
-                if failed_aims>=2:status='locked_target_not_aimable';break
+                if failed_aims>=2:
+                    if continuous:
+                        excluded[locked['address']]=time.monotonic()+15;locked=None;failed_aims=0
+                    else:status='locked_target_not_aimable';break
                 session.pause(.15)
             else:
                 failed_aims+=1
-                if failed_aims>=2:status='aim_unconfirmed_twice';break
+                if failed_aims>=2:
+                    if continuous:
+                        failed=locked or result.get('target')
+                        if failed:excluded[failed['address']]=time.monotonic()+15
+                        locked=None;failed_aims=0
+                        log('aim_deferred',target=failed);position_anchor=tuple(session.player());continue
+                    status='aim_unconfirmed_twice';break
                 if locked:
                     position_anchor=tuple(session.player());session.pause(.2);continue
                 move=approach_once(session,progress);movement_segments+=int(bool(move.get('movement')));log('aim_reposition',result=move)
@@ -259,7 +308,10 @@ def run_bounded(session,progress=lambda message:None,seconds=30,max_casts=6):
         summary={'status':status,'casts_sent':casts,'observed_deaths':deaths,
                  'verified_pickups':verified_pickups,'unverified_target_losses':unverified_losses,'movement_segments':movement_segments,
                  'elapsed_seconds':round(time.monotonic()-started,2),'unattended_acceptance':False,'position':session.player()}
+        state('finished',result=summary)
         log('end',**summary);return summary
+    except Exception as error:
+        state('stopped',reason=str(error));log('stopped',reason=str(error));raise
     finally:
         session.navigation_map=before_navigation
         session.clear_background_mouse()
