@@ -201,7 +201,13 @@ def run_bounded(session,progress=lambda message:None,seconds=30,max_casts=6,cont
     obstruction=PatrolObstruction()
     def coverage_move(goal):
         options=dict(move_options,blocked_tiles=obstruction.blocked(time.monotonic()))
-        result=patrol_move(session,tilemap,goal,**options)
+        try:result=patrol_move(session,tilemap,goal,**options)
+        except RuntimeError as error:
+            if str(error)!='巡逻目标当前没有可走路径':raise
+            route.defer_goal(time.monotonic());log('route_temporarily_blocked',goal=goal)
+            session.pause(.3)
+            position=tuple(session.player())
+            return {'from':position,'to':position,'route_deferred':True}
         obstruction.observe(result,time.monotonic())
         return result
     excluded={};deferred_drops={};stalled=0;last_progress=0
@@ -310,10 +316,8 @@ def run_bounded(session,progress=lambda message:None,seconds=30,max_casts=6,cont
                         if continuous:
                             goal=route.next_goal(tuple(session.player()),time.monotonic())
                             if goal is None:session.pause(.3);continue
-                            try:move=coverage_move(goal)
-                            except RuntimeError as error:
-                                if str(error)!='巡逻目标当前没有可走路径':raise
-                                route.defer_goal(time.monotonic());log('route_temporarily_blocked',goal=goal);continue
+                            move=coverage_move(goal)
+                            if move.get('route_deferred'):continue
                             moved=tuple(move.get('from',()))!=tuple(move.get('to',()))
                             stalled=0 if moved else stalled+1
                             if stalled>=3:route.defer_goal(time.monotonic());stalled=0

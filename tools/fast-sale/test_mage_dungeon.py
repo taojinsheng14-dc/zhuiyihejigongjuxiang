@@ -108,7 +108,7 @@ class MageDungeonTests(unittest.TestCase):
 
 
 class BoundedMageTests(unittest.TestCase):
-    def run_case(self,spell,monsters=None,drops=None,pickup=None,max_casts=1,player=None,continuous=False,profile=None,capacity_error=None):
+    def run_case(self,spell,monsters=None,drops=None,pickup=None,max_casts=1,player=None,continuous=False,profile=None,capacity_error=None,movement_error=None):
         import tempfile
         from pathlib import Path
         from contextlib import ExitStack
@@ -123,7 +123,7 @@ class BoundedMageTests(unittest.TestCase):
             stack.enter_context(patch('mage_dungeon.probe_once',side_effect=spell))
             stack.enter_context(patch('warrior_combat.patrol_plan',return_value=(object(),{'waypoints':[(20,20),(30,30)]})))
             stack.enter_context(patch('inventory_flow.ensure_loot_capacity',side_effect=capacity_error))
-            stack.enter_context(patch('warrior_combat.patrol_move',return_value={'from':(20,20),'to':(20,20)}))
+            stack.enter_context(patch('warrior_combat.patrol_move',side_effect=movement_error,return_value={'from':(20,20),'to':(20,20)}))
             stack.enter_context(patch('ground_item_probe.ground_snapshot',**({'side_effect':drops} if callable(drops) else {'return_value':{'ground_maps':[{'items':drops or []}]}})))
             stack.enter_context(patch('island_pickup_policy.filter_drops',side_effect=lambda rows:(rows,[])))
             stack.enter_context(patch('ground_item_probe.pickup_current_test',**({'side_effect':pickup} if callable(pickup) else {'return_value':pickup})))
@@ -131,6 +131,24 @@ class BoundedMageTests(unittest.TestCase):
             result=run_bounded(s,max_casts=max_casts,continuous=continuous,profile=profile)
         self.assertIs(s.navigation_map,original);s.clear_background_mouse.assert_called_once()
         return result
+
+    def test_blocked_drop_route_defers_and_returns_to_fresh_combat(self):
+        reads=[0]
+        def drops(*args):
+            reads[0]+=1
+            return {'ground_maps':[{'items':[{'id':7,'name':'金币','x':20,'y':20}] if reads[0]<=4 else []}]}
+        spell=Mock(side_effect=RuntimeError('test cancellation after route deferral'))
+        with self.assertRaisesRegex(RuntimeError,'test cancellation after route deferral'):
+            self.run_case(spell,drops=drops,pickup={'status':'blocked','verified':False},continuous=True,
+                          movement_error=RuntimeError('巡逻目标当前没有可走路径'))
+        spell.assert_called_once()
+        self.assertEqual(reads[0],5)
+
+    def test_blocked_drop_route_does_not_swallow_independent_guard_error(self):
+        with self.assertRaisesRegex(RuntimeError,'map identity changed'):
+            self.run_case(Mock(),drops=[{'id':7,'name':'金币','x':20,'y':20}],
+                          pickup={'status':'blocked','verified':False},continuous=True,
+                          movement_error=RuntimeError('map identity changed'))
 
     def test_activity_panel_opening_between_actions_does_not_end_command(self):
         from current_map_hunt import PanelOpen
