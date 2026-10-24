@@ -20,6 +20,17 @@ class SchedulerTests(unittest.TestCase):
         s=island.Scheduler();action,target=s.choose(snapshot([drop(1,25),drop(2,20)],[monster()]),0)
         self.assertEqual((action,target['id']),('pickup',2))
 
+    def test_hero_occupied_drop_waits_for_combat_then_becomes_pickable(self):
+        s=island.Scheduler();blocked=drop(1,18,16)
+        self.assertEqual(s.choose(snapshot([blocked],[monster()],hero=(18,16)),0)[0],'approach')
+        self.assertEqual(s.choose(snapshot([blocked],hero=(18,16)),1)[0],'pickup')
+        self.assertEqual(s.failures,{})
+
+    def test_unblocked_drop_still_precedes_combat(self):
+        s=island.Scheduler();blocked=drop(1,18,16);clear=drop(2,22,18)
+        action,target=s.choose(snapshot([blocked,clear],[monster()],hero=(18,16)),0)
+        self.assertEqual((action,target['id']),('pickup',2))
+
     def test_target_remains_sticky_until_done(self):
         s=island.Scheduler();s.choose(snapshot([drop(1,23)]),0)
         self.assertEqual(s.choose(snapshot([drop(1,23),drop(2,20)]),.2)[1]['id'],1)
@@ -98,6 +109,25 @@ class LoopTests(unittest.TestCase):
             r=island.run_loop(s,seconds=20)
         self.assertEqual(r['status'],'completed');self.assertEqual(r['picked_verified'],1);self.assertEqual(r['transitions'],2)
         self.assertEqual(actions[:2],['pickup','activate']);self.assertEqual(actions.count('transition'),2)
+
+    def test_hero_blocked_loot_does_not_spend_unblock_budget_during_combat(self):
+        s=self.session();blocked=drop(1,18,16)
+        samples=[snapshot([blocked],[monster(20)],hero=(18,16)),snapshot([blocked],hero=(22,22)),{'town':True}]
+        with patch.object(island,'observe',side_effect=samples),patch.object(island,'pick_one',return_value={'verified':True}) as pick,patch.object(island,'move_one') as move,patch.object(island,'log'),patch.object(island.time,'monotonic',side_effect=lambda:s.now):
+            result=island.run_loop(s)
+        pick.assert_called_once();move.assert_not_called()
+        self.assertEqual(result['picked_verified'],1)
+
+    def test_open_bag_waits_without_input_then_resumes_on_close(self):
+        s=self.session();s.bag=True
+        s.visible=lambda key:s.bag if key=='bag' else False
+        s.held_item=lambda:'';s.sale_item=lambda:'';s.inflight_item=lambda:'';s.login_stage=lambda:'playing'
+        def pause(seconds):s.now+=seconds;s.bag=False
+        s.pause=pause
+        with patch.object(island,'header',return_value=island.ISLAND_HEADER),patch.object(island,'observe',return_value={'town':True}) as observe,patch.object(island,'pick_one') as pick,patch.object(island,'log'),patch.object(island.time,'monotonic',side_effect=lambda:s.now):
+            r=island.run_loop(s)
+        observe.assert_called_once();pick.assert_not_called();s.close_panels.assert_not_called()
+        self.assertTrue(r['completion_verified'])
 
     def test_new_monster_after_open_cancels_transition(self):
         s=self.session();samples=[snapshot(),snapshot(),snapshot(),snapshot(),snapshot(),snapshot(),snapshot(monsters=[monster(20)])]

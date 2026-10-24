@@ -89,6 +89,7 @@ class Scheduler:
         occupied={tuple(m['position']) for m in alive}
         eligible=[d for d in drops if d.get('key_matches') and (d['x'],d['y']) not in occupied
                   and self.failures.get(d['id'],0)<3 and now>=self.retry_at.get(d['id'],0)]
+        if alive:eligible=[d for d in eligible if not hero_blocks_pickup(sample,d)]
         if eligible:
             selected=next((d for d in eligible if d['id']==self.target),None)
             selected=selected or min(eligible,key=lambda d:((d['x']-position[0])**2+(d['y']-position[1])**2,d['id']))
@@ -241,10 +242,16 @@ def pick_one(session,drop):
 
 def run_loop(session,progress=lambda text:None,seconds=7200,transitions=0,on_transition=lambda n:None,melee=None):
     from inventory_flow import ensure_loot_capacity
-    scheduler=Scheduler();deadline=time.monotonic()+seconds;picked=0;last_action=None;unstable_since=None;hero_unblocks={}
+    scheduler=Scheduler();deadline=time.monotonic()+seconds;picked=0;last_action=None;unstable_since=None;hero_unblocks={};combat_deferred=set();panel_wait=False
     if session.visible('merchant') and not getattr(session,'_island_open_corner',None):session.close_panels()
     while time.monotonic()<deadline:
         session.check()
+        if session.visible('bag'):
+            if session.held_item() or session.sale_item() or session.inflight_item():raise RuntimeError('背包打开且物品状态不空，停止孤岛输入')
+            if session.login_stage()!='playing' or header(session)!=ISLAND_HEADER:raise RuntimeError('背包等待时角色或孤岛地图未核对')
+            if not panel_wait:progress('孤岛：背包打开，等待关闭后继续');log('bag_open_wait');panel_wait=True
+            session.pause(.2);continue
+        if panel_wait:log('bag_closed_resume');panel_wait=False
         try:sample=observe(session)
         except TransientScene as error:
             if unstable_since is None:unstable_since=time.monotonic()
@@ -257,6 +264,12 @@ def run_loop(session,progress=lambda text:None,seconds=7200,transitions=0,on_tra
                 log('bag_transfer',result=capacity);scheduler=Scheduler();hero_unblocks={};last_action=None
                 continue
             sample['free']=capacity['main_free']
+        if sample.get('monsters'):
+            for blocked_drop in sample['drops']:
+                if hero_blocks_pickup(sample,blocked_drop):
+                    uid=blocked_drop['id'];hero_unblocks.pop(uid,None)
+                    if uid not in combat_deferred:
+                        log('pickup_deferred_for_combat',drop=blocked_drop,hero=sample['hero']);combat_deferred.add(uid)
         now=time.monotonic();action,target=scheduler.choose(sample,now)
         if melee is not None and action in ('approach','wait') and sample.get('monsters'):
             if session.visible('merchant') or session.visible('bag'):session.close_panels()
@@ -294,9 +307,11 @@ def run_loop(session,progress=lambda text:None,seconds=7200,transitions=0,on_tra
                     fresh=observe(session)
                     remains=any(d['id']==target['id'] for d in fresh.get('drops',[]))
                     if remains and hero_blocks_pickup(fresh,target):
+                        if fresh.get('monsters'):
+                            hero_unblocks.pop(target['id'],None);log('hero_unblock_deferred_for_combat',drop=target);continue
                         raise RuntimeError('英雄模型仍遮挡目标，有限带离及跟随等待已用完；保留现场')
                 continue
-            hero_unblocks.pop(target['id'],None)
+            hero_unblocks.pop(target['id'],None);combat_deferred.discard(target['id'])
             result=pick_one(session,target);scheduler.feedback(target,result,time.monotonic())
             picked+=int(bool(result.get('verified')));log('pickup',result=result)
         elif action=='approach':
