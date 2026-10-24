@@ -26,3 +26,41 @@ class RouteTests(unittest.TestCase):
         route.defer_goal(0)
         self.assertNotEqual(route.next_goal((0,2),1),goal)
         self.assertNotIn(goal,route.visited)
+
+
+class CenterRouteTests(unittest.TestCase):
+    def rectangle(self,width,height):
+        class Map:
+            def free(self,p):return 0<=p[0]<width and 0<=p[1]<height
+        return Map()
+
+    def test_narrow_corridor_waypoints_and_travel_use_middle(self):
+        route=CoverageRoute(self.rectangle(100,9),(1,0),spacing=24)
+        self.assertTrue(all(y==4 for x,y in route.points if 8<x<92))
+        path=route.navigation_map().path((1,0),(98,0))
+        middle=[y for x,y in path if 20<x<80]
+        self.assertTrue(middle);self.assertTrue(all(y==4 for y in middle))
+
+    def test_single_cell_bottleneck_remains_passable(self):
+        class Map:
+            def free(self,p):
+                x,y=p
+                return (0<=x<10 and 0<=y<9) or (10<=x<20 and y==4) or (20<=x<30 and 0<=y<9)
+        route=CoverageRoute(Map(),(4,4),spacing=24)
+        path=route.navigation_map().path((4,4),(25,4))
+        self.assertIn((15,4),path)
+        self.assertTrue(all(Map().free(p) for p in path))
+
+    def test_dynamic_blockers_and_diagonal_corners_respected(self):
+        route=CoverageRoute(self.rectangle(20,9),(1,4),spacing=24)
+        path=route.navigation_map().path((1,4),(18,4),blocked={(9,4),(10,4)})
+        self.assertNotIn((9,4),path);self.assertNotIn((10,4),path)
+        for a,b in zip(path,path[1:]):
+            if a[0]!=b[0] and a[1]!=b[1]:
+                self.assertNotIn((a[0],b[1]),{(9,4),(10,4)})
+                self.assertNotIn((b[0],a[1]),{(9,4),(10,4)})
+
+    def test_wide_room_has_interior_coverage_lanes(self):
+        route=CoverageRoute(self.rectangle(72,72),(35,35),spacing=24)
+        self.assertGreater(len(route.points),9)
+        self.assertTrue(all(route.clearance[p]>=8 for p in route.points))

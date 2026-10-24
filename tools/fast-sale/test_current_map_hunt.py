@@ -109,3 +109,34 @@ class CurrentMapTests(unittest.TestCase):
         p,s=self.random_session();s.shortcut_inventory=lambda:[]
         with self.assertRaisesRegex(RuntimeError,'缺少'):p.avoid_players(s,Mock())
         s.press_named_hotkey.assert_not_called()
+
+
+class GenericProfileTests(unittest.TestCase):
+    def test_supported_formats_resolve_same_shared_profile(self):
+        import struct,tempfile
+        from pathlib import Path
+        for stride in (12,14):
+            with self.subTest(stride=stride),tempfile.TemporaryDirectory() as folder:
+                file=Path(folder)/'new-normal.map';file.write_bytes(bytes(52+4*4*stride))
+                head=struct.pack('<HH',4,4)+bytes(48)
+                with patch.object(hunt,'header',return_value=head),patch('map_navigation.matching_map_file',return_value=file):
+                    profile=hunt.profile_for(SimpleNamespace())
+                self.assertEqual(profile.map_stride,stride);self.assertEqual(profile.header,head)
+                self.assertTrue(profile.center_route);self.assertEqual(profile.post_cast_wait,.05)
+
+    def test_unknown_format_and_town_are_rejected_before_input(self):
+        import struct,tempfile
+        from pathlib import Path
+        with tempfile.TemporaryDirectory() as folder:
+            for name,stride in (('unknown.map',13),('3.map',14)):
+                file=Path(folder)/name;file.write_bytes(bytes(52+4*4*stride))
+                with patch.object(hunt,'header',return_value=struct.pack('<HH',4,4)+bytes(48)),patch('map_navigation.matching_map_file',return_value=file):
+                    with self.assertRaises(RuntimeError):hunt.profile_for(SimpleNamespace())
+
+    def test_new_map_monster_name_supported_but_owned_pet_and_npc_excluded(self):
+        profile=hunt.NormalMap()
+        monster={'name':'新地图普通怪','class':'TCatMon','distance':3,'dead':False}
+        self.assertTrue(profile.is_target(monster))
+        self.assertFalse(profile.is_target(dict(monster,name='神兽(其他玩家)')))
+        self.assertFalse(profile.is_target(dict(monster,**{'class':'TMerchant'})))
+        self.assertFalse(profile.is_target(dict(monster,dead=True)))

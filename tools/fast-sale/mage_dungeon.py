@@ -193,7 +193,10 @@ def run_bounded(session,progress=lambda message:None,seconds=30,max_casts=6,cont
     approach=profile.approach if profile else approach_once
     started=time.monotonic();deadline=started+(43200 if continuous else min(120,max(1,seconds)));limit=float('inf') if continuous else min(60,max(1,max_casts))
     from dungeon_route import CoverageRoute
+    base_tilemap=tilemap
     route=CoverageRoute(tilemap,tuple(session.player()),spacing=getattr(profile,'route_spacing',8)) if continuous else None
+    if continuous and profile and getattr(profile,'center_route',False):
+        tilemap=route.navigation_map();profile.tilemap=tilemap
     move_options=profile.move_options() if profile and hasattr(profile,'move_options') else {'allow_hold':False}
     excluded={};deferred_drops={};stalled=0;last_progress=0
     original_progress=progress
@@ -276,6 +279,7 @@ def run_bounded(session,progress=lambda message:None,seconds=30,max_casts=6,cont
                     if result.get('status') in ('combat_required','hero_moved','hero_wait'):pickup_attempts[chosen['id']]=0
                     position_anchor=tuple(session.player());session.pause(.2);continue
                 excluded={a:t for a,t in excluded.items() if t>time.monotonic()}
+                if profile and hasattr(profile,'target_names'):probe_options['target_names']=profile.target_names(session)
                 try:result=probe_once(session,progress,locked=locked,**probe_options,**({'excluded':set(excluded)} if continuous else {}))
                 except (profile.panel_exception if profile else ()):
                     locked=None;failed_aims=0;continue
@@ -346,7 +350,9 @@ def run_bounded(session,progress=lambda message:None,seconds=30,max_casts=6,cont
                 locked=None;last_zero_health=False;failed_aims=0;excluded.clear()
                 position_anchor=tuple(session.player())
                 if result.get('random_used'):
-                    route=CoverageRoute(tilemap,position_anchor,spacing=getattr(profile,'route_spacing',8))
+                    route=CoverageRoute(base_tilemap,position_anchor,spacing=getattr(profile,'route_spacing',8))
+                    if getattr(profile,'center_route',False):
+                        tilemap=route.navigation_map();profile.tilemap=tilemap
                 continue
         summary={'status':status,'casts_sent':casts,'observed_deaths':deaths,
                  'verified_pickups':verified_pickups,'unverified_target_losses':unverified_losses,'movement_segments':movement_segments,

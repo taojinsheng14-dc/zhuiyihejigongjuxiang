@@ -36,12 +36,15 @@ class PanelOpen(RuntimeError):pass
 class StoneTomb:
     player_exception=PlayersDetected
 
-    def __init__(self,avoid_players=None):
+    def __init__(self,avoid_players=None,map_header=STONE_HEADER,map_name='d715.map',map_stride=14):
         self.avoid_loaded_players=load_avoid_players() if avoid_players is None else avoid_players
+        self.header=map_header;self.map_name=map_name;self.map_stride=map_stride
+        self.label={'d715.map':'石墓五层','d601.map':'地牢东一层'}.get(map_name,'当前地图')
 
     panel_exception=PanelOpen
     header=STONE_HEADER
     names=STONE_NAMES
+    center_route=True
     route_spacing=24
     post_cast_wait=.05
 
@@ -99,9 +102,24 @@ class StoneTomb:
 
     def plan(self,session):
         from warrior_combat import patrol_plan
-        result=patrol_plan(session,expected_header=self.header,expected_name='d715.map',radius=None)
+        if self.map_stride==14:
+            result=patrol_plan(session,expected_header=self.header,expected_name=self.map_name,radius=None)
+        elif self.map_stride==12:
+            tilemap=session.navigation_map(self.header);start=tuple(session.player())
+            if not tilemap.free(start) or header(session)!=self.header:raise RuntimeError('当前地图起点或身份未核对')
+            result=(tilemap,{'map':self.map_name,'file_stride':12,'start':start,'waypoints':[start],'game_input_sent':False})
+        else:raise RuntimeError('当前地图格子格式尚未支持')
         self.tilemap=result[0]
         return result
+
+    def is_target(self,monster):
+        from random_hunt import target_monsters
+        return monster.get('class')=='TCatMon' and bool(target_monsters([monster],8))
+
+    def target_names(self,session):
+        scene=session.nearby_monsters(radius=8)
+        if scene['read_errors']:raise RuntimeError('当前地图目标采样不完整')
+        return {m['name'] for m in scene['monsters'] if self.is_target(m)}
 
     def has_loot(self,session):
         from ground_item_probe import ground_snapshot
@@ -120,7 +138,7 @@ class StoneTomb:
         self.guard(session)
         scene=session.nearby_monsters(radius=8)
         if scene['read_errors']:raise RuntimeError('近怪站位采样不完整')
-        targets=[m for m in scene['monsters'] if not m['dead'] and m['class']=='TCatMon' and m['name'] in self.names and m['distance']<=8]
+        targets=[m for m in scene['monsters'] if self.is_target(m)]
         if not targets:return {'movement':False,'nearby_combat':False}
         target=min(targets,key=lambda m:m['distance']);current=tuple(session.player())
         blocked={struct.unpack_from('<2i',raw,0x68) for address,raw in session.scene_actor_snapshot() if raw[0xac]==0}
@@ -142,21 +160,41 @@ class StoneTomb:
 def run(session,progress=lambda message:None):
     import importlib,mage_skills,mage_dungeon,dungeon_route,warrior_combat,ground_item_probe
     for module in (mage_skills,dungeon_route,warrior_combat,ground_item_probe,mage_dungeon):importlib.reload(module)
-    current=header(session)
-    if current==DUNGEON_HEADER:return mage_dungeon.run_bounded(session,progress,continuous=True)
-    if current!=STONE_HEADER:raise RuntimeError('当前地图尚未核对，未启动挂机')
-    profile=StoneTomb();profile.check_state(session)
+    profile=profile_for(session);profile.check_state(session)
     skills=mage_skills.inspect_current(session,'厚礼蟹')
     if not skills.get('f1_skill') or skills['f1_skill']['name']!='雷电术':raise RuntimeError('F1不是唯一雷电术，未挂机')
-    progress('石墓五层：核对路网后在整张可达地图循环巡逻，无怪直路按住右键连续跑，F1雷电术与名单拾取；不主动跨图')
-    def report(message):progress(message.replace('地牢持续清怪拾取','石墓五层清怪拾取'))
+    progress(profile.label+'：按通道中线覆盖整张可达地图，连续跑动、F1雷电术与名单拾取；不主动跨图')
+    def report(message):progress(message.replace('地牢持续清怪拾取',profile.label+'清怪拾取'))
     return mage_dungeon.run_bounded(session,report,continuous=True,profile=profile)
 
 
 def inspect(session):
-    import importlib,mage_skills,warrior_combat
-    importlib.reload(mage_skills);importlib.reload(warrior_combat)
-    profile=StoneTomb();profile.check_state(session)
+    import importlib,mage_skills,warrior_combat,dungeon_route
+    importlib.reload(mage_skills);importlib.reload(warrior_combat);importlib.reload(dungeon_route)
+    profile=profile_for(session);profile.check_state(session)
     tilemap,plan=profile.plan(session)
+    from dungeon_route import CoverageRoute
+    import time
+    started=time.monotonic();route=CoverageRoute(tilemap,session.player(),spacing=profile.route_spacing)
+    goal=route.next_goal(session.player(),time.monotonic())
+    path=route.navigation_map().path(session.player(),goal) if goal else []
+    center={'reachable_cells':len(route.clearance),'waypoints':sorted(route.points),'snapshot':route.snapshot(),'first_path':path,'planning_seconds':round(time.monotonic()-started,3)}
     skills=mage_skills.inspect_current(session,'厚礼蟹')
-    return {'map':tilemap.name,'plan':plan,'f1_skill':skills['f1_skill'],'game_input_sent':False}
+    return {'map':tilemap.name,'plan':plan,'center_route':center,'f1_skill':skills['f1_skill'],'game_input_sent':False}
+
+
+# Map data changes; combat, pickup, player avoidance and pacing share this profile.
+NormalMap=StoneTomb
+
+
+def profile_for(session):
+    import struct
+    from map_navigation import matching_map_file
+    current=header(session);file=matching_map_file(current,getattr(session,'_map_directory',None))
+    name=file.name.lower()
+    if name in ('3.map','5.map','0159.map','zlg101.map'):raise RuntimeError('城镇、商店或孤岛请使用对应流程，未启动普通地图挂机')
+    width,height=struct.unpack('<HH',current[:4]);size=file.stat().st_size-52
+    if not width or not height or size%(width*height):raise RuntimeError('当前地图文件尺寸不符')
+    stride=size//(width*height)
+    if stride not in (12,14):raise RuntimeError('当前地图格子格式尚未支持')
+    return NormalMap(map_header=current,map_name=name,map_stride=stride)
