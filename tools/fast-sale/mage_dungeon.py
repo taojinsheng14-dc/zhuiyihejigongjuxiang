@@ -181,7 +181,7 @@ def run_bounded(session,progress=lambda message:None,seconds=30,max_casts=6,cont
     import json,time
     from pathlib import Path
     import instance_context
-    from inventory_flow import ensure_loot_capacity
+    from inventory_flow import ensure_loot_capacity,DualBagsFull
     from ground_item_probe import ground_snapshot,pickup_current_test
     from island_pickup_policy import filter_drops
     from warrior_combat import patrol_plan,patrol_move
@@ -359,6 +359,13 @@ def run_bounded(session,progress=lambda message:None,seconds=30,max_casts=6,cont
                  'elapsed_seconds':round(time.monotonic()-started,2),'unattended_acceptance':False,'position':session.player()}
         state('finished',result=summary)
         log('end',**summary);return summary
+    except DualBagsFull as error:
+        if not getattr(profile,'return_when_full',False):
+            state('stopped',reason=str(error));log('stopped',reason=str(error));raise
+        summary={'status':'bags_full','casts_sent':casts,'observed_deaths':deaths,
+                 'verified_pickups':verified_pickups,'elapsed_seconds':round(time.monotonic()-started,2),
+                 'unattended_acceptance':False,'position':session.player()}
+        state('bags_full',result=summary);log('end',**summary);return summary
     except Exception as error:
         state('stopped',reason=str(error));log('stopped',reason=str(error));raise
     finally:

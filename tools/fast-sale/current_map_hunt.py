@@ -157,10 +157,15 @@ class StoneTomb:
 
 
 
-def run(session,progress=lambda message:None):
+def run(session,progress=lambda message:None,allow_cycle=True,return_when_full=False):
     import importlib,mage_skills,mage_dungeon,dungeon_route,warrior_combat,ground_item_probe
     for module in (mage_skills,dungeon_route,warrior_combat,ground_item_probe,mage_dungeon):importlib.reload(module)
+    if allow_cycle:
+        import stone_hunt_cycle
+        importlib.reload(stone_hunt_cycle)
+        if stone_hunt_cycle.enabled():return stone_hunt_cycle.run(session,progress)
     profile=profile_for(session);profile.check_state(session)
+    profile.return_when_full=return_when_full
     skills=mage_skills.inspect_current(session,'厚礼蟹')
     if not skills.get('f1_skill') or skills['f1_skill']['name']!='雷电术':raise RuntimeError('F1不是唯一雷电术，未挂机')
     progress(profile.label+'：按通道中线覆盖整张可达地图，连续跑动、F1雷电术与名单拾取；不主动跨图')

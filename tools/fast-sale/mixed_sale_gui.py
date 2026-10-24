@@ -68,6 +68,9 @@ class App(tk.Tk):
         import current_map_hunt
         self.map_avoid_players=tk.BooleanVar(value=current_map_hunt.load_avoid_players())
         ttk.Checkbutton(dungeon_tab,text='当前地图：全部已加载范围内见人就随机（消耗随机石，新任务生效）',variable=self.map_avoid_players,command=lambda:current_map_hunt.save_avoid_players(self.map_avoid_players.get())).pack(anchor='w',pady=(0,8))
+        import stone_hunt_cycle
+        self.map_sale_cycle=tk.BooleanVar(value=stone_hunt_cycle.enabled())
+        ttk.Checkbutton(dungeon_tab,text='石墓五层：双包满回城出售，再经老兵返回本层（新任务生效）',variable=self.map_sale_cycle,command=lambda:stone_hunt_cycle.save_enabled(self.map_sale_cycle.get())).pack(anchor='w',pady=(0,8))
         self.dungeon_start_button=ttk.Button(dungeon_tab,text='启动／接续当前地图挂机',style='Primary.TButton',command=lambda:self.run('mage_dungeon'))
         self.dungeon_start_button.pack(fill='x',pady=(0,10))
         ttk.Label(dungeon_tab,text='持续运行，单次最长12小时；沿图走完一圈继续巡逻。\n普通背包面板打开时等待，关闭后继续；未知提示、物品未决或双包满时安全停止。停止使用下方“停止本号任务”。',wraplength=560).pack(anchor='w',pady=(0,12))

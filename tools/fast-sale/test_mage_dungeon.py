@@ -98,7 +98,7 @@ class MageDungeonTests(unittest.TestCase):
 
 
 class BoundedMageTests(unittest.TestCase):
-    def run_case(self,spell,monsters=None,drops=None,pickup=None,max_casts=1,player=None,continuous=False,profile=None):
+    def run_case(self,spell,monsters=None,drops=None,pickup=None,max_casts=1,player=None,continuous=False,profile=None,capacity_error=None):
         import tempfile
         from pathlib import Path
         from contextlib import ExitStack
@@ -112,7 +112,7 @@ class BoundedMageTests(unittest.TestCase):
             stack.enter_context(patch('dungeon_route.CoverageRoute',return_value=SimpleNamespace(snapshot=lambda:{},next_goal=lambda *a:(30,30),visited=set(),points={(30,30)},defer_goal=lambda now:None)))
             stack.enter_context(patch('mage_dungeon.probe_once',side_effect=spell))
             stack.enter_context(patch('warrior_combat.patrol_plan',return_value=(object(),{'waypoints':[(20,20),(30,30)]})))
-            stack.enter_context(patch('inventory_flow.ensure_loot_capacity'))
+            stack.enter_context(patch('inventory_flow.ensure_loot_capacity',side_effect=capacity_error))
             stack.enter_context(patch('warrior_combat.patrol_move',return_value={'from':(20,20),'to':(20,20)}))
             stack.enter_context(patch('ground_item_probe.ground_snapshot',**({'side_effect':drops} if callable(drops) else {'return_value':{'ground_maps':[{'items':drops or []}]}})))
             stack.enter_context(patch('island_pickup_policy.filter_drops',side_effect=lambda rows:(rows,[])))
@@ -133,6 +133,15 @@ class BoundedMageTests(unittest.TestCase):
         r=self.run_case(lambda *a,**k:{'f1_sent':True,'target':{'address':1,'name':'蜈蚣'}},profile=profile)
         self.assertEqual(r['casts_sent'],1);self.assertEqual(r['status'],'bounded_end')
         self.assertGreaterEqual(checks[0],4)
+
+    def test_full_bags_handoff_requires_explicit_profile_authorization(self):
+        from inventory_flow import DualBagsFull
+        from current_map_hunt import PanelOpen
+        profile=SimpleNamespace(guard=Mock(),check_state=Mock(),header=HEADER,names={'蜈蚣'},panel_exception=PanelOpen,
+            wait_for_panels=lambda s:False,plan=lambda s:(object(),{'waypoints':[(20,20),(30,30)]}),approach=Mock(),return_when_full=True)
+        r=self.run_case(Mock(side_effect=AssertionError('must not attack')),profile=profile,capacity_error=DualBagsFull('both full'))
+        self.assertEqual(r['status'],'bags_full');self.assertEqual(r['casts_sent'],0)
+        with self.assertRaises(DualBagsFull):self.run_case(Mock(),capacity_error=DualBagsFull('both full'))
 
     def test_cast_limit_is_finite_and_not_a_kill_claim(self):
         r=self.run_case(lambda *a,**k:{'f1_sent':True,'target':{'address':1,'name':'蜈蚣'}})

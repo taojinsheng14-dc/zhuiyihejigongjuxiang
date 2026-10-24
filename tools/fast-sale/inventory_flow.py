@@ -31,6 +31,10 @@ def bag_decision(main,hero,hero_ready):
     return 'continue'
 
 
+class DualBagsFull(RuntimeError):
+    """A verified full-bag handoff; other inventory failures remain errors."""
+
+
 def ensure_loot_capacity(session,progress=lambda text:None):
     """Shared capacity gate for every scripted combat/pickup mode.
 
@@ -55,7 +59,7 @@ def ensure_loot_capacity(session,progress=lambda text:None):
         raise RuntimeError('转包期间地图变化，停止后续操作')
     free=session.inventory().count('')
     if free<=1:
-        if report.get('return_required'):raise RuntimeError('双包均接近满，已保留现场；当前模式不自动退出挑战')
+        if report.get('return_required'):raise DualBagsFull('双包均接近满，已保留现场；未授权回城的模式不自动退出挑战')
         raise RuntimeError('主包未能腾出足够空格，保留现场；不重复盲目转包')
     return {'transferred':True,'main_free':free,'report':report}
 
