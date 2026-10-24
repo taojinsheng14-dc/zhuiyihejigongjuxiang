@@ -334,6 +334,24 @@ class CornerRetryTests(unittest.TestCase):
             self.assertFalse(island.open_corner(s))
         s.open_npc.assert_not_called()
 
+    def test_manual_new_floor_after_npc_timeout_returns_to_combat(self):
+        from background_sale import NpcDialogNotOpened
+        s=self.session();s.open_npc.side_effect=NpcDialogNotOpened('timeout')
+        fresh=self.scene();fresh['monsters']=[monster()]
+        with patch.object(island,'observe',side_effect=[self.scene(),fresh]),patch.object(island,'log'):
+            self.assertFalse(island.open_corner(s))
+        s.open_npc.assert_called_once()
+
+    def test_timeout_reselects_a_different_verified_corner(self):
+        from background_sale import NpcDialogNotOpened
+        s=self.session();s.visible.side_effect=lambda key:key=='merchant' and s.open_npc.call_count>=2
+        scene=self.scene();scene['npcs']=[{'name':'孤岛挑战','map':xy,'draw':(400,200)} for xy in sorted(island.CORNERS)]
+        s.open_npc.side_effect=[NpcDialogNotOpened('timeout'),None]
+        with patch.object(island,'observe',return_value=scene),patch.object(island,'log'):
+            self.assertTrue(island.open_corner(s))
+        calls=s.open_npc.call_args_list
+        self.assertNotEqual(calls[0].args[0]['map'],calls[1].args[0]['map'])
+
     def test_persistent_missing_click_point_stops_after_six_samples(self):
         s=self.session();s.npc_click_point.return_value=None
         with patch.object(island,'observe',return_value=self.scene()) as observe,patch.object(island,'log'),patch.object(island,'move_one',return_value={'status':'blocked'}):

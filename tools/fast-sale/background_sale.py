@@ -26,6 +26,10 @@ class GameSessionLost(RuntimeError):
     """A verified death or a login screen interrupted an active sale."""
 
 
+class NpcDialogNotOpened(RuntimeError):
+    """Verified actor clicks completed but no merchant dialog was observed."""
+
+
 class SaleRouteIncomplete(RuntimeError):
     def __init__(self, message, pending=None):
         super().__init__(message)
@@ -3289,7 +3293,10 @@ class BackgroundSession(Session):
             self.click_npc_actor(alternate)
             self.events[-1]['npc']=npc['name']
             self.events[-1]['npc_retry']='same_verified_actor_body_anchor_once'
-            self.wait(lambda:self.visible('merchant'),timeout=3)
+            try:self.wait(lambda:self.visible('merchant'),timeout=3)
+            except RuntimeError as error:
+                if str(error)!='状态确认超时，停止；不会重复点击确定':raise
+                raise NpcDialogNotOpened('已核对NPC两次点击后菜单仍未打开') from error
         self.active_merchant = npc['name']
         if getattr(self,'_stats_enabled',False):
             self.write_stats({'event':'npc_open_confirmed','npc':npc['name'],'position':self.player()})

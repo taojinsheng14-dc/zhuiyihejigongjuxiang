@@ -72,9 +72,10 @@ class NpcApproachTests(unittest.TestCase):
         self.assertTrue(state['merchant']);s.walk_tile.assert_not_called()
     def test_two_failed_npc_hits_stop_without_more_attempts(self):
         s,npc,state=self.session();state['draw']=(1120,465)
+        s.wait=lambda condition,timeout:(_ for _ in ()).throw(RuntimeError('状态确认超时，停止；不会重复点击确定'))
         s.click=Mock(side_effect=lambda target:s.events.append({'point':target}))
         with patch('background_sale.time.sleep'):
-            with self.assertRaisesRegex(RuntimeError,'timeout'):s.open_npc(npc)
+            with self.assertRaisesRegex(RuntimeError,'两次点击'):s.open_npc(npc)
         self.assertEqual(s.click.call_count,2)
     def test_two_nonmoving_attempts_stop_without_npc_click(self):
         s,npc,state=self.session(moves=False)

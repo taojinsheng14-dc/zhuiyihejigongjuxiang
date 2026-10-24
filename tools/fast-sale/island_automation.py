@@ -297,16 +297,26 @@ def run_loop(session,progress=lambda text:None,seconds=7200,transitions=0,on_tra
 
 
 def open_corner(session):
+    from background_sale import NpcDialogNotOpened
+    failed=set()
     for attempt in range(6):
         session.check()
         session.stable_player()
         sample=observe(session)
         if sample.get('town') or sample['monsters'] or sample['drops']:return False
-        known=[n for n in sample['npcs'] if n['name']=='孤岛挑战' and tuple(n['map']) in CORNERS]
+        known=[n for n in sample['npcs'] if n['name']=='孤岛挑战' and tuple(n['map']) in CORNERS and tuple(n['map']) not in failed]
         clickable=[n for n in known if session.npc_click_point(n['draw']) is not None]
         if clickable:
             npc=min(clickable,key=lambda n:max(abs(n['map'][i]-sample['position'][i]) for i in (0,1)))
-            session.open_npc(npc)
+            try:session.open_npc(npc)
+            except NpcDialogNotOpened:
+                failed.add(tuple(npc['map']))
+                log('corner_dialog_not_opened',npc=npc['map'],position=session.player(),failed=len(failed))
+                fresh=observe(session)
+                if fresh.get('town') or fresh['monsters'] or fresh['drops']:return False
+                if any(session.visible(k) for k in ('merchant','sell','bag')):raise RuntimeError('NPC点击后面板状态不明，保留现场')
+                if len(failed)>=2:raise RuntimeError('两个不同角落NPC菜单均未打开，保留现场')
+                session.pause(.25);continue
             if not session.visible('merchant'):raise RuntimeError('角落NPC对话未打开，停止')
             session._island_open_corner={'npc':npc,'position':tuple(session.player())}
             return True
