@@ -22,7 +22,7 @@ from equipment import sale_plan
 from profit_tracker import ProfitTracker
 from random_hunt import load_settings,save_settings,RandomSettings
 
-BUILD='2026.10.24.9'
+BUILD='2026.10.24.10'
 
 def active_task(command,result,sample,now):
     step=command.get('step')
@@ -71,6 +71,9 @@ class App(tk.Tk):
         self.dungeon_status=tk.StringVar(value='尚无地牢运行记录')
         ttk.Label(dungeon_tab,textvariable=self.dungeon_status,wraplength=560,style='Status.TLabel').pack(fill='x')
         self.last_dungeon_refresh=0
+        self.last_binding_refresh=0
+        self.available_roles=tk.StringVar(value='正在读取当前角色…')
+        ttk.Label(settings_tab,textvariable=self.available_roles,wraplength=580).pack(anchor='w',pady=(0,8))
         ttk.Label(island_tab,text='每日一次 · 英雄战斗 · 优先拾取\n接续挑战不会重新入场。完整无人干预流程仍待验证。',wraplength=560,style='Subtitle.TLabel').pack(anchor='w',pady=10)
         self.island_buttons=[]
         for label,action in [('从土城进入并自动挑战（每日一次）','island_start'),('接续已进入的孤岛','island_resume'),('只读检查孤岛记录','island_status')]:
@@ -192,6 +195,7 @@ class App(tk.Tk):
 
     def receive_results(self):
         self.refresh_dungeon_status()
+        self.refresh_binding_status()
         self.sync_existing_task()
         if self.busy:
             try:
@@ -205,6 +209,8 @@ class App(tk.Tk):
         try:
             while True:
                 result,error=self.messages.get_nowait()
+                if result=={'helper_stopped_for_binding':True} and error is None:
+                    self.busy=False;self.choose_game();continue
                 self.finished(result,error)
         except queue.Empty:pass
         self.after(100,self.receive_results)
@@ -248,7 +254,28 @@ class App(tk.Tk):
 
     def binding_summary(self):
         selected=instance_context.binding()
-        return ('本实例绑定：PID %s · %s' % (selected['pid'],selected.get('title',''))) if selected else '尚未指定角色；双号时请分别选择'
+        if not selected:return '尚未指定角色；请在角色设置中选择'
+        name=selected.get('character') or selected.get('title','未知角色')
+        try:instance_context.verify_binding(selected)
+        except (OSError,RuntimeError):return '旧绑定：{} · PID {}（已退出或不可核对，请重新选择）'.format(name,selected.get('pid'))
+        return '已绑定：{} · PID {}'.format(name,selected['pid'])
+
+    def refresh_binding_status(self):
+        if time.monotonic()-self.last_binding_refresh<2:return
+        self.last_binding_refresh=time.monotonic()
+        try:
+            self.binding_label.set(self.binding_summary())
+            from fast_sale import MemoryReader
+            reader=MemoryReader()
+            try:choices=reader.candidates()
+            finally:reader.close()
+            names=['{}（PID {}）'.format(title.rsplit(' - ',1)[-1],pid) for pid,title,exe in choices]
+            selected=instance_context.binding()
+            match=next((title.rsplit(' - ',1)[-1] for pid,title,exe in choices if selected and pid==selected.get('pid')),None)
+            if match and selected.get('character') and match!=selected['character']:
+                self.binding_label.set('当前窗口：{} · 保存绑定：{}（角色已变化，请重新选择）'.format(match,selected['character']))
+            self.available_roles.set('当前可选角色：'+('、'.join(names) if names else '未发现已登录客户端'))
+        except (OSError,RuntimeError,ValueError):self.available_roles.set('当前角色列表暂不可核对')
 
     def choose_game(self):
         if self.busy or self.attached_step is not None:
@@ -261,7 +288,17 @@ class App(tk.Tk):
                 try:instance_context.process_identity(helper_pid)
                 except RuntimeError:pass
                 else:
-                    self.status.set('辅助进程仍在运行，请先结束本实例辅助再改绑');return
+                    command=json.loads((HELPER/'source-sale-command.json').read_text(encoding='utf8'))
+                    if command.get('step',0)>saved.get('step',0):
+                        self.status.set('本号命令尚未结束，请先正常停止再更换角色');return
+                    self.busy=True;self.cancel.clear()
+                    self.status.set('正在正常关闭本号空闲辅助，随后显示当前角色列表…')
+                    def stop_idle():
+                        try:
+                            drive([{'action':'stop','foreground':False}],self.cancel)
+                            self.messages.put(({'helper_stopped_for_binding':True},None))
+                        except Exception as error:self.messages.put((None,str(error)))
+                    threading.Thread(target=stop_idle,daemon=True).start();return
         except (OSError,ValueError):pass
         try:
             from fast_sale import MemoryReader

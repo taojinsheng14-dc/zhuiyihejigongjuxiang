@@ -33,13 +33,31 @@ def drive(actions,cancel=None):
     acquired=kernel.WaitForSingleObject(mutex,0) in (0,0x80)
     try:
         if not acquired:raise RuntimeError('已有工具操作正在执行，请先等待或停止')
-        return _drive_locked(actions,cancel)
+        return _drive_locked(actions,cancel,helper_pid=pid)
     finally:
         if acquired:kernel.ReleaseMutex(mutex)
         kernel.CloseHandle(mutex)
 
 
-def _drive_locked(actions,cancel=None):
+def _helper_running(pid):
+    import ctypes
+    from ctypes import wintypes as w
+    kernel=ctypes.WinDLL('kernel32',use_last_error=True)
+    kernel.OpenProcess.argtypes=[w.DWORD,w.BOOL,w.DWORD];kernel.OpenProcess.restype=w.HANDLE
+    kernel.GetExitCodeProcess.argtypes=[w.HANDLE,ctypes.POINTER(w.DWORD)]
+    kernel.CloseHandle.argtypes=[w.HANDLE]
+    handle=kernel.OpenProcess(0x1000,False,pid)
+    if not handle:
+        if ctypes.get_last_error()==87:return False
+        raise RuntimeError('无法核对空闲辅助是否退出，未继续更换角色')
+    try:
+        code=w.DWORD()
+        if not kernel.GetExitCodeProcess(handle,ctypes.byref(code)):raise RuntimeError('无法读取辅助退出状态')
+        return code.value==259
+    finally:kernel.CloseHandle(handle)
+
+
+def _drive_locked(actions,cancel=None,helper_pid=None):
     import sys
     sys.path.insert(0,str(SOURCE.parent/'fast-sale'))
     from cycle_stats import append_runtime_event
@@ -67,6 +85,8 @@ def _drive_locked(actions,cancel=None):
         monitoring=action.get('categories') in (['监测双包'],['监测并回城出售'],['挂机清包循环'],['接续当前挂机图循环'],['孤岛每日自动挑战'],['接续孤岛自动挑战'],['法师地牢持续清怪拾取'])
         deadline=time.monotonic()+(43300 if monitoring else 600 if action['action']=='shop_route' else 50)
         while time.monotonic()<deadline:
+            if action['action']=='stop' and helper_pid and not _helper_running(helper_pid):
+                return {'step':step,'result':{'helper_stopped':True}}
             if cancel is not None and cancel.is_set():
                 cancel_temp=ROOT/'source-sale-cancel.tmp'
                 cancel_temp.write_text(json.dumps({'step':step,'requested_by':'user','reason':'点击工具停止按钮或关闭工具'}),encoding='utf8')
