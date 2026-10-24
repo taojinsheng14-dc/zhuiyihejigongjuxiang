@@ -1,0 +1,552 @@
+{
+  "progress": [
+    "1/3 土城检查通过，读取双包并按现有白名单实际出售",
+    "双包没有白名单装备：跳过出售，成交环节本次未验证",
+    "2/3 清包结束，按正式流程检查回城石及背包，打开挂机菜单",
+    "3/3 已识别普通房间，测试停在入场点击前；不下图，不计挂机闭环",
+    "1/3 土城检查通过，读取双包并按现有白名单实际出售",
+    "双包没有白名单装备：跳过出售，成交环节本次未验证",
+    "2/3 清包结束，按正式流程检查回城石及背包，打开挂机菜单",
+    "3/3 已识别普通房间，测试停在入场点击前；不下图，不计挂机闭环",
+    "1/3 土城检查通过，读取双包并按现有白名单实际出售",
+    "正在定位场景NPC…",
+    "老兵尚未加载，按固定坐标右键靠近；对象加载后即停止寻路",
+    "点击盟重老兵…",
+    "确认盟重老兵，必要时靠近后打开对话",
+    "正在定位场景NPC…",
+    "老兵尚未加载，按固定坐标右键靠近；对象加载后即停止寻路",
+    "点击盟重老兵…",
+    "确认盟重老兵，必要时靠近后打开对话",
+    "打开商店传送菜单…",
+    "传送盟重武器店…",
+    "点击铁匠铺老板…",
+    "检查武器商店菜单…",
+    "核对物品并提交一件出售…",
+    "出售 1/2：第1格 短剑",
+    "出售 2/2：第2格 短剑",
+    "武器已售完，按用户要求直接使用盟重回城石，不走店门",
+    "武器店出口受阻，识别快捷栏中的盟重传送石，使用一次；等待确认土城",
+    "老兵尚未加载，按固定坐标右键靠近；对象加载后即停止寻路",
+    "已识别普通房间，点击一次进入；不点第三排高级房间",
+    "开始监测双包；人物包达到39格后转英雄包，双包均达到39格（各预留1格）后识别盟重传送石回城出售",
+    "人物包空40格，英雄包空34格",
+    "人物包空39格，英雄包空35格",
+    "人物包空38格，英雄包空36格",
+    "人物包空39格，英雄包空35格",
+    "人物包空39格，英雄包空36格",
+    "人物包空38格，英雄包空36格",
+    "人物包空37格，英雄包空36格",
+    "人物包空36格，英雄包空36格",
+    "人物包空35格，英雄包空36格",
+    "人物包空34格，英雄包空36格",
+    "人物包空33格，英雄包空36格",
+    "人物包空32格，英雄包空36格",
+    "人物包空31格，英雄包空36格",
+    "人物包空30格，英雄包空36格",
+    "人物包空29格，英雄包空36格",
+    "人物包空28格，英雄包空36格",
+    "人物包空27格，英雄包空36格",
+    "人物包空26格，英雄包空36格",
+    "人物包空25格，英雄包空36格",
+    "人物包空24格，英雄包空36格",
+    "人物包空23格，英雄包空36格",
+    "人物包空22格，英雄包空36格",
+    "人物包空21格，英雄包空36格",
+    "人物包空20格，英雄包空36格",
+    "人物包空19格，英雄包空36格",
+    "人物包空18格，英雄包空36格",
+    "人物包空17格，英雄包空36格",
+    "人物包空16格，英雄包空36格",
+    "人物包空15格，英雄包空36格",
+    "人物包空14格，英雄包空36格",
+    "人物包空13格，英雄包空36格",
+    "人物包空12格，英雄包空36格",
+    "人物包空11格，英雄包空36格",
+    "人物包空10格，英雄包空36格",
+    "人物包空9格，英雄包空36格",
+    "人物包空8格，英雄包空36格",
+    "人物包空7格，英雄包空36格",
+    "人物包空6格，英雄包空36格",
+    "人物包空5格，英雄包空36格",
+    "人物包空4格，英雄包空36格",
+    "人物包空3格，英雄包空36格",
+    "人物包空2格，英雄包空36格",
+    "人物包空1格，英雄包空36格",
+    "人物包空36格，英雄包空1格",
+    "人物包空35格，英雄包空1格",
+    "人物包空34格，英雄包空1格",
+    "人物包空33格，英雄包空1格",
+    "人物包空32格，英雄包空1格",
+    "人物包空31格，英雄包空1格",
+    "人物包空30格，英雄包空1格",
+    "人物包空29格，英雄包空1格",
+    "人物包空28格，英雄包空1格",
+    "人物包空27格，英雄包空1格",
+    "人物包空26格，英雄包空1格",
+    "人物包空25格，英雄包空1格",
+    "人物包空24格，英雄包空1格",
+    "人物包空23格，英雄包空1格",
+    "人物包空22格，英雄包空1格",
+    "人物包空21格，英雄包空1格",
+    "人物包空20格，英雄包空1格",
+    "人物包空19格，英雄包空1格",
+    "人物包空18格，英雄包空1格",
+    "人物包空17格，英雄包空1格",
+    "人物包空16格，英雄包空1格",
+    "人物包空15格，英雄包空1格",
+    "人物包空14格，英雄包空1格",
+    "人物包空13格，英雄包空1格",
+    "人物包空12格，英雄包空1格",
+    "人物包空11格，英雄包空1格",
+    "人物包空10格，英雄包空1格",
+    "人物包空9格，英雄包空1格",
+    "人物包空8格，英雄包空1格",
+    "人物包空7格，英雄包空1格",
+    "人物包空6格，英雄包空1格",
+    "人物包空5格，英雄包空1格",
+    "人物包空4格，英雄包空1格",
+    "人物包空3格，英雄包空1格",
+    "人物包空2格，英雄包空1格",
+    "人物包空1格，英雄包空1格",
+    "双包已满，识别快捷栏中的盟重传送石，使用一次；等待确认土城",
+    "已确认回城坐标，等待切图界面结束；仅处理已识别的挂机限制提示",
+    "从英雄包取回清单装备：第5格 破魂",
+    "正在定位场景NPC…",
+    "点击盟重老兵…",
+    "确认盟重老兵，必要时靠近后打开对话",
+    "打开商店传送菜单…"
+  ],
+  "instance": "1",
+  "npcs": [
+    {
+      "address": 579355056,
+      "name": "藏宝天下",
+      "map": [
+        317,
+        323
+      ],
+      "draw": [
+        160,
+        177
+      ]
+    },
+    {
+      "address": 579370896,
+      "name": "全民打宝",
+      "map": [
+        317,
+        327
+      ],
+      "draw": [
+        160,
+        305
+      ]
+    },
+    {
+      "address": 579367728,
+      "name": "孤岛挑战",
+      "map": [
+        317,
+        331
+      ],
+      "draw": [
+        160,
+        433
+      ]
+    },
+    {
+      "address": 579378288,
+      "name": "盟重老兵",
+      "map": [
+        320,
+        320
+      ],
+      "draw": [
+        304,
+        81
+      ]
+    },
+    {
+      "address": 579381456,
+      "name": "神器锻造",
+      "map": [
+        324,
+        320
+      ],
+      "draw": [
+        496,
+        81
+      ]
+    },
+    {
+      "address": 579345552,
+      "name": "装备回收",
+      "map": [
+        328,
+        320
+      ],
+      "draw": [
+        688,
+        81
+      ]
+    },
+    {
+      "address": 638421136,
+      "name": "白日门龙人",
+      "map": [
+        332,
+        320
+      ],
+      "draw": [
+        880,
+        81
+      ]
+    },
+    {
+      "address": 638432752,
+      "name": "英雄管理",
+      "map": [
+        336,
+        320
+      ],
+      "draw": [
+        1072,
+        81
+      ]
+    }
+  ],
+  "stage": "stopped",
+  "state": {
+    "helper_pid": 13924,
+    "game_pid": 33752,
+    "in_game": true,
+    "inventory": [
+      "魔血石(大)",
+      "八荒",
+      "道士头盔",
+      "修罗",
+      "骷髅戒指",
+      "死神手套",
+      "道德戒指",
+      "灵魂战衣(男)",
+      "道士头盔",
+      "道士头盔",
+      "金戒指",
+      "八荒",
+      "魔力手镯",
+      "坚固手套",
+      "蓝翡翠项链",
+      "魅力戒指",
+      "坚固手套",
+      "骷髅头盔",
+      "坚固手套",
+      "重盔甲(女)",
+      "破魂",
+      "坚固手套",
+      "黑檀手镯",
+      "凝霜",
+      "魔力手镯",
+      "魔力手镯",
+      "魅力戒指",
+      "灵魂战衣(女)",
+      "魔力手镯",
+      "斩马刀",
+      "坚固手套",
+      "金戒指",
+      "魔力手镯",
+      "凝霜",
+      "黑檀手镯",
+      "道士手镯",
+      "降妖除魔戒指",
+      "道士手镯",
+      "降妖除魔戒指",
+      "破魂"
+    ],
+    "player": [
+      327,
+      328
+    ],
+    "player_draw": [
+      640,
+      241
+    ],
+    "held": "",
+    "sale_item": "",
+    "recent_inputs": [
+      {
+        "point": [
+          784,
+          453
+        ],
+        "message_point": [
+          784,
+          453
+        ],
+        "message_coordinates": "physical",
+        "button": "left",
+        "input": "SendMessageTimeout",
+        "cursor_before": [
+          1283,
+          857
+        ],
+        "position_before": [
+          327,
+          328
+        ],
+        "screen_origin": [
+          1173,
+          316
+        ],
+        "physical_client": [
+          1280,
+          800
+        ]
+      },
+      {
+        "point": [
+          1181,
+          665
+        ],
+        "message_point": [
+          1181,
+          665
+        ],
+        "message_coordinates": "physical",
+        "button": "left",
+        "input": "SendMessageTimeout",
+        "cursor_before": [
+          1283,
+          857
+        ],
+        "position_before": [
+          327,
+          328
+        ],
+        "screen_origin": [
+          1173,
+          316
+        ],
+        "physical_client": [
+          1280,
+          800
+        ]
+      },
+      {
+        "point": [
+          206,
+          130
+        ],
+        "message_point": [
+          206,
+          130
+        ],
+        "message_coordinates": "physical",
+        "button": "right",
+        "input": "SendMessageTimeout",
+        "cursor_before": [
+          1283,
+          857
+        ],
+        "position_before": [
+          327,
+          328
+        ],
+        "screen_origin": [
+          1173,
+          316
+        ],
+        "physical_client": [
+          1280,
+          800
+        ]
+      },
+      {
+        "transfer": {
+          "name": "破魂",
+          "source": "hero",
+          "source_slot": 5,
+          "target_slot": 40,
+          "verified": true
+        }
+      },
+      {
+        "point": [
+          244,
+          112
+        ],
+        "message_point": [
+          244,
+          112
+        ],
+        "message_coordinates": "physical",
+        "button": "left",
+        "input": "SendMessageTimeout",
+        "cursor_before": [
+          1283,
+          857
+        ],
+        "position_before": [
+          327,
+          328
+        ],
+        "screen_origin": [
+          1173,
+          316
+        ],
+        "physical_client": [
+          1280,
+          800
+        ]
+      },
+      {
+        "point": [
+          304,
+          41
+        ],
+        "message_point": [
+          304,
+          41
+        ],
+        "message_coordinates": "physical",
+        "button": "left",
+        "input": "SendMessageTimeout",
+        "cursor_before": [
+          1283,
+          857
+        ],
+        "position_before": [
+          327,
+          328
+        ],
+        "screen_origin": [
+          1173,
+          316
+        ],
+        "physical_client": [
+          1280,
+          800
+        ],
+        "npc": "盟重老兵"
+      }
+    ],
+    "input_state": {
+      "foreground": 1382118,
+      "game_hwnd": 2756780,
+      "capture": 0,
+      "left_pressed": false,
+      "right_pressed": false
+    },
+    "sale_handler_layout": {
+      "verified": true,
+      "signatures": {
+        "0x170610": true,
+        "0x170843": true
+      },
+      "record_bytes": 156,
+      "basis": "historical_handler_compared_to_current_code"
+    },
+    "client_size": [
+      1280,
+      800
+    ],
+    "map_identity": {
+      "name": "3.map",
+      "header": "e80320030d4c6567656e64206f66206d69720000e93c4000e93c4000240088001300150068c1fe0300000000287e440000000000",
+      "position": [
+        327,
+        328
+      ]
+    },
+    "visible": {
+      "merchant": true,
+      "sell": false,
+      "bag": false
+    },
+    "bounds": {
+      "merchant": [
+        0,
+        0,
+        416,
+        176
+      ],
+      "sell": [
+        260,
+        176,
+        140,
+        181
+      ],
+      "bag": [
+        236,
+        60,
+        352,
+        295
+      ],
+      "grid": [
+        29,
+        42,
+        288,
+        160
+      ]
+    },
+    "dead": false,
+    "wallet": {
+      "gold": 2694276,
+      "yuanbao": 2133
+    },
+    "hero_status": {
+      "ready": true,
+      "actor": 505358528,
+      "flag": "01",
+      "dead": "00",
+      "group": {
+        "object": 504576064,
+        "bounds": [
+          1116,
+          654,
+          78,
+          21
+        ],
+        "visible": true
+      },
+      "recall": {
+        "object": 470578960,
+        "bounds": [
+          2,
+          4,
+          20,
+          16
+        ],
+        "visible": true
+      }
+    }
+  },
+  "completed": [
+    {
+      "item": "短剑",
+      "slot": 1,
+      "seconds": 1.724,
+      "status": "出售传输已结束；服务器成交需核对金币提示；同UID及余额不变时最多补确认一次",
+      "settled": true,
+      "remaining_count": 1,
+      "gold_before": 2671958,
+      "gold_after": 2672260,
+      "gold_change": 302,
+      "yuanbao_after": 2148
+    },
+    {
+      "item": "短剑",
+      "slot": 2,
+      "seconds": 1.725,
+      "status": "出售传输已结束；服务器成交需核对金币提示；同UID及余额不变时最多补确认一次",
+      "settled": true,
+      "remaining_count": 0,
+      "gold_before": 2672260,
+      "gold_after": 2672645,
+      "gold_change": 385,
+      "yuanbao_after": 2148
+    }
+  ],
+  "step": 8,
+  "error": "状态确认超时，停止；不会重复点击确定",
+  "trace": "Traceback (most recent call last):\n  File \"D:\\code\\zhuiyihejigongjuxiang\\tools\\game-chat-inspect\\run_source_sale.py\", line 92, in <module>\n    out['result']=s.run_shop_route(command.get('categories'),progress)\n                  ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"D:\\code\\zhuiyihejigongjuxiang\\tools\\fast-sale\\background_sale.py\", line 1731, in run_shop_route\n    if categories==['挂机清包循环']:return self.hunt_cycle(progress)\n                                           ~~~~~~~~~~~~~~~^^^^^^^^^^\n  File \"D:\\code\\zhuiyihejigongjuxiang\\tools\\fast-sale\\background_sale.py\", line 2498, in hunt_cycle\n    result=self.monitor_bags(progress,seconds=max(1,seconds-(time.monotonic()-started)),auto_return=True)\n  File \"D:\\code\\zhuiyihejigongjuxiang\\tools\\fast-sale\\background_sale.py\", line 2722, in monitor_bags\n    sale=self.dual_sale_route(progress)\n  File \"D:\\code\\zhuiyihejigongjuxiang\\tools\\fast-sale\\background_sale.py\", line 993, in dual_sale_route\n    result=self._dual_sale_route(progress)\n  File \"D:\\code\\zhuiyihejigongjuxiang\\tools\\fast-sale\\background_sale.py\", line 1046, in _dual_sale_route\n    result=self.mixed_sale_route(progress)\n  File \"D:\\code\\zhuiyihejigongjuxiang\\tools\\fast-sale\\background_sale.py\", line 1074, in mixed_sale_route\n    if has_weapons:completed.append(self.teleport_weapon_sale(progress=progress))\n                                    ~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^\n  File \"D:\\code\\zhuiyihejigongjuxiang\\tools\\fast-sale\\background_sale.py\", line 3222, in teleport_weapon_sale\n    self.menu_click('shop_transfer')\n    ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^\n  File \"D:\\code\\zhuiyihejigongjuxiang\\tools\\fast-sale\\background_sale.py\", line 3195, in menu_click\n    self.wait(lambda: self.menu_matches(name), timeout=3)\n    ~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"D:\\code\\zhuiyihejigongjuxiang\\tools\\fast-sale\\fast_sale.py\", line 199, in wait\n    raise RuntimeError('状态确认超时，停止；不会重复点击确定')\nRuntimeError: 状态确认超时，停止；不会重复点击确定\n"
+}

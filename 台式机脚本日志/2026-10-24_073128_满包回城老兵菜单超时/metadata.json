@@ -1,0 +1,52 @@
+{
+  "machine": "DESKTOP-K24MKF0",
+  "exported_at": "2026-10-24T10:13:43.006185+08:00",
+  "timezone": "Asia/Shanghai",
+  "incident_at": "2026-10-24T07:31:28+08:00",
+  "git_commit": "33a06461646cc0614df0d9a7f2a1f648b2a9028d",
+  "files": [
+    {
+      "path": "outputs/挂机统计/运行日志.jsonl",
+      "bytes": 20947,
+      "sha256": "459083bf1b95b11b5d16139741a1db2f5dea8672c0f0154ab160ffac35baabb3"
+    },
+    {
+      "path": "outputs/挂机统计/events.jsonl",
+      "bytes": 46893,
+      "sha256": "c8b87aa5250187c336237d6364bc26e7a7a311493213db3886bfbd4678e209be"
+    },
+    {
+      "path": "outputs/挂机统计/出售诊断.jsonl",
+      "bytes": 1500585,
+      "sha256": "8d5ae489b15285d40017dcfa047b2dec32587eb2990aa7511ec90f03fb6e6ca0"
+    },
+    {
+      "path": "outputs/挂机统计/清包统计.csv",
+      "bytes": 920,
+      "sha256": "2805a6d5510ca31f6042b9e55f15d101514e653d060e565134e3886d8901afe0"
+    },
+    {
+      "path": "tools/game-chat-inspect/source-sale-command.json",
+      "bytes": 89,
+      "sha256": "4e807bb3e1c2ca29cde3170cfb6db3d152217ff2c4e23f30ead97738e92bc53a"
+    },
+    {
+      "path": "tools/game-chat-inspect/source-sale-result.json",
+      "bytes": 112597,
+      "sha256": "d15e839a255f80c9d5d5f1eb544adc718d9dc7576d9fd9c75c501d9caa773fb6"
+    },
+    {
+      "path": "tools/game-chat-inspect/shop-test-step-8.json",
+      "bytes": 16432,
+      "sha256": "8b194ec28ce90304e2077adaac1443f86a56f6539640b98cb05615a81cc2a9b2"
+    }
+  ],
+  "excluded": [
+    "credentials",
+    "DPAPI",
+    "bindings",
+    "screenshots",
+    "config"
+  ],
+  "note": "本次事件相关日志快照；部分累计日志也包含当天早先测试。实时结果可能后续更新，优先以shop-test-step-8.json和对应时间的事件为准。"
+}

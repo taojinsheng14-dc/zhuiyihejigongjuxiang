@@ -1,0 +1,3160 @@
+{
+  "progress": [
+    "1/3 土城检查通过，读取双包并按现有白名单实际出售",
+    "双包没有白名单装备：跳过出售，成交环节本次未验证",
+    "2/3 清包结束，按正式流程检查回城石及背包，打开挂机菜单",
+    "3/3 已识别普通房间，测试停在入场点击前；不下图，不计挂机闭环",
+    "1/3 土城检查通过，读取双包并按现有白名单实际出售",
+    "双包没有白名单装备：跳过出售，成交环节本次未验证",
+    "2/3 清包结束，按正式流程检查回城石及背包，打开挂机菜单",
+    "3/3 已识别普通房间，测试停在入场点击前；不下图，不计挂机闭环",
+    "1/3 土城检查通过，读取双包并按现有白名单实际出售",
+    "正在定位场景NPC…",
+    "老兵尚未加载，按固定坐标右键靠近；对象加载后即停止寻路",
+    "点击盟重老兵…",
+    "确认盟重老兵，必要时靠近后打开对话",
+    "正在定位场景NPC…",
+    "老兵尚未加载，按固定坐标右键靠近；对象加载后即停止寻路",
+    "点击盟重老兵…",
+    "确认盟重老兵，必要时靠近后打开对话",
+    "打开商店传送菜单…",
+    "传送盟重武器店…",
+    "点击铁匠铺老板…",
+    "检查武器商店菜单…",
+    "核对物品并提交一件出售…",
+    "出售 1/2：第1格 短剑",
+    "出售 2/2：第2格 短剑",
+    "武器已售完，按用户要求直接使用盟重回城石，不走店门",
+    "武器店出口受阻，识别快捷栏中的盟重传送石，使用一次；等待确认土城",
+    "老兵尚未加载，按固定坐标右键靠近；对象加载后即停止寻路",
+    "已识别普通房间，点击一次进入；不点第三排高级房间",
+    "开始监测双包；人物包达到39格后转英雄包，双包均达到39格（各预留1格）后识别盟重传送石回城出售",
+    "人物包空40格，英雄包空34格",
+    "人物包空39格，英雄包空35格",
+    "人物包空38格，英雄包空36格",
+    "人物包空39格，英雄包空35格",
+    "人物包空39格，英雄包空36格",
+    "人物包空38格，英雄包空36格",
+    "人物包空37格，英雄包空36格",
+    "人物包空36格，英雄包空36格",
+    "人物包空35格，英雄包空36格",
+    "人物包空34格，英雄包空36格",
+    "人物包空33格，英雄包空36格",
+    "人物包空32格，英雄包空36格",
+    "人物包空31格，英雄包空36格",
+    "人物包空30格，英雄包空36格",
+    "人物包空29格，英雄包空36格",
+    "人物包空28格，英雄包空36格",
+    "人物包空27格，英雄包空36格",
+    "人物包空26格，英雄包空36格",
+    "人物包空25格，英雄包空36格",
+    "人物包空24格，英雄包空36格",
+    "人物包空23格，英雄包空36格",
+    "人物包空22格，英雄包空36格",
+    "人物包空21格，英雄包空36格",
+    "人物包空20格，英雄包空36格",
+    "人物包空19格，英雄包空36格",
+    "人物包空18格，英雄包空36格",
+    "人物包空17格，英雄包空36格",
+    "人物包空16格，英雄包空36格",
+    "人物包空15格，英雄包空36格",
+    "人物包空14格，英雄包空36格",
+    "人物包空13格，英雄包空36格",
+    "人物包空12格，英雄包空36格",
+    "人物包空11格，英雄包空36格",
+    "人物包空10格，英雄包空36格",
+    "人物包空9格，英雄包空36格",
+    "人物包空8格，英雄包空36格",
+    "人物包空7格，英雄包空36格",
+    "人物包空6格，英雄包空36格",
+    "人物包空5格，英雄包空36格",
+    "人物包空4格，英雄包空36格",
+    "人物包空3格，英雄包空36格",
+    "人物包空2格，英雄包空36格",
+    "人物包空1格，英雄包空36格",
+    "人物包空36格，英雄包空1格",
+    "人物包空35格，英雄包空1格",
+    "人物包空34格，英雄包空1格",
+    "人物包空33格，英雄包空1格",
+    "人物包空32格，英雄包空1格",
+    "人物包空31格，英雄包空1格",
+    "人物包空30格，英雄包空1格",
+    "人物包空29格，英雄包空1格",
+    "人物包空28格，英雄包空1格",
+    "人物包空27格，英雄包空1格",
+    "人物包空26格，英雄包空1格",
+    "人物包空25格，英雄包空1格",
+    "人物包空24格，英雄包空1格",
+    "人物包空23格，英雄包空1格",
+    "人物包空22格，英雄包空1格",
+    "人物包空21格，英雄包空1格",
+    "人物包空20格，英雄包空1格",
+    "人物包空19格，英雄包空1格",
+    "人物包空18格，英雄包空1格",
+    "人物包空17格，英雄包空1格",
+    "人物包空16格，英雄包空1格",
+    "人物包空15格，英雄包空1格",
+    "人物包空14格，英雄包空1格",
+    "人物包空13格，英雄包空1格",
+    "人物包空12格，英雄包空1格",
+    "人物包空11格，英雄包空1格",
+    "人物包空10格，英雄包空1格",
+    "人物包空9格，英雄包空1格",
+    "人物包空8格，英雄包空1格",
+    "人物包空7格，英雄包空1格",
+    "人物包空6格，英雄包空1格",
+    "人物包空5格，英雄包空1格",
+    "人物包空4格，英雄包空1格",
+    "人物包空3格，英雄包空1格",
+    "人物包空2格，英雄包空1格",
+    "人物包空1格，英雄包空1格",
+    "双包已满，识别快捷栏中的盟重传送石，使用一次；等待确认土城",
+    "已确认回城坐标，等待切图界面结束；仅处理已识别的挂机限制提示",
+    "从英雄包取回清单装备：第5格 破魂",
+    "正在定位场景NPC…",
+    "点击盟重老兵…",
+    "确认盟重老兵，必要时靠近后打开对话",
+    "打开商店传送菜单…",
+    "正在定位场景NPC…",
+    "点击盟重老兵…",
+    "确认盟重老兵，必要时靠近后打开对话",
+    "打开商店传送菜单…",
+    "传送盟重武器店…",
+    "点击铁匠铺老板…",
+    "检查武器商店菜单…",
+    "核对物品并提交一件出售…",
+    "出售 1/8：第2格 八荒",
+    "出售 2/8：第4格 修罗",
+    "出售 3/8：第12格 八荒",
+    "出售 4/8：第21格 破魂",
+    "出售 5/8：第24格 凝霜",
+    "出售 6/8：第30格 斩马刀",
+    "出售 7/8：第34格 凝霜",
+    "出售 8/8：第40格 破魂",
+    "从英雄包取回清单装备：第10格 八荒",
+    "从英雄包取回清单装备：第13格 破魂",
+    "从英雄包取回清单装备：第17格 凌风",
+    "从英雄包取回清单装备：第22格 海魂",
+    "从英雄包取回清单装备：第23格 凝霜",
+    "从英雄包取回清单装备：第26格 八荒",
+    "从英雄包取回清单装备：第31格 八荒",
+    "从英雄包取回清单装备：第33格 修罗",
+    "出售 1/8：第2格 八荒",
+    "出售 2/8：第4格 破魂",
+    "出售 3/8：第12格 凌风",
+    "出售 4/8：第21格 海魂",
+    "出售 5/8：第24格 凝霜",
+    "出售 6/8：第30格 八荒",
+    "出售 7/8：第34格 八荒",
+    "出售 8/8：第40格 修罗",
+    "从英雄包取回清单装备：第34格 海魂",
+    "从英雄包取回清单装备：第37格 偃月",
+    "出售 1/2：第2格 海魂",
+    "出售 2/2：第4格 偃月",
+    "武器已售完，按用户要求直接使用盟重回城石，不走店门",
+    "武器店出口受阻，识别快捷栏中的盟重传送石，使用一次；等待确认土城",
+    "确认盟重老兵，必要时靠近后打开对话",
+    "传送苍月岛（2000金币）",
+    "苍月传送后向右跑两次，离开拥挤落点",
+    "沿苍月已校准路线到出售站位",
+    "出售 1/3：第8格 灵魂战衣(男)",
+    "出售 2/3：第20格 重盔甲(女)",
+    "出售 3/3：第28格 灵魂战衣(女)",
+    "从英雄包取回清单装备：第6格 灵魂战衣(男)",
+    "从英雄包取回清单装备：第18格 魔法长袍(男)",
+    "从英雄包取回清单装备：第24格 魔法长袍(女)",
+    "从英雄包取回清单装备：第38格 灵魂战衣(女)",
+    "出售 1/4：第2格 灵魂战衣(男)",
+    "出售 2/4：第4格 魔法长袍(男)",
+    "出售 3/4：第8格 魔法长袍(女)",
+    "出售 4/4：第12格 灵魂战衣(女)",
+    "出售 1/4：第3格 道士头盔",
+    "出售 2/4：第9格 道士头盔",
+    "出售 3/4：第10格 道士头盔",
+    "出售 4/4：第18格 骷髅头盔",
+    "从英雄包取回清单装备：第27格 骷髅头盔",
+    "从英雄包取回清单装备：第30格 道士头盔",
+    "从英雄包取回清单装备：第32格 道士头盔",
+    "出售 1/3：第2格 骷髅头盔",
+    "出售 2/3：第3格 道士头盔",
+    "出售 3/3：第4格 道士头盔",
+    "出售 1/8：第5格 骷髅戒指",
+    "出售 2/8：第7格 道德戒指",
+    "出售 3/8：第11格 金戒指",
+    "出售 4/8：第16格 魅力戒指",
+    "出售 5/8：第27格 魅力戒指",
+    "出售 6/8：第32格 金戒指",
+    "出售 7/8：第37格 降妖除魔戒指",
+    "出售 8/8：第39格 降妖除魔戒指",
+    "从英雄包取回清单装备：第15格 骷髅戒指",
+    "从英雄包取回清单装备：第19格 珊瑚戒指",
+    "从英雄包取回清单装备：第20格 道德戒指",
+    "从英雄包取回清单装备：第35格 珊瑚戒指",
+    "从英雄包取回清单装备：第39格 骷髅戒指",
+    "出售 1/5：第2格 骷髅戒指",
+    "出售 2/5：第3格 珊瑚戒指",
+    "出售 3/5：第4格 道德戒指",
+    "出售 4/5：第5格 珊瑚戒指",
+    "出售 5/5：第7格 骷髅戒指",
+    "出售 1/15：第6格 死神手套",
+    "出售 2/15：第13格 魔力手镯",
+    "出售 3/15：第14格 坚固手套",
+    "出售 4/15：第17格 坚固手套",
+    "出售 5/15：第19格 坚固手套",
+    "出售 6/15：第22格 坚固手套",
+    "出售 7/15：第23格 黑檀手镯",
+    "出售 8/15：第25格 魔力手镯",
+    "出售 9/15：第26格 魔力手镯",
+    "出售 10/15：第29格 魔力手镯",
+    "出售 11/15：第31格 坚固手套",
+    "出售 12/15：第33格 魔力手镯",
+    "出售 13/15：第35格 黑檀手镯",
+    "出售 14/15：第36格 道士手镯",
+    "出售 15/15：第38格 道士手镯",
+    "从英雄包取回清单装备：第7格 坚固手套",
+    "从英雄包取回清单装备：第8格 魔力手镯",
+    "从英雄包取回清单装备：第11格 死神手套",
+    "从英雄包取回清单装备：第12格 魔力手镯",
+    "从英雄包取回清单装备：第14格 魔力手镯",
+    "从英雄包取回清单装备：第16格 坚固手套",
+    "从英雄包取回清单装备：第21格 坚固手套",
+    "从英雄包取回清单装备：第25格 黑檀手镯",
+    "从英雄包取回清单装备：第29格 坚固手套",
+    "从英雄包取回清单装备：第36格 金手镯",
+    "出售 1/10：第2格 坚固手套",
+    "出售 2/10：第3格 魔力手镯",
+    "出售 3/10：第4格 死神手套",
+    "出售 4/10：第5格 魔力手镯",
+    "出售 5/10：第6格 魔力手镯",
+    "出售 6/10：第7格 坚固手套",
+    "出售 7/10：第8格 坚固手套",
+    "出售 8/10：第9格 黑檀手镯",
+    "出售 9/10：第10格 坚固手套",
+    "出售 10/10：第11格 金手镯",
+    "出售 1/1：第15格 蓝翡翠项链",
+    "从英雄包取回清单装备：第9格 蓝翡翠项链",
+    "从英雄包取回清单装备：第28格 蓝翡翠项链",
+    "出售 1/2：第2格 蓝翡翠项链",
+    "出售 2/2：第3格 蓝翡翠项链"
+  ],
+  "instance": "1",
+  "npcs": [
+    {
+      "address": 579355056,
+      "name": "藏宝天下",
+      "map": [
+        317,
+        323
+      ],
+      "draw": [
+        160,
+        177
+      ]
+    },
+    {
+      "address": 579370896,
+      "name": "全民打宝",
+      "map": [
+        317,
+        327
+      ],
+      "draw": [
+        160,
+        305
+      ]
+    },
+    {
+      "address": 579367728,
+      "name": "孤岛挑战",
+      "map": [
+        317,
+        331
+      ],
+      "draw": [
+        160,
+        433
+      ]
+    },
+    {
+      "address": 579378288,
+      "name": "盟重老兵",
+      "map": [
+        320,
+        320
+      ],
+      "draw": [
+        304,
+        81
+      ]
+    },
+    {
+      "address": 579381456,
+      "name": "神器锻造",
+      "map": [
+        324,
+        320
+      ],
+      "draw": [
+        496,
+        81
+      ]
+    },
+    {
+      "address": 579345552,
+      "name": "装备回收",
+      "map": [
+        328,
+        320
+      ],
+      "draw": [
+        688,
+        81
+      ]
+    },
+    {
+      "address": 638421136,
+      "name": "白日门龙人",
+      "map": [
+        332,
+        320
+      ],
+      "draw": [
+        880,
+        81
+      ]
+    },
+    {
+      "address": 638432752,
+      "name": "英雄管理",
+      "map": [
+        336,
+        320
+      ],
+      "draw": [
+        1072,
+        81
+      ]
+    }
+  ],
+  "stage": "stopped",
+  "state": {
+    "helper_pid": 13924,
+    "game_pid": 33752,
+    "in_game": true,
+    "inventory": [
+      "魔血石(大)",
+      "",
+      "",
+      "",
+      "",
+      "",
+      "",
+      "",
+      "",
+      "",
+      "",
+      "",
+      "",
+      "",
+      "",
+      "",
+      "",
+      "",
+      "",
+      "",
+      "",
+      "",
+      "",
+      "",
+      "",
+      "",
+      "",
+      "",
+      "",
+      "",
+      "",
+      "",
+      "",
+      "",
+      "",
+      "",
+      "",
+      "",
+      "",
+      ""
+    ],
+    "player": [
+      144,
+      330
+    ],
+    "player_draw": [
+      640,
+      241
+    ],
+    "held": "",
+    "sale_item": "",
+    "recent_inputs": [
+      {
+        "point": [
+          535,
+          58
+        ],
+        "message_point": [
+          535,
+          58
+        ],
+        "message_coordinates": "physical",
+        "button": "left",
+        "input": "SendMessageTimeout",
+        "cursor_before": [
+          1387,
+          311
+        ],
+        "position_before": [
+          144,
+          330
+        ],
+        "screen_origin": [
+          1173,
+          316
+        ],
+        "physical_client": [
+          1280,
+          800
+        ]
+      },
+      {
+        "point": [
+          318,
+          269
+        ],
+        "message_point": [
+          318,
+          269
+        ],
+        "message_coordinates": "physical",
+        "button": "left",
+        "input": "SendMessageTimeout",
+        "cursor_before": [
+          1387,
+          311
+        ],
+        "position_before": [
+          144,
+          330
+        ],
+        "screen_origin": [
+          1173,
+          316
+        ],
+        "physical_client": [
+          1280,
+          800
+        ]
+      },
+      {
+        "point": [
+          357,
+          332
+        ],
+        "message_point": [
+          357,
+          332
+        ],
+        "message_coordinates": "physical",
+        "button": "left",
+        "input": "SendMessageTimeout",
+        "cursor_before": [
+          1387,
+          311
+        ],
+        "position_before": [
+          144,
+          330
+        ],
+        "screen_origin": [
+          1173,
+          316
+        ],
+        "physical_client": [
+          1280,
+          800
+        ]
+      },
+      {
+        "point": [
+          383,
+          188
+        ],
+        "message_point": [
+          383,
+          188
+        ],
+        "message_coordinates": "physical",
+        "button": "left",
+        "input": "SendMessageTimeout",
+        "cursor_before": [
+          1387,
+          311
+        ],
+        "position_before": [
+          144,
+          330
+        ],
+        "screen_origin": [
+          1173,
+          316
+        ],
+        "physical_client": [
+          1280,
+          800
+        ]
+      },
+      {
+        "point": [
+          760,
+          70
+        ],
+        "message_point": [
+          760,
+          70
+        ],
+        "message_coordinates": "physical",
+        "button": "left",
+        "input": "SendMessageTimeout",
+        "cursor_before": [
+          1387,
+          311
+        ],
+        "position_before": [
+          144,
+          330
+        ],
+        "screen_origin": [
+          1173,
+          316
+        ],
+        "physical_client": [
+          1280,
+          800
+        ]
+      },
+      {
+        "point": [
+          406,
+          12
+        ],
+        "message_point": [
+          406,
+          12
+        ],
+        "message_coordinates": "physical",
+        "button": "left",
+        "input": "SendMessageTimeout",
+        "cursor_before": [
+          1387,
+          311
+        ],
+        "position_before": [
+          144,
+          330
+        ],
+        "screen_origin": [
+          1173,
+          316
+        ],
+        "physical_client": [
+          1280,
+          800
+        ]
+      }
+    ],
+    "input_state": {
+      "foreground": 2756780,
+      "game_hwnd": 2756780,
+      "capture": 0,
+      "left_pressed": false,
+      "right_pressed": false
+    },
+    "sale_handler_layout": {
+      "verified": true,
+      "signatures": {
+        "0x170610": true,
+        "0x170843": true
+      },
+      "record_bytes": 156,
+      "basis": "historical_handler_compared_to_current_code"
+    },
+    "client_size": [
+      1280,
+      800
+    ],
+    "map_identity": {
+      "name": "5.map",
+      "header": "200320030d4c6567656e64206f66206d69720000e93c4000e93c4000240088005300560030997f0300000000287e440000000000",
+      "position": [
+        144,
+        330
+      ]
+    },
+    "visible": {
+      "merchant": false,
+      "sell": false,
+      "bag": false
+    },
+    "bounds": {
+      "merchant": [
+        0,
+        0,
+        416,
+        176
+      ],
+      "sell": [
+        260,
+        176,
+        140,
+        181
+      ],
+      "bag": [
+        416,
+        0,
+        352,
+        295
+      ],
+      "grid": [
+        29,
+        42,
+        288,
+        160
+      ]
+    },
+    "dead": false,
+    "wallet": {
+      "gold": 2900476,
+      "yuanbao": 2133
+    },
+    "hero_status": {
+      "ready": true,
+      "actor": 505358528,
+      "flag": "01",
+      "dead": "00",
+      "group": {
+        "object": 504576064,
+        "bounds": [
+          1116,
+          654,
+          78,
+          21
+        ],
+        "visible": true
+      },
+      "recall": {
+        "object": 470578960,
+        "bounds": [
+          2,
+          4,
+          20,
+          16
+        ],
+        "visible": true
+      }
+    }
+  },
+  "completed": [
+    {
+      "item": "短剑",
+      "slot": 1,
+      "seconds": 1.724,
+      "status": "出售传输已结束；服务器成交需核对金币提示；同UID及余额不变时最多补确认一次",
+      "settled": true,
+      "remaining_count": 1,
+      "gold_before": 2671958,
+      "gold_after": 2672260,
+      "gold_change": 302,
+      "yuanbao_after": 2148
+    },
+    {
+      "item": "短剑",
+      "slot": 2,
+      "seconds": 1.725,
+      "status": "出售传输已结束；服务器成交需核对金币提示；同UID及余额不变时最多补确认一次",
+      "settled": true,
+      "remaining_count": 0,
+      "gold_before": 2672260,
+      "gold_after": 2672645,
+      "gold_change": 385,
+      "yuanbao_after": 2148
+    },
+    {
+      "item": "八荒",
+      "slot": 2,
+      "seconds": 1.709,
+      "status": "出售传输已结束；服务器成交需核对金币提示；同UID及余额不变时最多补确认一次",
+      "settled": true,
+      "remaining_count": 1,
+      "gold_before": 2694276,
+      "gold_after": 2696651,
+      "gold_change": 2375,
+      "yuanbao_after": 2133
+    },
+    {
+      "item": "修罗",
+      "slot": 4,
+      "seconds": 1.719,
+      "status": "出售传输已结束；服务器成交需核对金币提示；同UID及余额不变时最多补确认一次",
+      "settled": true,
+      "remaining_count": 0,
+      "gold_before": 2696651,
+      "gold_after": 2701351,
+      "gold_change": 4700,
+      "yuanbao_after": 2133
+    },
+    {
+      "item": "八荒",
+      "slot": 12,
+      "seconds": 1.689,
+      "status": "出售传输已结束；服务器成交需核对金币提示；同UID及余额不变时最多补确认一次",
+      "settled": true,
+      "remaining_count": 0,
+      "gold_before": 2701351,
+      "gold_after": 2703189,
+      "gold_change": 1838,
+      "yuanbao_after": 2133
+    },
+    {
+      "item": "破魂",
+      "slot": 21,
+      "seconds": 1.735,
+      "status": "出售传输已结束；服务器成交需核对金币提示；同UID及余额不变时最多补确认一次",
+      "settled": true,
+      "remaining_count": 1,
+      "gold_before": 2703189,
+      "gold_after": 2705139,
+      "gold_change": 1950,
+      "yuanbao_after": 2133
+    },
+    {
+      "item": "凝霜",
+      "slot": 24,
+      "seconds": 1.746,
+      "status": "出售传输已结束；服务器成交需核对金币提示；同UID及余额不变时最多补确认一次",
+      "settled": true,
+      "remaining_count": 1,
+      "gold_before": 2705139,
+      "gold_after": 2709119,
+      "gold_change": 3980,
+      "yuanbao_after": 2133
+    },
+    {
+      "item": "斩马刀",
+      "slot": 30,
+      "seconds": 1.713,
+      "status": "出售传输已结束；服务器成交需核对金币提示；同UID及余额不变时最多补确认一次",
+      "settled": true,
+      "remaining_count": 0,
+      "gold_before": 2709119,
+      "gold_after": 2711069,
+      "gold_change": 1950,
+      "yuanbao_after": 2133
+    },
+    {
+      "item": "凝霜",
+      "slot": 34,
+      "seconds": 1.703,
+      "status": "出售传输已结束；服务器成交需核对金币提示；同UID及余额不变时最多补确认一次",
+      "settled": true,
+      "remaining_count": 0,
+      "gold_before": 2711069,
+      "gold_after": 2713589,
+      "gold_change": 2520,
+      "yuanbao_after": 2133
+    },
+    {
+      "item": "破魂",
+      "slot": 40,
+      "seconds": 1.73,
+      "status": "出售传输已结束；服务器成交需核对金币提示；同UID及余额不变时最多补确认一次",
+      "settled": true,
+      "remaining_count": 0,
+      "gold_before": 2713589,
+      "gold_after": 2715339,
+      "gold_change": 1750,
+      "yuanbao_after": 2133
+    },
+    {
+      "item": "八荒",
+      "slot": 2,
+      "seconds": 1.727,
+      "status": "出售传输已结束；服务器成交需核对金币提示；同UID及余额不变时最多补确认一次",
+      "settled": true,
+      "remaining_count": 2,
+      "gold_before": 2715339,
+      "gold_after": 2717177,
+      "gold_change": 1838,
+      "yuanbao_after": 2133
+    },
+    {
+      "item": "破魂",
+      "slot": 4,
+      "seconds": 1.704,
+      "status": "出售传输已结束；服务器成交需核对金币提示；同UID及余额不变时最多补确认一次",
+      "settled": true,
+      "remaining_count": 0,
+      "gold_before": 2717177,
+      "gold_after": 2719389,
+      "gold_change": 2212,
+      "yuanbao_after": 2133
+    },
+    {
+      "item": "凌风",
+      "slot": 12,
+      "seconds": 1.742,
+      "status": "出售传输已结束；服务器成交需核对金币提示；同UID及余额不变时最多补确认一次",
+      "settled": true,
+      "remaining_count": 0,
+      "gold_before": 2719389,
+      "gold_after": 2722239,
+      "gold_change": 2850,
+      "yuanbao_after": 2133
+    },
+    {
+      "item": "海魂",
+      "slot": 21,
+      "seconds": 1.717,
+      "status": "出售传输已结束；服务器成交需核对金币提示；同UID及余额不变时最多补确认一次",
+      "settled": true,
+      "remaining_count": 0,
+      "gold_before": 2722239,
+      "gold_after": 2723447,
+      "gold_change": 1208,
+      "yuanbao_after": 2133
+    },
+    {
+      "item": "凝霜",
+      "slot": 24,
+      "seconds": 1.72,
+      "status": "出售传输已结束；服务器成交需核对金币提示；同UID及余额不变时最多补确认一次",
+      "settled": true,
+      "remaining_count": 0,
+      "gold_before": 2723447,
+      "gold_after": 2726307,
+      "gold_change": 2860,
+      "yuanbao_after": 2133
+    },
+    {
+      "item": "八荒",
+      "slot": 30,
+      "seconds": 1.689,
+      "status": "出售传输已结束；服务器成交需核对金币提示；同UID及余额不变时最多补确认一次",
+      "settled": true,
+      "remaining_count": 1,
+      "gold_before": 2726307,
+      "gold_after": 2728432,
+      "gold_change": 2125,
+      "yuanbao_after": 2133
+    },
+    {
+      "item": "八荒",
+      "slot": 34,
+      "seconds": 1.719,
+      "status": "出售传输已结束；服务器成交需核对金币提示；同UID及余额不变时最多补确认一次",
+      "settled": true,
+      "remaining_count": 0,
+      "gold_before": 2728432,
+      "gold_after": 2730432,
+      "gold_change": 2000,
+      "yuanbao_after": 2133
+    },
+    {
+      "item": "修罗",
+      "slot": 40,
+      "seconds": 1.705,
+      "status": "出售传输已结束；服务器成交需核对金币提示；同UID及余额不变时最多补确认一次",
+      "settled": true,
+      "remaining_count": 0,
+      "gold_before": 2730432,
+      "gold_after": 2734157,
+      "gold_change": 3725,
+      "yuanbao_after": 2133
+    },
+    {
+      "item": "海魂",
+      "slot": 2,
+      "seconds": 1.625,
+      "status": "出售传输已结束；服务器成交需核对金币提示；同UID及余额不变时最多补确认一次",
+      "settled": true,
+      "remaining_count": 0,
+      "gold_before": 2734157,
+      "gold_after": 2735469,
+      "gold_change": 1312,
+      "yuanbao_after": 2133
+    },
+    {
+      "item": "偃月",
+      "slot": 4,
+      "seconds": 1.626,
+      "status": "出售传输已结束；服务器成交需核对金币提示；同UID及余额不变时最多补确认一次",
+      "settled": true,
+      "remaining_count": 0,
+      "gold_before": 2735469,
+      "gold_after": 2738769,
+      "gold_change": 3300,
+      "yuanbao_after": 2133
+    },
+    {
+      "item": "灵魂战衣(男)",
+      "slot": 8,
+      "seconds": 1.631,
+      "status": "出售传输已结束；服务器成交需核对金币提示；同UID及余额不变时最多补确认一次",
+      "settled": true,
+      "remaining_count": 0,
+      "gold_before": 2736769,
+      "gold_after": 2741394,
+      "gold_change": 4625,
+      "yuanbao_after": 2133
+    },
+    {
+      "item": "重盔甲(女)",
+      "slot": 20,
+      "seconds": 1.619,
+      "status": "出售传输已结束；服务器成交需核对金币提示；同UID及余额不变时最多补确认一次",
+      "settled": true,
+      "remaining_count": 0,
+      "gold_before": 2741394,
+      "gold_after": 2746314,
+      "gold_change": 4920,
+      "yuanbao_after": 2133
+    },
+    {
+      "item": "灵魂战衣(女)",
+      "slot": 28,
+      "seconds": 1.629,
+      "status": "出售传输已结束；服务器成交需核对金币提示；同UID及余额不变时最多补确认一次",
+      "settled": true,
+      "remaining_count": 0,
+      "gold_before": 2746314,
+      "gold_after": 2751289,
+      "gold_change": 4975,
+      "yuanbao_after": 2133
+    },
+    {
+      "item": "灵魂战衣(男)",
+      "slot": 2,
+      "seconds": 1.638,
+      "status": "出售传输已结束；服务器成交需核对金币提示；同UID及余额不变时最多补确认一次",
+      "settled": true,
+      "remaining_count": 0,
+      "gold_before": 2751289,
+      "gold_after": 2755689,
+      "gold_change": 4400,
+      "yuanbao_after": 2133
+    },
+    {
+      "item": "魔法长袍(男)",
+      "slot": 4,
+      "seconds": 1.639,
+      "status": "出售传输已结束；服务器成交需核对金币提示；同UID及余额不变时最多补确认一次",
+      "settled": true,
+      "remaining_count": 0,
+      "gold_before": 2755689,
+      "gold_after": 2758814,
+      "gold_change": 3125,
+      "yuanbao_after": 2133
+    },
+    {
+      "item": "魔法长袍(女)",
+      "slot": 8,
+      "seconds": 1.629,
+      "status": "出售传输已结束；服务器成交需核对金币提示；同UID及余额不变时最多补确认一次",
+      "settled": true,
+      "remaining_count": 0,
+      "gold_before": 2758814,
+      "gold_after": 2762564,
+      "gold_change": 3750,
+      "yuanbao_after": 2133
+    },
+    {
+      "item": "灵魂战衣(女)",
+      "slot": 12,
+      "seconds": 1.623,
+      "status": "出售传输已结束；服务器成交需核对金币提示；同UID及余额不变时最多补确认一次",
+      "settled": true,
+      "remaining_count": 0,
+      "gold_before": 2762564,
+      "gold_after": 2765614,
+      "gold_change": 3050,
+      "yuanbao_after": 2133
+    },
+    {
+      "item": "道士头盔",
+      "slot": 3,
+      "seconds": 1.637,
+      "status": "出售传输已结束；服务器成交需核对金币提示；同UID及余额不变时最多补确认一次",
+      "settled": true,
+      "remaining_count": 2,
+      "gold_before": 2765614,
+      "gold_after": 2767889,
+      "gold_change": 2275,
+      "yuanbao_after": 2133
+    },
+    {
+      "item": "道士头盔",
+      "slot": 9,
+      "seconds": 1.628,
+      "status": "出售传输已结束；服务器成交需核对金币提示；同UID及余额不变时最多补确认一次",
+      "settled": true,
+      "remaining_count": 1,
+      "gold_before": 2767889,
+      "gold_after": 2770177,
+      "gold_change": 2288,
+      "yuanbao_after": 2133
+    },
+    {
+      "item": "道士头盔",
+      "slot": 10,
+      "seconds": 1.625,
+      "status": "出售传输已结束；服务器成交需核对金币提示；同UID及余额不变时最多补确认一次",
+      "settled": true,
+      "remaining_count": 0,
+      "gold_before": 2770177,
+      "gold_after": 2771752,
+      "gold_change": 1575,
+      "yuanbao_after": 2133
+    },
+    {
+      "item": "骷髅头盔",
+      "slot": 18,
+      "seconds": 1.629,
+      "status": "出售传输已结束；服务器成交需核对金币提示；同UID及余额不变时最多补确认一次",
+      "settled": true,
+      "remaining_count": 0,
+      "gold_before": 2771752,
+      "gold_after": 2775732,
+      "gold_change": 3980,
+      "yuanbao_after": 2133
+    },
+    {
+      "item": "骷髅头盔",
+      "slot": 2,
+      "seconds": 1.628,
+      "status": "出售传输已结束；服务器成交需核对金币提示；同UID及余额不变时最多补确认一次",
+      "settled": true,
+      "remaining_count": 0,
+      "gold_before": 2775732,
+      "gold_after": 2778432,
+      "gold_change": 2700,
+      "yuanbao_after": 2133
+    },
+    {
+      "item": "道士头盔",
+      "slot": 3,
+      "seconds": 1.637,
+      "status": "出售传输已结束；服务器成交需核对金币提示；同UID及余额不变时最多补确认一次",
+      "settled": true,
+      "remaining_count": 1,
+      "gold_before": 2778432,
+      "gold_after": 2780207,
+      "gold_change": 1775,
+      "yuanbao_after": 2133
+    },
+    {
+      "item": "道士头盔",
+      "slot": 4,
+      "seconds": 1.632,
+      "status": "出售传输已结束；服务器成交需核对金币提示；同UID及余额不变时最多补确认一次",
+      "settled": true,
+      "remaining_count": 0,
+      "gold_before": 2780207,
+      "gold_after": 2782157,
+      "gold_change": 1950,
+      "yuanbao_after": 2133
+    },
+    {
+      "item": "骷髅戒指",
+      "slot": 5,
+      "seconds": 1.622,
+      "status": "出售传输已结束；服务器成交需核对金币提示；同UID及余额不变时最多补确认一次",
+      "settled": true,
+      "remaining_count": 0,
+      "gold_before": 2782157,
+      "gold_after": 2783819,
+      "gold_change": 1662,
+      "yuanbao_after": 2133
+    },
+    {
+      "item": "道德戒指",
+      "slot": 7,
+      "seconds": 1.63,
+      "status": "出售传输已结束；服务器成交需核对金币提示；同UID及余额不变时最多补确认一次",
+      "settled": true,
+      "remaining_count": 0,
+      "gold_before": 2783819,
+      "gold_after": 2785369,
+      "gold_change": 1550,
+      "yuanbao_after": 2133
+    },
+    {
+      "item": "金戒指",
+      "slot": 11,
+      "seconds": 1.634,
+      "status": "出售传输已结束；服务器成交需核对金币提示；同UID及余额不变时最多补确认一次",
+      "settled": true,
+      "remaining_count": 1,
+      "gold_before": 2785369,
+      "gold_after": 2789395,
+      "gold_change": 4026,
+      "yuanbao_after": 2133
+    },
+    {
+      "item": "魅力戒指",
+      "slot": 16,
+      "seconds": 1.626,
+      "status": "出售传输已结束；服务器成交需核对金币提示；同UID及余额不变时最多补确认一次",
+      "settled": true,
+      "remaining_count": 1,
+      "gold_before": 2789395,
+      "gold_after": 2791215,
+      "gold_change": 1820,
+      "yuanbao_after": 2133
+    },
+    {
+      "item": "魅力戒指",
+      "slot": 27,
+      "seconds": 1.634,
+      "status": "出售传输已结束；服务器成交需核对金币提示；同UID及余额不变时最多补确认一次",
+      "settled": true,
+      "remaining_count": 0,
+      "gold_before": 2791215,
+      "gold_after": 2792785,
+      "gold_change": 1570,
+      "yuanbao_after": 2133
+    },
+    {
+      "item": "金戒指",
+      "slot": 32,
+      "seconds": 1.632,
+      "status": "出售传输已结束；服务器成交需核对金币提示；同UID及余额不变时最多补确认一次",
+      "settled": true,
+      "remaining_count": 0,
+      "gold_before": 2792785,
+      "gold_after": 2796151,
+      "gold_change": 3366,
+      "yuanbao_after": 2133
+    },
+    {
+      "item": "降妖除魔戒指",
+      "slot": 37,
+      "seconds": 1.635,
+      "status": "出售传输已结束；服务器成交需核对金币提示；同UID及余额不变时最多补确认一次",
+      "settled": true,
+      "remaining_count": 1,
+      "gold_before": 2796151,
+      "gold_after": 2800126,
+      "gold_change": 3975,
+      "yuanbao_after": 2133
+    },
+    {
+      "item": "降妖除魔戒指",
+      "slot": 39,
+      "seconds": 1.629,
+      "status": "出售传输已结束；服务器成交需核对金币提示；同UID及余额不变时最多补确认一次",
+      "settled": true,
+      "remaining_count": 0,
+      "gold_before": 2800126,
+      "gold_after": 2804301,
+      "gold_change": 4175,
+      "yuanbao_after": 2133
+    },
+    {
+      "item": "骷髅戒指",
+      "slot": 2,
+      "seconds": 1.628,
+      "status": "出售传输已结束；服务器成交需核对金币提示；同UID及余额不变时最多补确认一次",
+      "settled": true,
+      "remaining_count": 1,
+      "gold_before": 2804301,
+      "gold_after": 2806789,
+      "gold_change": 2488,
+      "yuanbao_after": 2133
+    },
+    {
+      "item": "珊瑚戒指",
+      "slot": 3,
+      "seconds": 1.622,
+      "status": "出售传输已结束；服务器成交需核对金币提示；同UID及余额不变时最多补确认一次",
+      "settled": true,
+      "remaining_count": 1,
+      "gold_before": 2806789,
+      "gold_after": 2812714,
+      "gold_change": 5925,
+      "yuanbao_after": 2133
+    },
+    {
+      "item": "道德戒指",
+      "slot": 4,
+      "seconds": 1.625,
+      "status": "出售传输已结束；服务器成交需核对金币提示；同UID及余额不变时最多补确认一次",
+      "settled": true,
+      "remaining_count": 0,
+      "gold_before": 2812714,
+      "gold_after": 2814334,
+      "gold_change": 1620,
+      "yuanbao_after": 2133
+    },
+    {
+      "item": "珊瑚戒指",
+      "slot": 5,
+      "seconds": 1.624,
+      "status": "出售传输已结束；服务器成交需核对金币提示；同UID及余额不变时最多补确认一次",
+      "settled": true,
+      "remaining_count": 0,
+      "gold_before": 2814334,
+      "gold_after": 2819134,
+      "gold_change": 4800,
+      "yuanbao_after": 2133
+    },
+    {
+      "item": "骷髅戒指",
+      "slot": 7,
+      "seconds": 1.627,
+      "status": "出售传输已结束；服务器成交需核对金币提示；同UID及余额不变时最多补确认一次",
+      "settled": true,
+      "remaining_count": 0,
+      "gold_before": 2819134,
+      "gold_after": 2820834,
+      "gold_change": 1700,
+      "yuanbao_after": 2133
+    },
+    {
+      "item": "死神手套",
+      "slot": 6,
+      "seconds": 1.624,
+      "status": "出售传输已结束；服务器成交需核对金币提示；同UID及余额不变时最多补确认一次",
+      "settled": true,
+      "remaining_count": 0,
+      "gold_before": 2820834,
+      "gold_after": 2824034,
+      "gold_change": 3200,
+      "yuanbao_after": 2133
+    },
+    {
+      "item": "魔力手镯",
+      "slot": 13,
+      "seconds": 1.628,
+      "status": "出售传输已结束；服务器成交需核对金币提示；同UID及余额不变时最多补确认一次",
+      "settled": true,
+      "remaining_count": 4,
+      "gold_before": 2824034,
+      "gold_after": 2826762,
+      "gold_change": 2728,
+      "yuanbao_after": 2133
+    },
+    {
+      "item": "坚固手套",
+      "slot": 14,
+      "seconds": 1.636,
+      "status": "出售传输已结束；服务器成交需核对金币提示；同UID及余额不变时最多补确认一次",
+      "settled": true,
+      "remaining_count": 4,
+      "gold_before": 2826762,
+      "gold_after": 2829842,
+      "gold_change": 3080,
+      "yuanbao_after": 2133
+    },
+    {
+      "item": "坚固手套",
+      "slot": 17,
+      "seconds": 1.629,
+      "status": "出售传输已结束；服务器成交需核对金币提示；同UID及余额不变时最多补确认一次",
+      "settled": true,
+      "remaining_count": 3,
+      "gold_before": 2829842,
+      "gold_after": 2832100,
+      "gold_change": 2258,
+      "yuanbao_after": 2133
+    },
+    {
+      "item": "坚固手套",
+      "slot": 19,
+      "seconds": 1.631,
+      "status": "出售传输已结束；服务器成交需核对金币提示；同UID及余额不变时最多补确认一次",
+      "settled": true,
+      "remaining_count": 2,
+      "gold_before": 2832100,
+      "gold_after": 2834462,
+      "gold_change": 2362,
+      "yuanbao_after": 2133
+    },
+    {
+      "item": "坚固手套",
+      "slot": 22,
+      "seconds": 1.631,
+      "status": "出售传输已结束；服务器成交需核对金币提示；同UID及余额不变时最多补确认一次",
+      "settled": true,
+      "remaining_count": 1,
+      "gold_before": 2834462,
+      "gold_after": 2836860,
+      "gold_change": 2398,
+      "yuanbao_after": 2133
+    },
+    {
+      "item": "黑檀手镯",
+      "slot": 23,
+      "seconds": 1.645,
+      "status": "出售传输已结束；服务器成交需核对金币提示；同UID及余额不变时最多补确认一次",
+      "settled": true,
+      "remaining_count": 1,
+      "gold_before": 2836860,
+      "gold_after": 2838650,
+      "gold_change": 1790,
+      "yuanbao_after": 2133
+    },
+    {
+      "item": "魔力手镯",
+      "slot": 25,
+      "seconds": 1.631,
+      "status": "出售传输已结束；服务器成交需核对金币提示；同UID及余额不变时最多补确认一次",
+      "settled": true,
+      "remaining_count": 3,
+      "gold_before": 2838650,
+      "gold_after": 2841959,
+      "gold_change": 3309,
+      "yuanbao_after": 2133
+    },
+    {
+      "item": "魔力手镯",
+      "slot": 26,
+      "seconds": 1.618,
+      "status": "出售传输已结束；服务器成交需核对金币提示；同UID及余额不变时最多补确认一次",
+      "settled": true,
+      "remaining_count": 2,
+      "gold_before": 2841959,
+      "gold_after": 2845468,
+      "gold_change": 3509,
+      "yuanbao_after": 2133
+    },
+    {
+      "item": "魔力手镯",
+      "slot": 29,
+      "seconds": 1.635,
+      "status": "出售传输已结束；服务器成交需核对金币提示；同UID及余额不变时最多补确认一次",
+      "settled": true,
+      "remaining_count": 1,
+      "gold_before": 2845468,
+      "gold_after": 2848122,
+      "gold_change": 2654,
+      "yuanbao_after": 2133
+    },
+    {
+      "item": "坚固手套",
+      "slot": 31,
+      "seconds": 1.625,
+      "status": "出售传输已结束；服务器成交需核对金币提示；同UID及余额不变时最多补确认一次",
+      "settled": true,
+      "remaining_count": 0,
+      "gold_before": 2848122,
+      "gold_after": 2850572,
+      "gold_change": 2450,
+      "yuanbao_after": 2133
+    },
+    {
+      "item": "魔力手镯",
+      "slot": 33,
+      "seconds": 1.632,
+      "status": "出售传输已结束；服务器成交需核对金币提示；同UID及余额不变时最多补确认一次",
+      "settled": true,
+      "remaining_count": 0,
+      "gold_before": 2850572,
+      "gold_after": 2853608,
+      "gold_change": 3036,
+      "yuanbao_after": 2133
+    },
+    {
+      "item": "黑檀手镯",
+      "slot": 35,
+      "seconds": 1.63,
+      "status": "出售传输已结束；服务器成交需核对金币提示；同UID及余额不变时最多补确认一次",
+      "settled": true,
+      "remaining_count": 0,
+      "gold_before": 2853608,
+      "gold_after": 2855598,
+      "gold_change": 1990,
+      "yuanbao_after": 2133
+    },
+    {
+      "item": "道士手镯",
+      "slot": 36,
+      "seconds": 1.644,
+      "status": "出售传输已结束；服务器成交需核对金币提示；同UID及余额不变时最多补确认一次",
+      "settled": true,
+      "remaining_count": 1,
+      "gold_before": 2855598,
+      "gold_after": 2857248,
+      "gold_change": 1650,
+      "yuanbao_after": 2133
+    },
+    {
+      "item": "道士手镯",
+      "slot": 38,
+      "seconds": 1.642,
+      "status": "出售传输已结束；服务器成交需核对金币提示；同UID及余额不变时最多补确认一次",
+      "settled": true,
+      "remaining_count": 0,
+      "gold_before": 2857248,
+      "gold_after": 2859218,
+      "gold_change": 1970,
+      "yuanbao_after": 2133
+    },
+    {
+      "item": "坚固手套",
+      "slot": 2,
+      "seconds": 1.63,
+      "status": "出售传输已结束；服务器成交需核对金币提示；同UID及余额不变时最多补确认一次",
+      "settled": true,
+      "remaining_count": 3,
+      "gold_before": 2859218,
+      "gold_after": 2861948,
+      "gold_change": 2730,
+      "yuanbao_after": 2133
+    },
+    {
+      "item": "魔力手镯",
+      "slot": 3,
+      "seconds": 1.629,
+      "status": "出售传输已结束；服务器成交需核对金币提示；同UID及余额不变时最多补确认一次",
+      "settled": true,
+      "remaining_count": 2,
+      "gold_before": 2861948,
+      "gold_after": 2864548,
+      "gold_change": 2600,
+      "yuanbao_after": 2133
+    },
+    {
+      "item": "死神手套",
+      "slot": 4,
+      "seconds": 1.624,
+      "status": "出售传输已结束；服务器成交需核对金币提示；同UID及余额不变时最多补确认一次",
+      "settled": true,
+      "remaining_count": 0,
+      "gold_before": 2864548,
+      "gold_after": 2868388,
+      "gold_change": 3840,
+      "yuanbao_after": 2133
+    },
+    {
+      "item": "魔力手镯",
+      "slot": 5,
+      "seconds": 1.641,
+      "status": "出售传输已结束；服务器成交需核对金币提示；同UID及余额不变时最多补确认一次",
+      "settled": true,
+      "remaining_count": 1,
+      "gold_before": 2868388,
+      "gold_after": 2871970,
+      "gold_change": 3582,
+      "yuanbao_after": 2133
+    },
+    {
+      "item": "魔力手镯",
+      "slot": 6,
+      "seconds": 1.625,
+      "status": "出售传输已结束；服务器成交需核对金币提示；同UID及余额不变时最多补确认一次",
+      "settled": true,
+      "remaining_count": 0,
+      "gold_before": 2871970,
+      "gold_after": 2874334,
+      "gold_change": 2364,
+      "yuanbao_after": 2133
+    },
+    {
+      "item": "坚固手套",
+      "slot": 7,
+      "seconds": 1.629,
+      "status": "出售传输已结束；服务器成交需核对金币提示；同UID及余额不变时最多补确认一次",
+      "settled": true,
+      "remaining_count": 2,
+      "gold_before": 2874334,
+      "gold_after": 2877676,
+      "gold_change": 3342,
+      "yuanbao_after": 2133
+    },
+    {
+      "item": "坚固手套",
+      "slot": 8,
+      "seconds": 1.633,
+      "status": "出售传输已结束；服务器成交需核对金币提示；同UID及余额不变时最多补确认一次",
+      "settled": true,
+      "remaining_count": 1,
+      "gold_before": 2877676,
+      "gold_after": 2880966,
+      "gold_change": 3290,
+      "yuanbao_after": 2133
+    },
+    {
+      "item": "黑檀手镯",
+      "slot": 9,
+      "seconds": 1.638,
+      "status": "出售传输已结束；服务器成交需核对金币提示；同UID及余额不变时最多补确认一次",
+      "settled": true,
+      "remaining_count": 0,
+      "gold_before": 2880966,
+      "gold_after": 2882616,
+      "gold_change": 1650,
+      "yuanbao_after": 2133
+    },
+    {
+      "item": "坚固手套",
+      "slot": 10,
+      "seconds": 1.63,
+      "status": "出售传输已结束；服务器成交需核对金币提示；同UID及余额不变时最多补确认一次",
+      "settled": true,
+      "remaining_count": 0,
+      "gold_before": 2882616,
+      "gold_after": 2885434,
+      "gold_change": 2818,
+      "yuanbao_after": 2133
+    },
+    {
+      "item": "金手镯",
+      "slot": 11,
+      "seconds": 1.626,
+      "status": "出售传输已结束；服务器成交需核对金币提示；同UID及余额不变时最多补确认一次",
+      "settled": true,
+      "remaining_count": 0,
+      "gold_before": 2885434,
+      "gold_after": 2888776,
+      "gold_change": 3342,
+      "yuanbao_after": 2133
+    },
+    {
+      "item": "蓝翡翠项链",
+      "slot": 15,
+      "seconds": 1.624,
+      "status": "出售传输已结束；服务器成交需核对金币提示；同UID及余额不变时最多补确认一次",
+      "settled": true,
+      "remaining_count": 0,
+      "gold_before": 2888776,
+      "gold_after": 2893526,
+      "gold_change": 4750,
+      "yuanbao_after": 2133
+    },
+    {
+      "item": "蓝翡翠项链",
+      "slot": 2,
+      "seconds": 1.62,
+      "status": "出售传输已结束；服务器成交需核对金币提示；同UID及余额不变时最多补确认一次",
+      "settled": true,
+      "remaining_count": 1,
+      "gold_before": 2893526,
+      "gold_after": 2897451,
+      "gold_change": 3925,
+      "yuanbao_after": 2133
+    },
+    {
+      "item": "蓝翡翠项链",
+      "slot": 3,
+      "seconds": 1.633,
+      "status": "出售传输已结束；服务器成交需核对金币提示；同UID及余额不变时最多补确认一次",
+      "settled": true,
+      "remaining_count": 0,
+      "gold_before": 2897451,
+      "gold_after": 2900476,
+      "gold_change": 3025,
+      "yuanbao_after": 2133
+    }
+  ],
+  "step": 10,
+  "result": {
+    "count": 73,
+    "results": [
+      {
+        "count": 73,
+        "results": [
+          {
+            "status": "已逐件提交并检查返回状态，请核对金币提示",
+            "submitted": [
+              {
+                "item": "八荒",
+                "slot": 2,
+                "seconds": 1.709,
+                "status": "出售传输已结束；服务器成交需核对金币提示；同UID及余额不变时最多补确认一次",
+                "settled": true,
+                "remaining_count": 1,
+                "gold_before": 2694276,
+                "gold_after": 2696651,
+                "gold_change": 2375,
+                "yuanbao_after": 2133
+              },
+              {
+                "item": "修罗",
+                "slot": 4,
+                "seconds": 1.719,
+                "status": "出售传输已结束；服务器成交需核对金币提示；同UID及余额不变时最多补确认一次",
+                "settled": true,
+                "remaining_count": 0,
+                "gold_before": 2696651,
+                "gold_after": 2701351,
+                "gold_change": 4700,
+                "yuanbao_after": 2133
+              },
+              {
+                "item": "八荒",
+                "slot": 12,
+                "seconds": 1.689,
+                "status": "出售传输已结束；服务器成交需核对金币提示；同UID及余额不变时最多补确认一次",
+                "settled": true,
+                "remaining_count": 0,
+                "gold_before": 2701351,
+                "gold_after": 2703189,
+                "gold_change": 1838,
+                "yuanbao_after": 2133
+              },
+              {
+                "item": "破魂",
+                "slot": 21,
+                "seconds": 1.735,
+                "status": "出售传输已结束；服务器成交需核对金币提示；同UID及余额不变时最多补确认一次",
+                "settled": true,
+                "remaining_count": 1,
+                "gold_before": 2703189,
+                "gold_after": 2705139,
+                "gold_change": 1950,
+                "yuanbao_after": 2133
+              },
+              {
+                "item": "凝霜",
+                "slot": 24,
+                "seconds": 1.746,
+                "status": "出售传输已结束；服务器成交需核对金币提示；同UID及余额不变时最多补确认一次",
+                "settled": true,
+                "remaining_count": 1,
+                "gold_before": 2705139,
+                "gold_after": 2709119,
+                "gold_change": 3980,
+                "yuanbao_after": 2133
+              },
+              {
+                "item": "斩马刀",
+                "slot": 30,
+                "seconds": 1.713,
+                "status": "出售传输已结束；服务器成交需核对金币提示；同UID及余额不变时最多补确认一次",
+                "settled": true,
+                "remaining_count": 0,
+                "gold_before": 2709119,
+                "gold_after": 2711069,
+                "gold_change": 1950,
+                "yuanbao_after": 2133
+              },
+              {
+                "item": "凝霜",
+                "slot": 34,
+                "seconds": 1.703,
+                "status": "出售传输已结束；服务器成交需核对金币提示；同UID及余额不变时最多补确认一次",
+                "settled": true,
+                "remaining_count": 0,
+                "gold_before": 2711069,
+                "gold_after": 2713589,
+                "gold_change": 2520,
+                "yuanbao_after": 2133
+              },
+              {
+                "item": "破魂",
+                "slot": 40,
+                "seconds": 1.73,
+                "status": "出售传输已结束；服务器成交需核对金币提示；同UID及余额不变时最多补确认一次",
+                "settled": true,
+                "remaining_count": 0,
+                "gold_before": 2713589,
+                "gold_after": 2715339,
+                "gold_change": 1750,
+                "yuanbao_after": 2133
+              },
+              {
+                "item": "八荒",
+                "slot": 2,
+                "seconds": 1.727,
+                "status": "出售传输已结束；服务器成交需核对金币提示；同UID及余额不变时最多补确认一次",
+                "settled": true,
+                "remaining_count": 2,
+                "gold_before": 2715339,
+                "gold_after": 2717177,
+                "gold_change": 1838,
+                "yuanbao_after": 2133
+              },
+              {
+                "item": "破魂",
+                "slot": 4,
+                "seconds": 1.704,
+                "status": "出售传输已结束；服务器成交需核对金币提示；同UID及余额不变时最多补确认一次",
+                "settled": true,
+                "remaining_count": 0,
+                "gold_before": 2717177,
+                "gold_after": 2719389,
+                "gold_change": 2212,
+                "yuanbao_after": 2133
+              },
+              {
+                "item": "凌风",
+                "slot": 12,
+                "seconds": 1.742,
+                "status": "出售传输已结束；服务器成交需核对金币提示；同UID及余额不变时最多补确认一次",
+                "settled": true,
+                "remaining_count": 0,
+                "gold_before": 2719389,
+                "gold_after": 2722239,
+                "gold_change": 2850,
+                "yuanbao_after": 2133
+              },
+              {
+                "item": "海魂",
+                "slot": 21,
+                "seconds": 1.717,
+                "status": "出售传输已结束；服务器成交需核对金币提示；同UID及余额不变时最多补确认一次",
+                "settled": true,
+                "remaining_count": 0,
+                "gold_before": 2722239,
+                "gold_after": 2723447,
+                "gold_change": 1208,
+                "yuanbao_after": 2133
+              },
+              {
+                "item": "凝霜",
+                "slot": 24,
+                "seconds": 1.72,
+                "status": "出售传输已结束；服务器成交需核对金币提示；同UID及余额不变时最多补确认一次",
+                "settled": true,
+                "remaining_count": 0,
+                "gold_before": 2723447,
+                "gold_after": 2726307,
+                "gold_change": 2860,
+                "yuanbao_after": 2133
+              },
+              {
+                "item": "八荒",
+                "slot": 30,
+                "seconds": 1.689,
+                "status": "出售传输已结束；服务器成交需核对金币提示；同UID及余额不变时最多补确认一次",
+                "settled": true,
+                "remaining_count": 1,
+                "gold_before": 2726307,
+                "gold_after": 2728432,
+                "gold_change": 2125,
+                "yuanbao_after": 2133
+              },
+              {
+                "item": "八荒",
+                "slot": 34,
+                "seconds": 1.719,
+                "status": "出售传输已结束；服务器成交需核对金币提示；同UID及余额不变时最多补确认一次",
+                "settled": true,
+                "remaining_count": 0,
+                "gold_before": 2728432,
+                "gold_after": 2730432,
+                "gold_change": 2000,
+                "yuanbao_after": 2133
+              },
+              {
+                "item": "修罗",
+                "slot": 40,
+                "seconds": 1.705,
+                "status": "出售传输已结束；服务器成交需核对金币提示；同UID及余额不变时最多补确认一次",
+                "settled": true,
+                "remaining_count": 0,
+                "gold_before": 2730432,
+                "gold_after": 2734157,
+                "gold_change": 3725,
+                "yuanbao_after": 2133
+              },
+              {
+                "item": "海魂",
+                "slot": 2,
+                "seconds": 1.625,
+                "status": "出售传输已结束；服务器成交需核对金币提示；同UID及余额不变时最多补确认一次",
+                "settled": true,
+                "remaining_count": 0,
+                "gold_before": 2734157,
+                "gold_after": 2735469,
+                "gold_change": 1312,
+                "yuanbao_after": 2133
+              },
+              {
+                "item": "偃月",
+                "slot": 4,
+                "seconds": 1.626,
+                "status": "出售传输已结束；服务器成交需核对金币提示；同UID及余额不变时最多补确认一次",
+                "settled": true,
+                "remaining_count": 0,
+                "gold_before": 2735469,
+                "gold_after": 2738769,
+                "gold_change": 3300,
+                "yuanbao_after": 2133
+              }
+            ],
+            "count": 18,
+            "seconds": 61.286,
+            "remaining_plan": [
+              {
+                "slot": 3,
+                "name": "道士头盔",
+                "category": "头盔",
+                "current_shop_supported": false
+              },
+              {
+                "slot": 5,
+                "name": "骷髅戒指",
+                "category": "戒指",
+                "current_shop_supported": false
+              },
+              {
+                "slot": 6,
+                "name": "死神手套",
+                "category": "手镯",
+                "current_shop_supported": false
+              },
+              {
+                "slot": 7,
+                "name": "道德戒指",
+                "category": "戒指",
+                "current_shop_supported": false
+              },
+              {
+                "slot": 8,
+                "name": "灵魂战衣(男)",
+                "category": "衣服",
+                "current_shop_supported": false
+              },
+              {
+                "slot": 9,
+                "name": "道士头盔",
+                "category": "头盔",
+                "current_shop_supported": false
+              },
+              {
+                "slot": 10,
+                "name": "道士头盔",
+                "category": "头盔",
+                "current_shop_supported": false
+              },
+              {
+                "slot": 11,
+                "name": "金戒指",
+                "category": "戒指",
+                "current_shop_supported": false
+              },
+              {
+                "slot": 13,
+                "name": "魔力手镯",
+                "category": "手镯",
+                "current_shop_supported": false
+              },
+              {
+                "slot": 14,
+                "name": "坚固手套",
+                "category": "手镯",
+                "current_shop_supported": false
+              },
+              {
+                "slot": 15,
+                "name": "蓝翡翠项链",
+                "category": "项链",
+                "current_shop_supported": false
+              },
+              {
+                "slot": 16,
+                "name": "魅力戒指",
+                "category": "戒指",
+                "current_shop_supported": false
+              },
+              {
+                "slot": 17,
+                "name": "坚固手套",
+                "category": "手镯",
+                "current_shop_supported": false
+              },
+              {
+                "slot": 18,
+                "name": "骷髅头盔",
+                "category": "头盔",
+                "current_shop_supported": false
+              },
+              {
+                "slot": 19,
+                "name": "坚固手套",
+                "category": "手镯",
+                "current_shop_supported": false
+              },
+              {
+                "slot": 20,
+                "name": "重盔甲(女)",
+                "category": "衣服",
+                "current_shop_supported": false
+              },
+              {
+                "slot": 22,
+                "name": "坚固手套",
+                "category": "手镯",
+                "current_shop_supported": false
+              },
+              {
+                "slot": 23,
+                "name": "黑檀手镯",
+                "category": "手镯",
+                "current_shop_supported": false
+              },
+              {
+                "slot": 25,
+                "name": "魔力手镯",
+                "category": "手镯",
+                "current_shop_supported": false
+              },
+              {
+                "slot": 26,
+                "name": "魔力手镯",
+                "category": "手镯",
+                "current_shop_supported": false
+              },
+              {
+                "slot": 27,
+                "name": "魅力戒指",
+                "category": "戒指",
+                "current_shop_supported": false
+              },
+              {
+                "slot": 28,
+                "name": "灵魂战衣(女)",
+                "category": "衣服",
+                "current_shop_supported": false
+              },
+              {
+                "slot": 29,
+                "name": "魔力手镯",
+                "category": "手镯",
+                "current_shop_supported": false
+              },
+              {
+                "slot": 31,
+                "name": "坚固手套",
+                "category": "手镯",
+                "current_shop_supported": false
+              },
+              {
+                "slot": 32,
+                "name": "金戒指",
+                "category": "戒指",
+                "current_shop_supported": false
+              },
+              {
+                "slot": 33,
+                "name": "魔力手镯",
+                "category": "手镯",
+                "current_shop_supported": false
+              },
+              {
+                "slot": 35,
+                "name": "黑檀手镯",
+                "category": "手镯",
+                "current_shop_supported": false
+              },
+              {
+                "slot": 36,
+                "name": "道士手镯",
+                "category": "手镯",
+                "current_shop_supported": false
+              },
+              {
+                "slot": 37,
+                "name": "降妖除魔戒指",
+                "category": "戒指",
+                "current_shop_supported": false
+              },
+              {
+                "slot": 38,
+                "name": "道士手镯",
+                "category": "手镯",
+                "current_shop_supported": false
+              },
+              {
+                "slot": 39,
+                "name": "降妖除魔戒指",
+                "category": "戒指",
+                "current_shop_supported": false
+              }
+            ],
+            "workflow_seconds": 67.578,
+            "input_method": "后台窗口鼠标消息；未激活游戏，未写入内存"
+          },
+          {
+            "categories": [
+              {
+                "status": "已逐件提交并检查返回状态，请核对金币提示",
+                "submitted": [
+                  {
+                    "item": "灵魂战衣(男)",
+                    "slot": 8,
+                    "seconds": 1.631,
+                    "status": "出售传输已结束；服务器成交需核对金币提示；同UID及余额不变时最多补确认一次",
+                    "settled": true,
+                    "remaining_count": 0,
+                    "gold_before": 2736769,
+                    "gold_after": 2741394,
+                    "gold_change": 4625,
+                    "yuanbao_after": 2133
+                  },
+                  {
+                    "item": "重盔甲(女)",
+                    "slot": 20,
+                    "seconds": 1.619,
+                    "status": "出售传输已结束；服务器成交需核对金币提示；同UID及余额不变时最多补确认一次",
+                    "settled": true,
+                    "remaining_count": 0,
+                    "gold_before": 2741394,
+                    "gold_after": 2746314,
+                    "gold_change": 4920,
+                    "yuanbao_after": 2133
+                  },
+                  {
+                    "item": "灵魂战衣(女)",
+                    "slot": 28,
+                    "seconds": 1.629,
+                    "status": "出售传输已结束；服务器成交需核对金币提示；同UID及余额不变时最多补确认一次",
+                    "settled": true,
+                    "remaining_count": 0,
+                    "gold_before": 2746314,
+                    "gold_after": 2751289,
+                    "gold_change": 4975,
+                    "yuanbao_after": 2133
+                  },
+                  {
+                    "item": "灵魂战衣(男)",
+                    "slot": 2,
+                    "seconds": 1.638,
+                    "status": "出售传输已结束；服务器成交需核对金币提示；同UID及余额不变时最多补确认一次",
+                    "settled": true,
+                    "remaining_count": 0,
+                    "gold_before": 2751289,
+                    "gold_after": 2755689,
+                    "gold_change": 4400,
+                    "yuanbao_after": 2133
+                  },
+                  {
+                    "item": "魔法长袍(男)",
+                    "slot": 4,
+                    "seconds": 1.639,
+                    "status": "出售传输已结束；服务器成交需核对金币提示；同UID及余额不变时最多补确认一次",
+                    "settled": true,
+                    "remaining_count": 0,
+                    "gold_before": 2755689,
+                    "gold_after": 2758814,
+                    "gold_change": 3125,
+                    "yuanbao_after": 2133
+                  },
+                  {
+                    "item": "魔法长袍(女)",
+                    "slot": 8,
+                    "seconds": 1.629,
+                    "status": "出售传输已结束；服务器成交需核对金币提示；同UID及余额不变时最多补确认一次",
+                    "settled": true,
+                    "remaining_count": 0,
+                    "gold_before": 2758814,
+                    "gold_after": 2762564,
+                    "gold_change": 3750,
+                    "yuanbao_after": 2133
+                  },
+                  {
+                    "item": "灵魂战衣(女)",
+                    "slot": 12,
+                    "seconds": 1.623,
+                    "status": "出售传输已结束；服务器成交需核对金币提示；同UID及余额不变时最多补确认一次",
+                    "settled": true,
+                    "remaining_count": 0,
+                    "gold_before": 2762564,
+                    "gold_after": 2765614,
+                    "gold_change": 3050,
+                    "yuanbao_after": 2133
+                  }
+                ],
+                "count": 7,
+                "seconds": 24.825,
+                "remaining_plan": [
+                  {
+                    "slot": 3,
+                    "name": "道士头盔",
+                    "category": "头盔",
+                    "current_shop_supported": false
+                  },
+                  {
+                    "slot": 5,
+                    "name": "骷髅戒指",
+                    "category": "戒指",
+                    "current_shop_supported": false
+                  },
+                  {
+                    "slot": 6,
+                    "name": "死神手套",
+                    "category": "手镯",
+                    "current_shop_supported": false
+                  },
+                  {
+                    "slot": 7,
+                    "name": "道德戒指",
+                    "category": "戒指",
+                    "current_shop_supported": false
+                  },
+                  {
+                    "slot": 9,
+                    "name": "道士头盔",
+                    "category": "头盔",
+                    "current_shop_supported": false
+                  },
+                  {
+                    "slot": 10,
+                    "name": "道士头盔",
+                    "category": "头盔",
+                    "current_shop_supported": false
+                  },
+                  {
+                    "slot": 11,
+                    "name": "金戒指",
+                    "category": "戒指",
+                    "current_shop_supported": false
+                  },
+                  {
+                    "slot": 13,
+                    "name": "魔力手镯",
+                    "category": "手镯",
+                    "current_shop_supported": false
+                  },
+                  {
+                    "slot": 14,
+                    "name": "坚固手套",
+                    "category": "手镯",
+                    "current_shop_supported": false
+                  },
+                  {
+                    "slot": 15,
+                    "name": "蓝翡翠项链",
+                    "category": "项链",
+                    "current_shop_supported": false
+                  },
+                  {
+                    "slot": 16,
+                    "name": "魅力戒指",
+                    "category": "戒指",
+                    "current_shop_supported": false
+                  },
+                  {
+                    "slot": 17,
+                    "name": "坚固手套",
+                    "category": "手镯",
+                    "current_shop_supported": false
+                  },
+                  {
+                    "slot": 18,
+                    "name": "骷髅头盔",
+                    "category": "头盔",
+                    "current_shop_supported": false
+                  },
+                  {
+                    "slot": 19,
+                    "name": "坚固手套",
+                    "category": "手镯",
+                    "current_shop_supported": false
+                  },
+                  {
+                    "slot": 22,
+                    "name": "坚固手套",
+                    "category": "手镯",
+                    "current_shop_supported": false
+                  },
+                  {
+                    "slot": 23,
+                    "name": "黑檀手镯",
+                    "category": "手镯",
+                    "current_shop_supported": false
+                  },
+                  {
+                    "slot": 25,
+                    "name": "魔力手镯",
+                    "category": "手镯",
+                    "current_shop_supported": false
+                  },
+                  {
+                    "slot": 26,
+                    "name": "魔力手镯",
+                    "category": "手镯",
+                    "current_shop_supported": false
+                  },
+                  {
+                    "slot": 27,
+                    "name": "魅力戒指",
+                    "category": "戒指",
+                    "current_shop_supported": false
+                  },
+                  {
+                    "slot": 29,
+                    "name": "魔力手镯",
+                    "category": "手镯",
+                    "current_shop_supported": false
+                  },
+                  {
+                    "slot": 31,
+                    "name": "坚固手套",
+                    "category": "手镯",
+                    "current_shop_supported": false
+                  },
+                  {
+                    "slot": 32,
+                    "name": "金戒指",
+                    "category": "戒指",
+                    "current_shop_supported": false
+                  },
+                  {
+                    "slot": 33,
+                    "name": "魔力手镯",
+                    "category": "手镯",
+                    "current_shop_supported": false
+                  },
+                  {
+                    "slot": 35,
+                    "name": "黑檀手镯",
+                    "category": "手镯",
+                    "current_shop_supported": false
+                  },
+                  {
+                    "slot": 36,
+                    "name": "道士手镯",
+                    "category": "手镯",
+                    "current_shop_supported": false
+                  },
+                  {
+                    "slot": 37,
+                    "name": "降妖除魔戒指",
+                    "category": "戒指",
+                    "current_shop_supported": false
+                  },
+                  {
+                    "slot": 38,
+                    "name": "道士手镯",
+                    "category": "手镯",
+                    "current_shop_supported": false
+                  },
+                  {
+                    "slot": 39,
+                    "name": "降妖除魔戒指",
+                    "category": "戒指",
+                    "current_shop_supported": false
+                  }
+                ],
+                "category": "衣服",
+                "merchant": "服装店老板"
+              },
+              {
+                "status": "已逐件提交并检查返回状态，请核对金币提示",
+                "submitted": [
+                  {
+                    "item": "道士头盔",
+                    "slot": 3,
+                    "seconds": 1.637,
+                    "status": "出售传输已结束；服务器成交需核对金币提示；同UID及余额不变时最多补确认一次",
+                    "settled": true,
+                    "remaining_count": 2,
+                    "gold_before": 2765614,
+                    "gold_after": 2767889,
+                    "gold_change": 2275,
+                    "yuanbao_after": 2133
+                  },
+                  {
+                    "item": "道士头盔",
+                    "slot": 9,
+                    "seconds": 1.628,
+                    "status": "出售传输已结束；服务器成交需核对金币提示；同UID及余额不变时最多补确认一次",
+                    "settled": true,
+                    "remaining_count": 1,
+                    "gold_before": 2767889,
+                    "gold_after": 2770177,
+                    "gold_change": 2288,
+                    "yuanbao_after": 2133
+                  },
+                  {
+                    "item": "道士头盔",
+                    "slot": 10,
+                    "seconds": 1.625,
+                    "status": "出售传输已结束；服务器成交需核对金币提示；同UID及余额不变时最多补确认一次",
+                    "settled": true,
+                    "remaining_count": 0,
+                    "gold_before": 2770177,
+                    "gold_after": 2771752,
+                    "gold_change": 1575,
+                    "yuanbao_after": 2133
+                  },
+                  {
+                    "item": "骷髅头盔",
+                    "slot": 18,
+                    "seconds": 1.629,
+                    "status": "出售传输已结束；服务器成交需核对金币提示；同UID及余额不变时最多补确认一次",
+                    "settled": true,
+                    "remaining_count": 0,
+                    "gold_before": 2771752,
+                    "gold_after": 2775732,
+                    "gold_change": 3980,
+                    "yuanbao_after": 2133
+                  },
+                  {
+                    "item": "骷髅头盔",
+                    "slot": 2,
+                    "seconds": 1.628,
+                    "status": "出售传输已结束；服务器成交需核对金币提示；同UID及余额不变时最多补确认一次",
+                    "settled": true,
+                    "remaining_count": 0,
+                    "gold_before": 2775732,
+                    "gold_after": 2778432,
+                    "gold_change": 2700,
+                    "yuanbao_after": 2133
+                  },
+                  {
+                    "item": "道士头盔",
+                    "slot": 3,
+                    "seconds": 1.637,
+                    "status": "出售传输已结束；服务器成交需核对金币提示；同UID及余额不变时最多补确认一次",
+                    "settled": true,
+                    "remaining_count": 1,
+                    "gold_before": 2778432,
+                    "gold_after": 2780207,
+                    "gold_change": 1775,
+                    "yuanbao_after": 2133
+                  },
+                  {
+                    "item": "道士头盔",
+                    "slot": 4,
+                    "seconds": 1.632,
+                    "status": "出售传输已结束；服务器成交需核对金币提示；同UID及余额不变时最多补确认一次",
+                    "settled": true,
+                    "remaining_count": 0,
+                    "gold_before": 2780207,
+                    "gold_after": 2782157,
+                    "gold_change": 1950,
+                    "yuanbao_after": 2133
+                  }
+                ],
+                "count": 7,
+                "seconds": 23.934,
+                "remaining_plan": [
+                  {
+                    "slot": 5,
+                    "name": "骷髅戒指",
+                    "category": "戒指",
+                    "current_shop_supported": false
+                  },
+                  {
+                    "slot": 6,
+                    "name": "死神手套",
+                    "category": "手镯",
+                    "current_shop_supported": false
+                  },
+                  {
+                    "slot": 7,
+                    "name": "道德戒指",
+                    "category": "戒指",
+                    "current_shop_supported": false
+                  },
+                  {
+                    "slot": 11,
+                    "name": "金戒指",
+                    "category": "戒指",
+                    "current_shop_supported": false
+                  },
+                  {
+                    "slot": 13,
+                    "name": "魔力手镯",
+                    "category": "手镯",
+                    "current_shop_supported": false
+                  },
+                  {
+                    "slot": 14,
+                    "name": "坚固手套",
+                    "category": "手镯",
+                    "current_shop_supported": false
+                  },
+                  {
+                    "slot": 15,
+                    "name": "蓝翡翠项链",
+                    "category": "项链",
+                    "current_shop_supported": false
+                  },
+                  {
+                    "slot": 16,
+                    "name": "魅力戒指",
+                    "category": "戒指",
+                    "current_shop_supported": false
+                  },
+                  {
+                    "slot": 17,
+                    "name": "坚固手套",
+                    "category": "手镯",
+                    "current_shop_supported": false
+                  },
+                  {
+                    "slot": 19,
+                    "name": "坚固手套",
+                    "category": "手镯",
+                    "current_shop_supported": false
+                  },
+                  {
+                    "slot": 22,
+                    "name": "坚固手套",
+                    "category": "手镯",
+                    "current_shop_supported": false
+                  },
+                  {
+                    "slot": 23,
+                    "name": "黑檀手镯",
+                    "category": "手镯",
+                    "current_shop_supported": false
+                  },
+                  {
+                    "slot": 25,
+                    "name": "魔力手镯",
+                    "category": "手镯",
+                    "current_shop_supported": false
+                  },
+                  {
+                    "slot": 26,
+                    "name": "魔力手镯",
+                    "category": "手镯",
+                    "current_shop_supported": false
+                  },
+                  {
+                    "slot": 27,
+                    "name": "魅力戒指",
+                    "category": "戒指",
+                    "current_shop_supported": false
+                  },
+                  {
+                    "slot": 29,
+                    "name": "魔力手镯",
+                    "category": "手镯",
+                    "current_shop_supported": false
+                  },
+                  {
+                    "slot": 31,
+                    "name": "坚固手套",
+                    "category": "手镯",
+                    "current_shop_supported": false
+                  },
+                  {
+                    "slot": 32,
+                    "name": "金戒指",
+                    "category": "戒指",
+                    "current_shop_supported": false
+                  },
+                  {
+                    "slot": 33,
+                    "name": "魔力手镯",
+                    "category": "手镯",
+                    "current_shop_supported": false
+                  },
+                  {
+                    "slot": 35,
+                    "name": "黑檀手镯",
+                    "category": "手镯",
+                    "current_shop_supported": false
+                  },
+                  {
+                    "slot": 36,
+                    "name": "道士手镯",
+                    "category": "手镯",
+                    "current_shop_supported": false
+                  },
+                  {
+                    "slot": 37,
+                    "name": "降妖除魔戒指",
+                    "category": "戒指",
+                    "current_shop_supported": false
+                  },
+                  {
+                    "slot": 38,
+                    "name": "道士手镯",
+                    "category": "手镯",
+                    "current_shop_supported": false
+                  },
+                  {
+                    "slot": 39,
+                    "name": "降妖除魔戒指",
+                    "category": "戒指",
+                    "current_shop_supported": false
+                  }
+                ],
+                "category": "头盔",
+                "merchant": "服装店老板"
+              },
+              {
+                "status": "已逐件提交并检查返回状态，请核对金币提示",
+                "submitted": [
+                  {
+                    "item": "骷髅戒指",
+                    "slot": 5,
+                    "seconds": 1.622,
+                    "status": "出售传输已结束；服务器成交需核对金币提示；同UID及余额不变时最多补确认一次",
+                    "settled": true,
+                    "remaining_count": 0,
+                    "gold_before": 2782157,
+                    "gold_after": 2783819,
+                    "gold_change": 1662,
+                    "yuanbao_after": 2133
+                  },
+                  {
+                    "item": "道德戒指",
+                    "slot": 7,
+                    "seconds": 1.63,
+                    "status": "出售传输已结束；服务器成交需核对金币提示；同UID及余额不变时最多补确认一次",
+                    "settled": true,
+                    "remaining_count": 0,
+                    "gold_before": 2783819,
+                    "gold_after": 2785369,
+                    "gold_change": 1550,
+                    "yuanbao_after": 2133
+                  },
+                  {
+                    "item": "金戒指",
+                    "slot": 11,
+                    "seconds": 1.634,
+                    "status": "出售传输已结束；服务器成交需核对金币提示；同UID及余额不变时最多补确认一次",
+                    "settled": true,
+                    "remaining_count": 1,
+                    "gold_before": 2785369,
+                    "gold_after": 2789395,
+                    "gold_change": 4026,
+                    "yuanbao_after": 2133
+                  },
+                  {
+                    "item": "魅力戒指",
+                    "slot": 16,
+                    "seconds": 1.626,
+                    "status": "出售传输已结束；服务器成交需核对金币提示；同UID及余额不变时最多补确认一次",
+                    "settled": true,
+                    "remaining_count": 1,
+                    "gold_before": 2789395,
+                    "gold_after": 2791215,
+                    "gold_change": 1820,
+                    "yuanbao_after": 2133
+                  },
+                  {
+                    "item": "魅力戒指",
+                    "slot": 27,
+                    "seconds": 1.634,
+                    "status": "出售传输已结束；服务器成交需核对金币提示；同UID及余额不变时最多补确认一次",
+                    "settled": true,
+                    "remaining_count": 0,
+                    "gold_before": 2791215,
+                    "gold_after": 2792785,
+                    "gold_change": 1570,
+                    "yuanbao_after": 2133
+                  },
+                  {
+                    "item": "金戒指",
+                    "slot": 32,
+                    "seconds": 1.632,
+                    "status": "出售传输已结束；服务器成交需核对金币提示；同UID及余额不变时最多补确认一次",
+                    "settled": true,
+                    "remaining_count": 0,
+                    "gold_before": 2792785,
+                    "gold_after": 2796151,
+                    "gold_change": 3366,
+                    "yuanbao_after": 2133
+                  },
+                  {
+                    "item": "降妖除魔戒指",
+                    "slot": 37,
+                    "seconds": 1.635,
+                    "status": "出售传输已结束；服务器成交需核对金币提示；同UID及余额不变时最多补确认一次",
+                    "settled": true,
+                    "remaining_count": 1,
+                    "gold_before": 2796151,
+                    "gold_after": 2800126,
+                    "gold_change": 3975,
+                    "yuanbao_after": 2133
+                  },
+                  {
+                    "item": "降妖除魔戒指",
+                    "slot": 39,
+                    "seconds": 1.629,
+                    "status": "出售传输已结束；服务器成交需核对金币提示；同UID及余额不变时最多补确认一次",
+                    "settled": true,
+                    "remaining_count": 0,
+                    "gold_before": 2800126,
+                    "gold_after": 2804301,
+                    "gold_change": 4175,
+                    "yuanbao_after": 2133
+                  },
+                  {
+                    "item": "骷髅戒指",
+                    "slot": 2,
+                    "seconds": 1.628,
+                    "status": "出售传输已结束；服务器成交需核对金币提示；同UID及余额不变时最多补确认一次",
+                    "settled": true,
+                    "remaining_count": 1,
+                    "gold_before": 2804301,
+                    "gold_after": 2806789,
+                    "gold_change": 2488,
+                    "yuanbao_after": 2133
+                  },
+                  {
+                    "item": "珊瑚戒指",
+                    "slot": 3,
+                    "seconds": 1.622,
+                    "status": "出售传输已结束；服务器成交需核对金币提示；同UID及余额不变时最多补确认一次",
+                    "settled": true,
+                    "remaining_count": 1,
+                    "gold_before": 2806789,
+                    "gold_after": 2812714,
+                    "gold_change": 5925,
+                    "yuanbao_after": 2133
+                  },
+                  {
+                    "item": "道德戒指",
+                    "slot": 4,
+                    "seconds": 1.625,
+                    "status": "出售传输已结束；服务器成交需核对金币提示；同UID及余额不变时最多补确认一次",
+                    "settled": true,
+                    "remaining_count": 0,
+                    "gold_before": 2812714,
+                    "gold_after": 2814334,
+                    "gold_change": 1620,
+                    "yuanbao_after": 2133
+                  },
+                  {
+                    "item": "珊瑚戒指",
+                    "slot": 5,
+                    "seconds": 1.624,
+                    "status": "出售传输已结束；服务器成交需核对金币提示；同UID及余额不变时最多补确认一次",
+                    "settled": true,
+                    "remaining_count": 0,
+                    "gold_before": 2814334,
+                    "gold_after": 2819134,
+                    "gold_change": 4800,
+                    "yuanbao_after": 2133
+                  },
+                  {
+                    "item": "骷髅戒指",
+                    "slot": 7,
+                    "seconds": 1.627,
+                    "status": "出售传输已结束；服务器成交需核对金币提示；同UID及余额不变时最多补确认一次",
+                    "settled": true,
+                    "remaining_count": 0,
+                    "gold_before": 2819134,
+                    "gold_after": 2820834,
+                    "gold_change": 1700,
+                    "yuanbao_after": 2133
+                  }
+                ],
+                "count": 13,
+                "seconds": 38.609,
+                "remaining_plan": [
+                  {
+                    "slot": 6,
+                    "name": "死神手套",
+                    "category": "手镯",
+                    "current_shop_supported": false
+                  },
+                  {
+                    "slot": 13,
+                    "name": "魔力手镯",
+                    "category": "手镯",
+                    "current_shop_supported": false
+                  },
+                  {
+                    "slot": 14,
+                    "name": "坚固手套",
+                    "category": "手镯",
+                    "current_shop_supported": false
+                  },
+                  {
+                    "slot": 15,
+                    "name": "蓝翡翠项链",
+                    "category": "项链",
+                    "current_shop_supported": false
+                  },
+                  {
+                    "slot": 17,
+                    "name": "坚固手套",
+                    "category": "手镯",
+                    "current_shop_supported": false
+                  },
+                  {
+                    "slot": 19,
+                    "name": "坚固手套",
+                    "category": "手镯",
+                    "current_shop_supported": false
+                  },
+                  {
+                    "slot": 22,
+                    "name": "坚固手套",
+                    "category": "手镯",
+                    "current_shop_supported": false
+                  },
+                  {
+                    "slot": 23,
+                    "name": "黑檀手镯",
+                    "category": "手镯",
+                    "current_shop_supported": false
+                  },
+                  {
+                    "slot": 25,
+                    "name": "魔力手镯",
+                    "category": "手镯",
+                    "current_shop_supported": false
+                  },
+                  {
+                    "slot": 26,
+                    "name": "魔力手镯",
+                    "category": "手镯",
+                    "current_shop_supported": false
+                  },
+                  {
+                    "slot": 29,
+                    "name": "魔力手镯",
+                    "category": "手镯",
+                    "current_shop_supported": false
+                  },
+                  {
+                    "slot": 31,
+                    "name": "坚固手套",
+                    "category": "手镯",
+                    "current_shop_supported": false
+                  },
+                  {
+                    "slot": 33,
+                    "name": "魔力手镯",
+                    "category": "手镯",
+                    "current_shop_supported": false
+                  },
+                  {
+                    "slot": 35,
+                    "name": "黑檀手镯",
+                    "category": "手镯",
+                    "current_shop_supported": false
+                  },
+                  {
+                    "slot": 36,
+                    "name": "道士手镯",
+                    "category": "手镯",
+                    "current_shop_supported": false
+                  },
+                  {
+                    "slot": 38,
+                    "name": "道士手镯",
+                    "category": "手镯",
+                    "current_shop_supported": false
+                  }
+                ],
+                "category": "戒指",
+                "merchant": "首饰店老板"
+              },
+              {
+                "status": "已逐件提交并检查返回状态，请核对金币提示",
+                "submitted": [
+                  {
+                    "item": "死神手套",
+                    "slot": 6,
+                    "seconds": 1.624,
+                    "status": "出售传输已结束；服务器成交需核对金币提示；同UID及余额不变时最多补确认一次",
+                    "settled": true,
+                    "remaining_count": 0,
+                    "gold_before": 2820834,
+                    "gold_after": 2824034,
+                    "gold_change": 3200,
+                    "yuanbao_after": 2133
+                  },
+                  {
+                    "item": "魔力手镯",
+                    "slot": 13,
+                    "seconds": 1.628,
+                    "status": "出售传输已结束；服务器成交需核对金币提示；同UID及余额不变时最多补确认一次",
+                    "settled": true,
+                    "remaining_count": 4,
+                    "gold_before": 2824034,
+                    "gold_after": 2826762,
+                    "gold_change": 2728,
+                    "yuanbao_after": 2133
+                  },
+                  {
+                    "item": "坚固手套",
+                    "slot": 14,
+                    "seconds": 1.636,
+                    "status": "出售传输已结束；服务器成交需核对金币提示；同UID及余额不变时最多补确认一次",
+                    "settled": true,
+                    "remaining_count": 4,
+                    "gold_before": 2826762,
+                    "gold_after": 2829842,
+                    "gold_change": 3080,
+                    "yuanbao_after": 2133
+                  },
+                  {
+                    "item": "坚固手套",
+                    "slot": 17,
+                    "seconds": 1.629,
+                    "status": "出售传输已结束；服务器成交需核对金币提示；同UID及余额不变时最多补确认一次",
+                    "settled": true,
+                    "remaining_count": 3,
+                    "gold_before": 2829842,
+                    "gold_after": 2832100,
+                    "gold_change": 2258,
+                    "yuanbao_after": 2133
+                  },
+                  {
+                    "item": "坚固手套",
+                    "slot": 19,
+                    "seconds": 1.631,
+                    "status": "出售传输已结束；服务器成交需核对金币提示；同UID及余额不变时最多补确认一次",
+                    "settled": true,
+                    "remaining_count": 2,
+                    "gold_before": 2832100,
+                    "gold_after": 2834462,
+                    "gold_change": 2362,
+                    "yuanbao_after": 2133
+                  },
+                  {
+                    "item": "坚固手套",
+                    "slot": 22,
+                    "seconds": 1.631,
+                    "status": "出售传输已结束；服务器成交需核对金币提示；同UID及余额不变时最多补确认一次",
+                    "settled": true,
+                    "remaining_count": 1,
+                    "gold_before": 2834462,
+                    "gold_after": 2836860,
+                    "gold_change": 2398,
+                    "yuanbao_after": 2133
+                  },
+                  {
+                    "item": "黑檀手镯",
+                    "slot": 23,
+                    "seconds": 1.645,
+                    "status": "出售传输已结束；服务器成交需核对金币提示；同UID及余额不变时最多补确认一次",
+                    "settled": true,
+                    "remaining_count": 1,
+                    "gold_before": 2836860,
+                    "gold_after": 2838650,
+                    "gold_change": 1790,
+                    "yuanbao_after": 2133
+                  },
+                  {
+                    "item": "魔力手镯",
+                    "slot": 25,
+                    "seconds": 1.631,
+                    "status": "出售传输已结束；服务器成交需核对金币提示；同UID及余额不变时最多补确认一次",
+                    "settled": true,
+                    "remaining_count": 3,
+                    "gold_before": 2838650,
+                    "gold_after": 2841959,
+                    "gold_change": 3309,
+                    "yuanbao_after": 2133
+                  },
+                  {
+                    "item": "魔力手镯",
+                    "slot": 26,
+                    "seconds": 1.618,
+                    "status": "出售传输已结束；服务器成交需核对金币提示；同UID及余额不变时最多补确认一次",
+                    "settled": true,
+                    "remaining_count": 2,
+                    "gold_before": 2841959,
+                    "gold_after": 2845468,
+                    "gold_change": 3509,
+                    "yuanbao_after": 2133
+                  },
+                  {
+                    "item": "魔力手镯",
+                    "slot": 29,
+                    "seconds": 1.635,
+                    "status": "出售传输已结束；服务器成交需核对金币提示；同UID及余额不变时最多补确认一次",
+                    "settled": true,
+                    "remaining_count": 1,
+                    "gold_before": 2845468,
+                    "gold_after": 2848122,
+                    "gold_change": 2654,
+                    "yuanbao_after": 2133
+                  },
+                  {
+                    "item": "坚固手套",
+                    "slot": 31,
+                    "seconds": 1.625,
+                    "status": "出售传输已结束；服务器成交需核对金币提示；同UID及余额不变时最多补确认一次",
+                    "settled": true,
+                    "remaining_count": 0,
+                    "gold_before": 2848122,
+                    "gold_after": 2850572,
+                    "gold_change": 2450,
+                    "yuanbao_after": 2133
+                  },
+                  {
+                    "item": "魔力手镯",
+                    "slot": 33,
+                    "seconds": 1.632,
+                    "status": "出售传输已结束；服务器成交需核对金币提示；同UID及余额不变时最多补确认一次",
+                    "settled": true,
+                    "remaining_count": 0,
+                    "gold_before": 2850572,
+                    "gold_after": 2853608,
+                    "gold_change": 3036,
+                    "yuanbao_after": 2133
+                  },
+                  {
+                    "item": "黑檀手镯",
+                    "slot": 35,
+                    "seconds": 1.63,
+                    "status": "出售传输已结束；服务器成交需核对金币提示；同UID及余额不变时最多补确认一次",
+                    "settled": true,
+                    "remaining_count": 0,
+                    "gold_before": 2853608,
+                    "gold_after": 2855598,
+                    "gold_change": 1990,
+                    "yuanbao_after": 2133
+                  },
+                  {
+                    "item": "道士手镯",
+                    "slot": 36,
+                    "seconds": 1.644,
+                    "status": "出售传输已结束；服务器成交需核对金币提示；同UID及余额不变时最多补确认一次",
+                    "settled": true,
+                    "remaining_count": 1,
+                    "gold_before": 2855598,
+                    "gold_after": 2857248,
+                    "gold_change": 1650,
+                    "yuanbao_after": 2133
+                  },
+                  {
+                    "item": "道士手镯",
+                    "slot": 38,
+                    "seconds": 1.642,
+                    "status": "出售传输已结束；服务器成交需核对金币提示；同UID及余额不变时最多补确认一次",
+                    "settled": true,
+                    "remaining_count": 0,
+                    "gold_before": 2857248,
+                    "gold_after": 2859218,
+                    "gold_change": 1970,
+                    "yuanbao_after": 2133
+                  },
+                  {
+                    "item": "坚固手套",
+                    "slot": 2,
+                    "seconds": 1.63,
+                    "status": "出售传输已结束；服务器成交需核对金币提示；同UID及余额不变时最多补确认一次",
+                    "settled": true,
+                    "remaining_count": 3,
+                    "gold_before": 2859218,
+                    "gold_after": 2861948,
+                    "gold_change": 2730,
+                    "yuanbao_after": 2133
+                  },
+                  {
+                    "item": "魔力手镯",
+                    "slot": 3,
+                    "seconds": 1.629,
+                    "status": "出售传输已结束；服务器成交需核对金币提示；同UID及余额不变时最多补确认一次",
+                    "settled": true,
+                    "remaining_count": 2,
+                    "gold_before": 2861948,
+                    "gold_after": 2864548,
+                    "gold_change": 2600,
+                    "yuanbao_after": 2133
+                  },
+                  {
+                    "item": "死神手套",
+                    "slot": 4,
+                    "seconds": 1.624,
+                    "status": "出售传输已结束；服务器成交需核对金币提示；同UID及余额不变时最多补确认一次",
+                    "settled": true,
+                    "remaining_count": 0,
+                    "gold_before": 2864548,
+                    "gold_after": 2868388,
+                    "gold_change": 3840,
+                    "yuanbao_after": 2133
+                  },
+                  {
+                    "item": "魔力手镯",
+                    "slot": 5,
+                    "seconds": 1.641,
+                    "status": "出售传输已结束；服务器成交需核对金币提示；同UID及余额不变时最多补确认一次",
+                    "settled": true,
+                    "remaining_count": 1,
+                    "gold_before": 2868388,
+                    "gold_after": 2871970,
+                    "gold_change": 3582,
+                    "yuanbao_after": 2133
+                  },
+                  {
+                    "item": "魔力手镯",
+                    "slot": 6,
+                    "seconds": 1.625,
+                    "status": "出售传输已结束；服务器成交需核对金币提示；同UID及余额不变时最多补确认一次",
+                    "settled": true,
+                    "remaining_count": 0,
+                    "gold_before": 2871970,
+                    "gold_after": 2874334,
+                    "gold_change": 2364,
+                    "yuanbao_after": 2133
+                  },
+                  {
+                    "item": "坚固手套",
+                    "slot": 7,
+                    "seconds": 1.629,
+                    "status": "出售传输已结束；服务器成交需核对金币提示；同UID及余额不变时最多补确认一次",
+                    "settled": true,
+                    "remaining_count": 2,
+                    "gold_before": 2874334,
+                    "gold_after": 2877676,
+                    "gold_change": 3342,
+                    "yuanbao_after": 2133
+                  },
+                  {
+                    "item": "坚固手套",
+                    "slot": 8,
+                    "seconds": 1.633,
+                    "status": "出售传输已结束；服务器成交需核对金币提示；同UID及余额不变时最多补确认一次",
+                    "settled": true,
+                    "remaining_count": 1,
+                    "gold_before": 2877676,
+                    "gold_after": 2880966,
+                    "gold_change": 3290,
+                    "yuanbao_after": 2133
+                  },
+                  {
+                    "item": "黑檀手镯",
+                    "slot": 9,
+                    "seconds": 1.638,
+                    "status": "出售传输已结束；服务器成交需核对金币提示；同UID及余额不变时最多补确认一次",
+                    "settled": true,
+                    "remaining_count": 0,
+                    "gold_before": 2880966,
+                    "gold_after": 2882616,
+                    "gold_change": 1650,
+                    "yuanbao_after": 2133
+                  },
+                  {
+                    "item": "坚固手套",
+                    "slot": 10,
+                    "seconds": 1.63,
+                    "status": "出售传输已结束；服务器成交需核对金币提示；同UID及余额不变时最多补确认一次",
+                    "settled": true,
+                    "remaining_count": 0,
+                    "gold_before": 2882616,
+                    "gold_after": 2885434,
+                    "gold_change": 2818,
+                    "yuanbao_after": 2133
+                  },
+                  {
+                    "item": "金手镯",
+                    "slot": 11,
+                    "seconds": 1.626,
+                    "status": "出售传输已结束；服务器成交需核对金币提示；同UID及余额不变时最多补确认一次",
+                    "settled": true,
+                    "remaining_count": 0,
+                    "gold_before": 2885434,
+                    "gold_after": 2888776,
+                    "gold_change": 3342,
+                    "yuanbao_after": 2133
+                  }
+                ],
+                "count": 25,
+                "seconds": 69.067,
+                "remaining_plan": [
+                  {
+                    "slot": 15,
+                    "name": "蓝翡翠项链",
+                    "category": "项链",
+                    "current_shop_supported": false
+                  }
+                ],
+                "category": "手镯",
+                "merchant": "首饰店老板"
+              },
+              {
+                "status": "已逐件提交并检查返回状态，请核对金币提示",
+                "submitted": [
+                  {
+                    "item": "蓝翡翠项链",
+                    "slot": 15,
+                    "seconds": 1.624,
+                    "status": "出售传输已结束；服务器成交需核对金币提示；同UID及余额不变时最多补确认一次",
+                    "settled": true,
+                    "remaining_count": 0,
+                    "gold_before": 2888776,
+                    "gold_after": 2893526,
+                    "gold_change": 4750,
+                    "yuanbao_after": 2133
+                  },
+                  {
+                    "item": "蓝翡翠项链",
+                    "slot": 2,
+                    "seconds": 1.62,
+                    "status": "出售传输已结束；服务器成交需核对金币提示；同UID及余额不变时最多补确认一次",
+                    "settled": true,
+                    "remaining_count": 1,
+                    "gold_before": 2893526,
+                    "gold_after": 2897451,
+                    "gold_change": 3925,
+                    "yuanbao_after": 2133
+                  },
+                  {
+                    "item": "蓝翡翠项链",
+                    "slot": 3,
+                    "seconds": 1.633,
+                    "status": "出售传输已结束；服务器成交需核对金币提示；同UID及余额不变时最多补确认一次",
+                    "settled": true,
+                    "remaining_count": 0,
+                    "gold_before": 2897451,
+                    "gold_after": 2900476,
+                    "gold_change": 3025,
+                    "yuanbao_after": 2133
+                  }
+                ],
+                "count": 3,
+                "seconds": 14.365,
+                "remaining_plan": [],
+                "category": "项链",
+                "merchant": "首饰店老板"
+              }
+            ],
+            "count": 55,
+            "remaining_plan": []
+          }
+        ],
+        "remaining_plan": [],
+        "position": [
+          144,
+          330
+        ],
+        "verification_only": false,
+        "return_stone_used": true,
+        "exit_returns": 1,
+        "shop_exits": [
+          {
+            "town_position": [
+              324,
+              330
+            ],
+            "return_stone_used": true,
+            "exit_fallback": "用户要求武器售完直接回城",
+            "exit_players": [],
+            "return_result": {
+              "already_in_town": false,
+              "hotkey_sent": true,
+              "position": [
+                324,
+                330
+              ],
+              "town_verified": true
+            }
+          }
+        ],
+        "foreground_used": false
+      }
+    ],
+    "transfers": [],
+    "remaining_plan": [],
+    "main_free": 39,
+    "hero_free": 36,
+    "return_stone_used": true,
+    "exit_returns": 1,
+    "foreground_used": false,
+    "recoveries": []
+  }
+}
