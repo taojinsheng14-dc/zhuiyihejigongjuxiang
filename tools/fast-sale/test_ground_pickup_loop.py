@@ -66,3 +66,41 @@ class MoveTests(unittest.TestCase):
         self.assertEqual(probe.choose_pickup_move((2,2),[(2,2),(3,2),(4,2)],self.Map(),{(3,2)}),((3,2),'left'))
 
 if __name__=='__main__':unittest.main()
+
+
+class PickupRangeTests(unittest.TestCase):
+    def attempt(self,cooperative,changed_map=False):
+        from types import SimpleNamespace
+        from unittest.mock import Mock
+        from contextlib import ExitStack
+        drop={'id':7,'name':'木剑','x':6,'y':0,'key_matches':True}
+        snapshot={'position':(0,0),'ground_maps':[{'stable':True,'items':[drop]}]}
+        reads=[0]
+        def read(address,size):
+            reads[0]+=1
+            return (b'y' if changed_map and reads[0]>1 else b'x')*size
+        s=SimpleNamespace(inventory=lambda:['']*40,held_item=lambda:'',sale_item=lambda:'',inflight_item=lambda:'',
+            visible=lambda key:False,uint=lambda address:100,base=0,read=read,navigation_map=Mock(),
+            player=lambda:(-1,0),pause=Mock())
+        with ExitStack() as stack:
+            stack.enter_context(patch('inventory_flow.ensure_loot_capacity'))
+            stack.enter_context(patch.object(probe,'ground_snapshot',return_value=snapshot))
+            stack.enter_context(patch.object(probe,'stored_item_count',return_value=0))
+            stack.enter_context(patch('pickup_strategy.context',return_value={
+                'monsters':[],'hero':None,'position':(0,0)}))
+            stack.enter_context(patch('pickup_strategy.choose',return_value=('pickup',drop)))
+            click=stack.enter_context(patch('background_sale.BackgroundSession.background_mouse'))
+            result=probe.pickup_current_test(s,cooperative=cooperative)
+            click.assert_not_called()
+            return result
+
+    def test_cooperative_range_exit_yields_without_false_pickup_or_input(self):
+        result=self.attempt(True)
+        self.assertEqual(result['status'],'blocked')
+        self.assertFalse(result['verified']);self.assertTrue(result['ground_remaining'])
+
+    def test_bounded_manual_probe_retains_range_limit(self):
+        with self.assertRaisesRegex(RuntimeError,'超出测试范围'):self.attempt(False)
+
+    def test_map_change_still_stops_before_cooperative_yield(self):
+        with self.assertRaisesRegex(RuntimeError,'地图变化'):self.attempt(True,changed_map=True)

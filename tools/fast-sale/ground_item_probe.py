@@ -324,7 +324,13 @@ def pickup_current_test(session,excluded=None,names=('木剑',),radius=6,max_ste
                 session.pause(.3)
                 actions.append({'before':current,'after':tuple(session.player()),'point':point,'button':'left','action':'pickup_underfoot'})
             break
-        if radius is not None and max(abs(current[0]-target[0]),abs(current[1]-target[1]))>radius:raise RuntimeError('超出测试范围')
+        if session.read(session.uint(session.uint(session.base+0x2ba608))+4,52)!=map_header:
+            raise RuntimeError('拾取期间地图变化，停止')
+        if radius is not None and max(abs(current[0]-target[0]),abs(current[1]-target[1]))>radius:
+            if not cooperative:raise RuntimeError('超出测试范围')
+            # A bounded pickup attempt can detour beyond the selection radius.
+            # Yield to combat/patrol and resample; do not end continuous hunting.
+            break
         rows=ground_snapshot(session)['ground_maps'][0]
         if not rows.get('stable') or not any(r['id']==uid for r in rows['items']):break
         if session.read(session.uint(session.uint(session.base+0x2ba608))+4,52)!=map_header:
