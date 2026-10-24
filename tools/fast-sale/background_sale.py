@@ -3172,13 +3172,31 @@ class BackgroundSession(Session):
             raise RuntimeError('背包或网格尺寸已变化，需要重新校准；未移动或出售')
         return {'client_size':[width,height],'coordinate_basis':'live_controls'}
 
+    def capture_menu_frame(self, name):
+        # A blank window capture is not evidence that a menu link is absent.
+        # Retry capture only: never focus the window or click guessed coordinates.
+        for attempt in range(1, 4):
+            if not self.visible('merchant'): return None
+            capture = self.capture_client()
+            if not self.visible('merchant'): return None
+            extrema = capture.getextrema()
+            blank = all(high-low <= 3 for low, high in extrema)
+            if getattr(self, '_stats_enabled', False) and (blank or attempt > 1):
+                self.write_stats({'event': 'menu_capture', 'menu': name,
+                                  'attempt': attempt, 'blank': blank,
+                                  'size': list(capture.size), 'extrema': extrema})
+            if not blank: return capture
+            if attempt < 3: self.pause(.25)
+        raise RuntimeError('商人菜单截图连续3次为空白，已安全停止；未点击菜单，请检查游戏窗口渲染后再接续')
+
     def menu_matches(self, name):
         from PIL import Image
         if not self.visible('merchant'): return False
         entry = self.profile()['menus'][name]
+        capture = self.capture_menu_frame(name)
+        if capture is None: return False
         left, top = self.bounds('merchant')[:2]
         box = entry['box']
-        capture = self.capture_client()
         actual = capture.crop((left+box[0], top+box[1], left+box[2], top+box[3]))
         expected = Image.open(self.resource(entry['template'])).convert('RGB')
         def yellow(pixel):
