@@ -75,3 +75,37 @@ class CurrentMapTests(unittest.TestCase):
             result=profile.approach(s,Mock())
         self.assertTrue(result['nearby_combat']);self.assertFalse(result['movement'])
         self.assertEqual(result['target']['name'],'黑色恶蛆');move.assert_not_called()
+
+    def test_player_guard_queries_entire_loaded_scene(self):
+        s=self.session();s.nearby_players=Mock(return_value=[{'position':[100,100]}])
+        with patch.object(hunt,'header',return_value=hunt.STONE_HEADER),patch.object(hunt,'read_experience',return_value={'character':'厚礼蟹'}):
+            with self.assertRaises(hunt.PlayersDetected):hunt.StoneTomb(avoid_players=True).guard(s)
+        s.nearby_players.assert_called_once_with(None)
+
+    def random_session(self):
+        state={'position':(50,50)}
+        s=self.session();s.player=lambda:state['position'];s.stable_player=s.player
+        s.nearby_players=lambda radius:[{'position':[70,70]}]
+        s.currency_snapshot=lambda:{'gold':100,'yuanbao':10}
+        s.shortcut_inventory=lambda:[{'name':'随机传送石','key':1,'raw_98':100}]
+        s.clear_background_mouse=Mock();s.write_stats=Mock()
+        s.press_named_hotkey=Mock(side_effect=lambda *a:state.update(position=(80,80)))
+        s.wait=lambda condition,timeout:self.assertTrue(condition())
+        p=hunt.StoneTomb(avoid_players=True);p.check_state=Mock();p.tilemap=SimpleNamespace(free=lambda xy:True)
+        return p,s
+
+    def test_player_random_uses_one_named_stone_and_confirms_new_position(self):
+        p,s=self.random_session();result=p.avoid_players(s,Mock())
+        self.assertTrue(result['random_used']);self.assertEqual(result['after'],(80,80))
+        s.press_named_hotkey.assert_called_once_with(('随机传送石',),'random')
+        s.clear_background_mouse.assert_called_once()
+
+    def test_uncertain_random_does_not_repeat(self):
+        p,s=self.random_session();s.wait=lambda *a,**k:(_ for _ in ()).throw(RuntimeError('timeout'))
+        with self.assertRaisesRegex(RuntimeError,'不重复按键'):p.avoid_players(s,Mock())
+        self.assertEqual(s.press_named_hotkey.call_count,1)
+
+    def test_missing_random_stone_never_uses_other_item(self):
+        p,s=self.random_session();s.shortcut_inventory=lambda:[]
+        with self.assertRaisesRegex(RuntimeError,'缺少'):p.avoid_players(s,Mock())
+        s.press_named_hotkey.assert_not_called()

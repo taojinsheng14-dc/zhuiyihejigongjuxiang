@@ -340,6 +340,14 @@ def run_bounded(session,progress=lambda message:None,seconds=30,max_casts=6,cont
                 position_anchor=tuple(session.player())
             except (profile.panel_exception if profile else ()):
                 locked=None;failed_aims=0;continue
+            except (getattr(profile,'player_exception',()) if profile else ()):
+                session.clear_background_mouse()
+                result=profile.avoid_players(session,progress);log('player_avoidance',result=result)
+                locked=None;last_zero_health=False;failed_aims=0;excluded.clear()
+                position_anchor=tuple(session.player())
+                if result.get('random_used'):
+                    route=CoverageRoute(tilemap,position_anchor,spacing=getattr(profile,'route_spacing',8))
+                continue
         summary={'status':status,'casts_sent':casts,'observed_deaths':deaths,
                  'verified_pickups':verified_pickups,'unverified_target_losses':unverified_losses,'movement_segments':movement_segments,
                  'elapsed_seconds':round(time.monotonic()-started,2),'unattended_acceptance':False,'position':session.player()}

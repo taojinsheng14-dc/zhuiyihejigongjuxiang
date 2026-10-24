@@ -1751,6 +1751,10 @@ class BackgroundSession(Session):
             import ground_item_probe
             __import__('importlib').reload(ground_item_probe)
             return ground_item_probe.pickup_test(self)
+        if categories==['当前地图避人只读']:
+            return {'scope':'client_loaded','players':self.nearby_players(None),
+                    'random_stones':[{k:v for k,v in row.items() if k in ('key','name','raw_98')} for row in self.shortcut_inventory() if row['name']=='随机传送石'],
+                    'game_input_sent':False}
         if categories==['当前地图巡逻路网只读']:
             import current_map_hunt
             importlib.reload(current_map_hunt)
@@ -2315,23 +2319,30 @@ class BackgroundSession(Session):
                 self.pause(.01)
 
     def nearby_players(self,radius=8):
-        own=self.uint(self.uint(self.base+0x2bac2c));position=tuple(self.player())
-        rows=self.scene_actor_snapshot();humans=[];heroes=set()
-        addresses={address for address,raw in rows}
-        for address,raw in rows:
-            if struct.unpack_from('<I',raw)[0]!=self.base+0x24991c:continue
-            hero=self.uint(address+0x358)
-            if hero in addresses:heroes.add(hero)
-            humans.append((address,raw))
-        players=[]
-        for address,raw in humans:
-            if address==own or address in heroes or raw[0xac]==1:continue
-            x,y=struct.unpack_from('<2i',raw,0x68)
-            if raw[0xac] not in (0,1) or not(0<=x<10000 and 0<=y<10000):raise RuntimeError('附近玩家数据不符')
-            if max(abs(x-position[0]),abs(y-position[1]))<=radius:
-                players.append({'address':address,'position':[x,y]})
-        if tuple(self.player())!=position:raise RuntimeError('人物坐标在采样时发生变化，请重读')
-        return players
+        def snapshot():
+            own=self.uint(self.uint(self.base+0x2bac2c));position=tuple(self.player())
+            rows=self.scene_actor_snapshot();humans=[];heroes={self.uint(own+0x358)}
+            addresses={address for address,raw in rows}
+            for address,raw in rows:
+                if struct.unpack_from('<I',raw)[0]!=self.base+0x24991c:continue
+                hero=self.uint(address+0x358)
+                if hero in addresses:heroes.add(hero)
+                humans.append((address,raw))
+            players=[]
+            for address,raw in humans:
+                if address==own or address in heroes or raw[0xac]==1:continue
+                x,y=struct.unpack_from('<2i',raw,0x68)
+                if raw[0xac] not in (0,1) or not(0<=x<10000 and 0<=y<10000):raise RuntimeError('附近玩家数据不符')
+                if radius is None or max(abs(x-position[0]),abs(y-position[1]))<=radius:
+                    players.append({'address':address,'position':[x,y]})
+            if tuple(self.player())!=position:raise RuntimeError('人物坐标在采样时发生变化，请重读')
+            return players
+
+        for attempt in range(3):
+            try:return snapshot()
+            except RuntimeError as error:
+                if not any(text in str(error) for text in ('场景列表读取时发生变化','人物坐标在采样时发生变化')) or attempt==2:raise
+                self.pause(.01)
 
     def start_live_monitor(self,restart=False):
         import live_state

@@ -1,4 +1,6 @@
 """Explicitly verified normal-map mage profiles; no teleport or paid entry."""
+import json
+from instance_context import runtime_root
 from combat_metrics import read_experience
 from warrior_combat import HEADER as DUNGEON_HEADER
 
@@ -9,10 +11,34 @@ STONE_NAMES={'黑野猪','红野猪','白野猪','蝙蝠','角蝇','蝎蛇','楔
 def header(session):return session.read(session.uint(session.uint(session.base+0x2ba608))+4,52)
 
 
+def load_avoid_players():
+    path=runtime_root()/'outputs'/'当前地图挂机设置.json'
+    if not path.exists():return False
+    value=json.loads(path.read_text(encoding='utf8')).get('avoid_loaded_players',False)
+    if type(value) is not bool:raise RuntimeError('当前地图避人设置无效')
+    return value
+
+
+def save_avoid_players(enabled):
+    if type(enabled) is not bool:raise ValueError('避人随机开关必须是布尔值')
+    path=runtime_root()/'outputs'/'当前地图挂机设置.json';path.parent.mkdir(parents=True,exist_ok=True)
+    data=json.loads(path.read_text(encoding='utf8')) if path.exists() else {}
+    data['avoid_loaded_players']=enabled
+    temp=path.with_suffix('.tmp');temp.write_text(json.dumps(data,ensure_ascii=False,indent=2),encoding='utf8');temp.replace(path)
+
+
+class PlayersDetected(RuntimeError):pass
+
+
 class PanelOpen(RuntimeError):pass
 
 
 class StoneTomb:
+    player_exception=PlayersDetected
+
+    def __init__(self,avoid_players=None):
+        self.avoid_loaded_players=load_avoid_players() if avoid_players is None else avoid_players
+
     panel_exception=PanelOpen
     header=STONE_HEADER
     names=STONE_NAMES
@@ -29,6 +55,7 @@ class StoneTomb:
     def guard(self,session):
         self.check_state(session)
         if any(session.visible(k) for k in ('merchant','sell','bag')):raise PanelOpen('当前地图挂机面板打开，暂停输入')
+        if self.avoid_loaded_players and session.nearby_players(None):raise PlayersDetected('已加载范围内发现其他玩家')
 
     def wait_for_panels(self,session):
         self.check_state(session)
@@ -45,6 +72,30 @@ class StoneTomb:
                     self.check_state(session)
         else:session._hunt_activity_close_attempted=False
         return any(session.visible(k) for k in ('merchant','sell','bag'))
+
+    def avoid_players(self,session,progress):
+        self.check_state(session)
+        if any(session.visible(k) for k in ('merchant','sell','bag')):return {'random_used':False,'reason':'panel_wait'}
+        players=session.nearby_players(None)
+        if not players:return {'random_used':False,'reason':'players_no_longer_loaded'}
+        before=tuple(session.player());wallet_before=session.currency_snapshot()
+        # A failed/uncertain attempt ends this command; never press another key blindly.
+        if not any(row['name']=='随机传送石' and row.get('raw_98',1)>0 for row in session.shortcut_inventory()):raise RuntimeError('避人随机缺少可用随机传送石，未购买或使用随机卷')
+        session.clear_background_mouse();self.check_state(session)
+        session.write_stats({'event':'random_attempt','reason':'loaded_players','scope':'client_loaded','position':before,'player_count':len(players)})
+        progress('已加载范围发现其他玩家，使用随机传送石避开；不要求无怪')
+        session.press_named_hotkey(('随机传送石',),'random')
+        try:
+            session.wait(lambda:tuple(session.player())!=before,timeout=5)
+            self.check_state(session)
+            after=tuple(session.stable_player())
+            if not self.tilemap.free(after):raise RuntimeError('随机落点不在已核对可走路网')
+        except RuntimeError as error:
+            session.write_stats({'event':'random_result','confirmed':False,'reason':'loaded_players','error':str(error)})
+            raise RuntimeError('避人随机落点未确认，停止且不重复按键：'+str(error)) from error
+        wallet_after=session.currency_snapshot()
+        session.write_stats({'event':'random_result','confirmed':True,'reason':'loaded_players','before':before,'position':after})
+        return {'random_used':True,'scope':'client_loaded','player_count':len(players),'before':before,'after':after,'wallet_before':wallet_before,'wallet_after':wallet_after}
 
     def plan(self,session):
         from warrior_combat import patrol_plan

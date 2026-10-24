@@ -64,7 +64,10 @@ class App(tk.Tk):
         settings_tab=ttk.Frame(self.tabs,padding=10);self.tabs.insert(2,settings_tab,text='角色设置')
         dungeon_tab=ttk.Frame(self.tabs,padding=10);self.tabs.insert(2,dungeon_tab,text='地图挂机')
         ttk.Label(dungeon_tab,text='法师主体 · 当前已核对地图',font=('Microsoft YaHei UI',14,'bold')).pack(anchor='w')
-        ttk.Label(dungeon_tab,text='厚礼蟹 · F1雷电术 · 后台沿可达路线清怪、按名单拾取。\n支持地牢东一层、石墓五层；需自行到图，启动不会传送或购买。',wraplength=560,style='Subtitle.TLabel').pack(anchor='w',pady=(8,12))
+        ttk.Label(dungeon_tab,text='厚礼蟹 · F1雷电术 · 后台沿可达路线清怪、按名单拾取。\n支持地牢东一层、石墓五层；需自行到图，启动不购买或付费入场；开启避人会使用随机石。',wraplength=560,style='Subtitle.TLabel').pack(anchor='w',pady=(8,12))
+        import current_map_hunt
+        self.map_avoid_players=tk.BooleanVar(value=current_map_hunt.load_avoid_players())
+        ttk.Checkbutton(dungeon_tab,text='石墓：全部已加载范围内见人就随机（消耗随机石，新任务生效）',variable=self.map_avoid_players,command=lambda:current_map_hunt.save_avoid_players(self.map_avoid_players.get())).pack(anchor='w',pady=(0,8))
         self.dungeon_start_button=ttk.Button(dungeon_tab,text='启动／接续当前地图挂机',style='Primary.TButton',command=lambda:self.run('mage_dungeon'))
         self.dungeon_start_button.pack(fill='x',pady=(0,10))
         ttk.Label(dungeon_tab,text='持续运行，单次最长12小时；沿图走完一圈继续巡逻。\n打开背包、未知提示或双包满时会安全停止。关闭面板后可重新启动；停止使用下方“停止本号任务”。',wraplength=560).pack(anchor='w',pady=(0,12))

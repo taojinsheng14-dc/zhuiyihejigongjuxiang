@@ -81,6 +81,7 @@ class SceneNpcTests(unittest.TestCase):
         mapping[0x10000+0x358]=0x11000;mapping[0x12000+0x358]=0x13000
         s.uint=lambda address:mapping[address];s.scene_actor_snapshot=lambda:rows
         self.assertEqual(s.nearby_players(8),[{'address':0x12000,'position':[142,330]}])
+        self.assertEqual(s.nearby_players(None),[{'address':0x12000,'position':[142,330]},{'address':0x15000,'position':[170,330]}])
 
 
 if __name__=='__main__':unittest.main()
