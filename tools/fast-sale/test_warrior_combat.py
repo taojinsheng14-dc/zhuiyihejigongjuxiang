@@ -68,4 +68,29 @@ class WarriorCombatTests(unittest.TestCase):
         self.assertIn(0x205,messages);self.assertEqual(messages[-1],'clear')
 
 
+    def test_empty_straight_run_holds_one_press_across_multiple_steps(self):
+        from current_map_hunt import STONE_HEADER
+        session,messages=self.hold_session();tilemap=DungeonMap(40,40,[[0]*40 for _ in range(40)])
+        session.read=lambda a,n:STONE_HEADER
+        session.nearby_monsters=lambda:{'read_errors':0,'monsters':[]}
+        positions=iter([(10,10),(12,10),(14,10),(16,10),(18,10),(18,10)])
+        session.player=lambda:next(positions)
+        result=continuous_run(session,tilemap,(10,10),(1,0),(780,300),8,expected_header=STONE_HEADER)
+        self.assertEqual(result['release_reason'],'turn_or_segment_end')
+        self.assertEqual(messages.count(0x204),1);self.assertEqual(messages.count(0x205),1)
+        self.assertGreaterEqual(messages.count(0x200),3)
+
+    def test_held_run_releases_when_pickable_drop_appears(self):
+        session,messages=self.hold_session();tilemap=DungeonMap(40,40,[[0]*40 for _ in range(40)])
+        result=continuous_run(session,tilemap,(10,10),(1,0),(780,300),8,drop_check=lambda s:True)
+        self.assertEqual(result['release_reason'],'loot_detected')
+        self.assertEqual(messages.count(0x205),1)
+
+    def test_wrong_expected_map_releases_held_button(self):
+        session,messages=self.hold_session();tilemap=DungeonMap(40,40,[[0]*40 for _ in range(40)])
+        with self.assertRaisesRegex(RuntimeError,'地图变化'):
+            continuous_run(session,tilemap,(10,10),(1,0),(780,300),8,expected_header=bytes(52))
+        self.assertEqual(messages.count(0x205),1)
+
+
 if __name__=='__main__':unittest.main()

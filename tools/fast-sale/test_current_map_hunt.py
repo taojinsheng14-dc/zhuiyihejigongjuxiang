@@ -20,10 +20,10 @@ class CurrentMapTests(unittest.TestCase):
         self.assertTrue(m.free((82,50)));self.assertFalse(m.free((83,50)))
         with self.assertRaises(RuntimeError):m.path((50,50),(83,50))
 
-    def test_profile_uses_exact_stone_map_and_bounded_radius(self):
+    def test_profile_uses_exact_stone_map_without_local_radius(self):
         with patch('warrior_combat.patrol_plan',return_value=('map','plan')) as plan:
             s=self.session();self.assertEqual(hunt.StoneTomb().plan(s),('map','plan'))
-            plan.assert_called_once_with(s,expected_header=hunt.STONE_HEADER,expected_name='d715.map',radius=32)
+            plan.assert_called_once_with(s,expected_header=hunt.STONE_HEADER,expected_name='d715.map',radius=None)
 
     def test_pending_item_stops_before_input(self):
         s=self.session();s.held_item=lambda:'装备'
@@ -60,3 +60,9 @@ class CurrentMapTests(unittest.TestCase):
         with patch.object(hunt,'header',return_value=hunt.STONE_HEADER),patch.object(hunt,'read_experience',return_value={'character':'厚礼蟹'}):
             for _ in range(3):self.assertTrue(hunt.StoneTomb().wait_for_panels(s))
         s.click.assert_called_once()
+
+    def test_normal_map_requests_continuous_holding_and_full_coverage_spacing(self):
+        profile=hunt.StoneTomb();options=profile.move_options()
+        self.assertTrue(options['allow_hold']);self.assertEqual(options['expected_header'],hunt.STONE_HEADER)
+        self.assertEqual(profile.route_spacing,24)
+        self.assertEqual(options['hold_guard'],profile.guard)

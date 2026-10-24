@@ -189,7 +189,8 @@ def run_bounded(session,progress=lambda message:None,seconds=30,max_casts=6,cont
     approach=profile.approach if profile else approach_once
     started=time.monotonic();deadline=started+(43200 if continuous else min(120,max(1,seconds)));limit=float('inf') if continuous else min(60,max(1,max_casts))
     from dungeon_route import CoverageRoute
-    route=CoverageRoute(tilemap,tuple(session.player())) if continuous else None
+    route=CoverageRoute(tilemap,tuple(session.player()),spacing=getattr(profile,'route_spacing',8)) if continuous else None
+    move_options=profile.move_options() if profile and hasattr(profile,'move_options') else {'allow_hold':False}
     excluded={};deferred_drops={};stalled=0;last_progress=0
     original_progress=progress
     def report(message):
@@ -260,7 +261,7 @@ def run_bounded(session,progress=lambda message:None,seconds=30,max_casts=6,cont
                         else:status='pickup_progress_unconfirmed';break
                     if not nearby:
                         goal=route.next_goal(tuple(session.player()),time.monotonic())
-                        if goal is not None:patrol_move(session,tilemap,goal,allow_hold=False)
+                        if goal is not None:patrol_move(session,tilemap,goal,**move_options)
                         position_anchor=tuple(session.player());session.pause(.2);continue
                     check_scene(session)
                     result=pickup_current_test(session,names=(chosen['name'],),radius=6,max_steps=2,cooperative=True,target_id=chosen['id'])
@@ -293,7 +294,7 @@ def run_bounded(session,progress=lambda message:None,seconds=30,max_casts=6,cont
                         if continuous:
                             goal=route.next_goal(tuple(session.player()),time.monotonic())
                             if goal is None:session.pause(.3);continue
-                            try:move=patrol_move(session,tilemap,goal,allow_hold=False)
+                            try:move=patrol_move(session,tilemap,goal,**move_options)
                             except RuntimeError as error:
                                 if str(error)!='巡逻目标当前没有可走路径':raise
                                 route.defer_goal(time.monotonic());log('route_temporarily_blocked',goal=goal);continue

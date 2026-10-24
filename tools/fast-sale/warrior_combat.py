@@ -104,7 +104,7 @@ def eligible(monster):
             and not monster['dead'] and monster['on_screen'] and monster['distance']<=8)
 
 
-def continuous_run(session,tilemap,current,direction,point,max_tiles):
+def continuous_run(session,tilemap,current,direction,point,max_tiles,expected_header=HEADER,hold_guard=None,drop_check=None):
     """Ordinary held right mouse, released on monsters, turns or invalid motion."""
     width,height=session.client_size();physical=session.physical_client_size()
     mx,my=point
@@ -116,18 +116,22 @@ def continuous_run(session,tilemap,current,direction,point,max_tiles):
     def send(message,key):
         if not session.u.SendMessageTimeoutW(session.hwnd,message,key,lp,2,500,ctypes.byref(output)):
             raise RuntimeError('连续跑动鼠标消息未确认')
-    before=previous=current;deadline=time.monotonic()+2;reason='segment_time';pressed=False
+    before=previous=current;last_moved=time.monotonic();deadline=last_moved+8;reason='segment_time';pressed=False
     try:
         session.begin_background_input();session.wait_mouse_modifiers_released()
         if session.u.IsIconic(session.hwnd):raise RuntimeError('游戏最小化，停止连续跑动')
         send(0x200,0);send(0x204,2);pressed=True
         while time.monotonic()<deadline:
             session.check()
+            if hold_guard:hold_guard(session)
+            if drop_check and drop_check(session):reason='loot_detected';break
             obj=session.uint(session.uint(session.base+0x2ba608))
-            if session.read(obj+4,52)!=HEADER:raise RuntimeError('连续跑动时地图变化')
+            if session.read(obj+4,52)!=expected_header:raise RuntimeError('连续跑动时地图变化')
             at=tuple(session.player())
             if not tilemap.free(at) or max(abs(at[i]-previous[i]) for i in (0,1))>2:
                 raise RuntimeError('连续跑动实际坐标偏离')
+            if at!=previous:last_moved=time.monotonic()
+            elif time.monotonic()-last_moved>.8:reason='movement_stalled';break
             previous=at;distance=max(abs(at[i]-before[i]) for i in (0,1))
             if distance>=max_tiles-1:reason='turn_or_segment_end';break
             if any(at[i]!=before[i]+direction[i]*distance for i in (0,1)):
@@ -140,7 +144,11 @@ def continuous_run(session,tilemap,current,direction,point,max_tiles):
                 reason='physical_input';break
             if not all(tilemap.free((at[0]+direction[0]*n,at[1]+direction[1]*n)) for n in (1,2)):
                 reason='terrain_boundary';break
-            send(0x200,2);session.pause(.15)
+            if hasattr(session,'scene_actor_snapshot'):
+                from ground_item_probe import ground_actor_boxes
+                if any(x1<=point[0]<=x2 and y1<=point[1]<=y2 for x1,y1,x2,y2 in ground_actor_boxes(session)):
+                    reason='actor_occluded';break
+            send(0x200,2);session.pause(.12)
     finally:
         try:
             if pressed:send(0x205,0)
@@ -149,7 +157,7 @@ def continuous_run(session,tilemap,current,direction,point,max_tiles):
     return {'from':current,'to':tuple(session.player()),'button':'right_hold','release_reason':reason}
 
 
-def patrol_move(session,tilemap,waypoint,allow_hold=True):
+def patrol_move(session,tilemap,waypoint,allow_hold=True,expected_header=HEADER,hold_guard=None,drop_check=None):
     current=tuple(session.player());rows=session.scene_actor_snapshot()
     blocked={struct.unpack_from('<2i',raw,0x68) for address,raw in rows if raw[0xac]==0}
     blocked.discard(current);path=tilemap.path(current,waypoint,blocked)
@@ -169,10 +177,11 @@ def patrol_move(session,tilemap,waypoint,allow_hold=True):
     if point is None:return {'from':current,'to':current,'occluded':True}
     if run:
         straight=0
-        for n,p in enumerate(path[1:9],1):
+        for n,p in enumerate(path[1:33],1):
             if p!=(current[0]+dx*n,current[1]+dy*n):break
             straight=n
-        if allow_hold and straight>=4:return continuous_run(session,tilemap,current,(dx,dy),point,straight)
+        if allow_hold and straight>=4:return continuous_run(session,tilemap,current,(dx,dy),point,straight,
+            expected_header=expected_header,hold_guard=hold_guard,drop_check=drop_check)
     session.background_mouse(point,'right' if run else 'left',track_movement=False)
     previous=None;stable=0;settle_deadline=time.monotonic()+3
     while time.monotonic()<settle_deadline:

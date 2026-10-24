@@ -16,6 +16,7 @@ class StoneTomb:
     panel_exception=PanelOpen
     header=STONE_HEADER
     names=STONE_NAMES
+    route_spacing=24
 
     def check_state(self,session):
         session.check()
@@ -46,7 +47,18 @@ class StoneTomb:
 
     def plan(self,session):
         from warrior_combat import patrol_plan
-        return patrol_plan(session,expected_header=self.header,expected_name='d715.map',radius=32)
+        return patrol_plan(session,expected_header=self.header,expected_name='d715.map',radius=None)
+
+    def has_loot(self,session):
+        from ground_item_probe import ground_snapshot
+        from island_pickup_policy import filter_drops
+        rows=ground_snapshot(session)['ground_maps'][0]
+        if rows.get('error') or not rows.get('stable'):raise RuntimeError('连续跑动时掉落采样不完整')
+        drops,_=filter_drops(rows['items']);position=session.player()
+        return any(max(abs(d['x']-position[0]),abs(d['y']-position[1]))<=6 for d in drops)
+
+    def move_options(self):
+        return {'allow_hold':True,'expected_header':self.header,'hold_guard':self.guard,'drop_check':self.has_loot}
 
     def approach(self,session,progress):
         # Continuous coverage takes the next validated route when an aim cannot be confirmed.
@@ -62,7 +74,7 @@ def run(session,progress=lambda message:None):
     profile=StoneTomb();profile.check_state(session)
     skills=mage_skills.inspect_current(session,'厚礼蟹')
     if not skills.get('f1_skill') or skills['f1_skill']['name']!='雷电术':raise RuntimeError('F1不是唯一雷电术，未挂机')
-    progress('石墓五层：核对路网后在起点32格范围内巡逻，F1雷电术与名单拾取；不主动跨图')
+    progress('石墓五层：核对路网后在整张可达地图循环巡逻，无怪直路按住右键连续跑，F1雷电术与名单拾取；不主动跨图')
     def report(message):progress(message.replace('地牢持续清怪拾取','石墓五层清怪拾取'))
     return mage_dungeon.run_bounded(session,report,continuous=True,profile=profile)
 
