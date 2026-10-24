@@ -22,7 +22,7 @@ from equipment import sale_plan
 from profit_tracker import ProfitTracker
 from random_hunt import load_settings,save_settings,RandomSettings
 
-BUILD='2026.10.24.8'
+BUILD='2026.10.24.9'
 
 def active_task(command,result,sample,now):
     step=command.get('step')
@@ -62,6 +62,15 @@ class App(tk.Tk):
         island_tab=ttk.Frame(self.tabs,padding=10);self.tabs.add(island_tab,text='孤岛挑战')
         self.tabs.insert(1,island_tab)
         settings_tab=ttk.Frame(self.tabs,padding=10);self.tabs.insert(2,settings_tab,text='角色设置')
+        dungeon_tab=ttk.Frame(self.tabs,padding=10);self.tabs.insert(2,dungeon_tab,text='地牢挂机')
+        ttk.Label(dungeon_tab,text='法师主体 · 地牢东一层',font=('Microsoft YaHei UI',14,'bold')).pack(anchor='w')
+        ttk.Label(dungeon_tab,text='厚礼蟹 · F1雷电术 · 后台沿可达路线清怪、按名单拾取。\n需自己到地牢东一层；启动不会传送或购买。',wraplength=560,style='Subtitle.TLabel').pack(anchor='w',pady=(8,12))
+        self.dungeon_start_button=ttk.Button(dungeon_tab,text='启动／接续地牢挂机',style='Primary.TButton',command=lambda:self.run('mage_dungeon'))
+        self.dungeon_start_button.pack(fill='x',pady=(0,10))
+        ttk.Label(dungeon_tab,text='持续运行，单次最长12小时；沿图走完一圈继续巡逻。\n打开背包、未知提示或双包满时会安全停止。关闭面板后可重新启动；停止使用下方“停止本号任务”。',wraplength=560).pack(anchor='w',pady=(0,12))
+        self.dungeon_status=tk.StringVar(value='尚无地牢运行记录')
+        ttk.Label(dungeon_tab,textvariable=self.dungeon_status,wraplength=560,style='Status.TLabel').pack(fill='x')
+        self.last_dungeon_refresh=0
         ttk.Label(island_tab,text='每日一次 · 英雄战斗 · 优先拾取\n接续挑战不会重新入场。完整无人干预流程仍待验证。',wraplength=560,style='Subtitle.TLabel').pack(anchor='w',pady=10)
         self.island_buttons=[]
         for label,action in [('从土城进入并自动挑战（每日一次）','island_start'),('接续已进入的孤岛','island_resume'),('只读检查孤岛记录','island_status')]:
@@ -164,7 +173,25 @@ class App(tk.Tk):
         self.last_progress=None
         if '--start-hunt' in sys.argv:self.after(800,lambda:self.run('hunt'))
 
+    def refresh_dungeon_status(self):
+        if time.monotonic()-self.last_dungeon_refresh<1:return
+        self.last_dungeon_refresh=time.monotonic()
+        try:
+            data=json.loads((ROOT/'outputs'/'法师地牢挂机状态.json').read_text(encoding='utf8'))
+            route=data.get('route',{});position=data.get('position',[])
+            phase={'running':'运行中','stopped':'已停止','finished':'已结束'}.get(data.get('phase'),'记录')
+            age=time.time()-data.get('observed_epoch',0)
+            if age>5:phase=('状态待核对' if phase=='运行中' else phase)+'（最近记录）'
+            text='{} · 坐标 {}\n施法 {} 次 · 死亡观察 {} 次 · 确认拾取 {} 件\n路点 {}/{} · 完成 {} 圈'.format(
+                phase,position,data.get('casts',0),data.get('observed_deaths',0),data.get('verified_pickups',0),
+                route.get('visited',0),route.get('total',0),route.get('laps',0))
+            if data.get('reason'):text+='\n停止原因：'+str(data['reason'])
+            self.dungeon_status.set(text)
+        except FileNotFoundError:pass
+        except (OSError,ValueError,TypeError):self.dungeon_status.set('地牢状态暂不可读')
+
     def receive_results(self):
+        self.refresh_dungeon_status()
         self.sync_existing_task()
         if self.busy:
             try:
@@ -201,7 +228,7 @@ class App(tk.Tk):
         except (OSError,ValueError,TypeError):return
         if step is not None:
             self.attached_step=step
-            for button in (self.connect_button,self.start_button,self.inspect_button,self.recover_button,self.monitor_button,self.hunt_button,self.resume_hunt_button,self.pickup_button,self.bag_test_button,self.login_bag_test_button,self.town_test_button,self.weapon_transfer_test_button,self.cangyue_transfer_test_button,self.jewelry_menu_test_button,self.clothes_menu_test_button):
+            for button in (self.connect_button,self.start_button,self.inspect_button,self.recover_button,self.monitor_button,self.hunt_button,self.resume_hunt_button,self.pickup_button,self.bag_test_button,self.login_bag_test_button,self.town_test_button,self.weapon_transfer_test_button,self.cangyue_transfer_test_button,self.jewelry_menu_test_button,self.clothes_menu_test_button,self.dungeon_start_button):
                 button.configure(state='disabled')
             self.mode_box.configure(state='disabled');self.stop_button.configure(state='normal')
             for button in self.island_buttons:button.configure(state='disabled')
@@ -460,7 +487,12 @@ class App(tk.Tk):
             self.profit_pending_start=not self.start_profit(quiet=True)
             (HELPER/'live-monitor-request.json').write_text('{}',encoding='utf8')
             self.profit_auto=True
+        if execute=='mage_dungeon':
+            selected=instance_context.binding()
+            if not selected or selected.get('character')!='厚礼蟹':
+                self.status.set('地牢法师目前仅支持已绑定的厚礼蟹，请先核对本号角色');return
         self.busy=True;self.cancel.clear()
+        self.dungeon_start_button.configure(state='disabled')
         for button in self.island_buttons:button.configure(state='disabled')
         mode=self.mode.get()
         foreground=self.foreground.get()
@@ -480,7 +512,10 @@ class App(tk.Tk):
         self.stop_button.configure(state='normal');self.status.set('正在连接辅助进程…')
         def work():
             try:
-                if execute in ('island_start','island_resume','island_status'):
+                if execute=='mage_dungeon':
+                    response=drive([{'action':'shop_route','categories':['法师地牢持续清怪拾取'],'foreground':False}],self.cancel)
+                    result=response.get('result',{})
+                elif execute in ('island_start','island_resume','island_status'):
                     category={'island_start':'孤岛每日自动挑战','island_resume':'接续孤岛自动挑战','island_status':'孤岛自动状态只读'}[execute]
                     response=drive([{'action':'shop_route','categories':[category],'foreground':False}],self.cancel)
                     result=response.get('result',{})
@@ -550,6 +585,7 @@ class App(tk.Tk):
             self.profit.stop()
         self.profit_auto=False
         self.busy=False
+        self.dungeon_start_button.configure(state='normal')
         for button in self.island_buttons:button.configure(state='normal')
         self.recover_button.configure(state='normal')
         self.monitor_button.configure(state='normal')
