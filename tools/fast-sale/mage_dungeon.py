@@ -284,7 +284,7 @@ def run_bounded(session,progress=lambda message:None,seconds=30,max_casts=6,cont
                     casts+=1;locked=result['target'];failed_aims=0
                     hp=result.get('target_vitals_after',{})
                     last_zero_health=hp.get('0x11a',0)>0 and hp.get('0x112')==0
-                    session.pause(.6)
+                    session.pause(getattr(profile,'post_cast_wait',.6))
                 elif result.get('status') in ('no_verified_target','target_outside_input_area'):
                     if locked:
                         if last_zero_health:

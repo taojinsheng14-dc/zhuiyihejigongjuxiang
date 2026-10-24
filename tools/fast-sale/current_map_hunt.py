@@ -17,6 +17,7 @@ class StoneTomb:
     header=STONE_HEADER
     names=STONE_NAMES
     route_spacing=24
+    post_cast_wait=.05
 
     def check_state(self,session):
         session.check()
