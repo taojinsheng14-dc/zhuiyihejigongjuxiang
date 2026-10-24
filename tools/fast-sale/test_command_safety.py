@@ -39,6 +39,13 @@ class CommandSafetyTests(unittest.TestCase):
         self.assertIsNone(session.npc_click_point((24,100)))
         self.assertEqual(session.npc_click_point((216,49)),(216,73))
 
+    def test_fixed_left_menu_column_is_excluded_at_all_body_offsets(self):
+        session=Fake()
+        for x in (32,64,96,127):
+            self.assertIsNone(session.npc_click_point((x,240)))
+        self.assertEqual(session.npc_click_point((128,240)),(128,264))
+        self.assertFalse(session.npc_world_point_clear((64,240)))
+
     def test_npc_hidden_by_hero_panel_has_no_click_target(self):
         session=Fake();session.hero_covers=lambda box:True
         self.assertIsNone(session.npc_click_point((216,145)))

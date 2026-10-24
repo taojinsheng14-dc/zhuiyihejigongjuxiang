@@ -76,3 +76,20 @@ class LootRetryTests(unittest.TestCase):
         self.assertEqual(result['retry_passes'],1)
 
 if __name__=='__main__':unittest.main()
+
+
+class CornerUiExclusionTests(unittest.TestCase):
+    def test_legacy_corner_uses_verified_common_npc_open(self):
+        from types import SimpleNamespace
+        from unittest.mock import Mock
+        import island_challenge
+        npc={'name':'孤岛挑战','map':(13,18),'draw':(64,240),'address':7}
+        opened=[False]
+        def open_npc(target):
+            self.assertIs(target,npc);opened[0]=True
+        s=SimpleNamespace(visible=lambda key:opened[0],player=lambda:(17,18),
+            nearby_monsters=lambda **k:{'loaded_monster_alive':0},held_item=lambda:'',
+            sale_item=lambda:'',inflight_item=lambda:'',npcs=lambda:[npc],open_npc=Mock(side_effect=open_npc))
+        r=island_challenge.open_corner(s)
+        s.open_npc.assert_called_once_with(npc)
+        self.assertTrue(r['merchant_visible'])

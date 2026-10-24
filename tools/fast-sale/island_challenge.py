@@ -183,24 +183,13 @@ def open_corner(session):
     if session.held_item() or session.sale_item() or session.inflight_item():raise RuntimeError('物品状态不空')
     position=tuple(session.player());npcs=[n for n in session.npcs() if n['name']=='孤岛挑战']
     if not 1<=len(npcs)<=4 or any(tuple(n['map']) not in {(19,11),(26,18),(19,25),(13,18)} for n in npcs):raise RuntimeError('未确认岛内角落挑战NPC')
-    width,height=session.client_size()
-    visible=[n for n in npcs if 50<n['draw'][0]<width-50 and 50<n['draw'][1]+24<height-180]
-    if not visible:raise RuntimeError('角落NPC不在可点击范围')
-    npc=min(visible,key=lambda n:max(abs(n['map'][0]-position[0]),abs(n['map'][1]-position[1])))
-    from background_sale import BackgroundSession
-    attempts=[]
-    for offset in (40,):
-        if tuple(session.player())!=position:raise RuntimeError('点击NPC期间人物移动，停止追加点击')
-        fresh=[n for n in session.npcs() if n['address']==npc['address'] and n['name']=='孤岛挑战']
-        if len(fresh)!=1:break
-        point=(fresh[0]['draw'][0]+12,fresh[0]['draw'][1]+offset)
-        BackgroundSession.background_mouse(session,point,'left',track_movement=False,move_settle=.15,dpi_scaled=True,button_hold=.15)
-        for _ in range(20):
-            if session.visible('merchant'):break
-            session.pause(.1)
-        attempts.append({'offset':offset,'point':point,'opened':session.visible('merchant')})
-        if session.visible('merchant'):break
-    return {'npc':npc,'attempts':attempts,'merchant_visible':session.visible('merchant'),'position':session.player()}
+    # Use the same verified actor, UI exclusion and bounded approach as normal NPC clicks.
+    # The old raw x+12/y+40 click bypassed both fixed-menu and hero checks.
+    npc=min(npcs,key=lambda n:max(abs(n['map'][0]-position[0]),abs(n['map'][1]-position[1])))
+    session.open_npc(npc)
+    return {'npc':npc,'attempts':[{'verified_common_npc_path':True,'opened':session.visible('merchant')}],
+            'merchant_visible':session.visible('merchant'),'position':session.player()}
+
 
 
 def next_level(session):

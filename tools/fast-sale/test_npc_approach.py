@@ -42,6 +42,21 @@ class NpcApproachTests(unittest.TestCase):
         self.assertLessEqual(max(abs(a-b) for a,b in zip((12,17),s.walk_tile.call_args.args[0])),2)
         self.assertFalse(s.walk_tile.call_args.kwargs['allow_transition'])
         self.assertTrue(s.walk_tile.call_args.kwargs['run_only'])
+    def test_left_fixed_menu_overlap_is_approached_before_one_click(self):
+        s,npc,state=self.session();state['draw']=(64,240)
+        with patch('background_sale.time.sleep'):s.open_npc(npc)
+        s.walk_tile.assert_called_once()
+        s.click.assert_called_once_with((400,124))
+        self.assertTrue(state['merchant'])
+
+    def test_left_menu_body_anchor_cannot_be_used_as_retry(self):
+        s,npc,state=self.session();state['draw']=(64,240)
+        s.npc_click_point=lambda draw:(400,264)
+        s.click=Mock(side_effect=lambda target:s.events.append({'point':target}))
+        with patch('background_sale.time.sleep'):
+            with self.assertRaisesRegex(RuntimeError,'timeout'):s.open_npc(npc)
+        s.click.assert_called_once_with((400,264))
+
     def test_already_clickable_npc_is_not_moved(self):
         s,npc,state=self.session();state['draw']=(400,100)
         with patch('background_sale.time.sleep'):s.open_npc(npc)

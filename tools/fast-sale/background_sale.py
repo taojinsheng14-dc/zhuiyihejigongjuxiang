@@ -3280,7 +3280,7 @@ class BackgroundSession(Session):
             if self.login_stage()!='playing' or tuple(self.player())!=standing or sample()!=point:raise
             # Retry the verified actor's body anchor, not the ground below its feet.
             alternate=(point[0],point[1])
-            if alternate==target or not(32<=alternate[0]<=width-32 and 40<=alternate[1]<height-240):raise
+            if alternate==target or not self.npc_world_point_clear(alternate):raise
             if self.hero_covers((alternate[0]-8,alternate[1]-8,alternate[0]+8,alternate[1]+8)):raise
             if getattr(self,'_stats_enabled',False):
                 self.write_stats({'event':'npc_open_attempt','npc':npc['name'],'npc_map':npc['map'],
@@ -3297,12 +3297,18 @@ class BackgroundSession(Session):
         # A visible, unobstructed body hit point is sufficient, even at the edge.
         return self.npc_click_point(draw)
 
+    def npc_world_point_clear(self,point):
+        # Logical client pixels: reserve the whole fixed left-menu column,
+        # including a margin. This is a conservative exclusion, not a measured control bound.
+        width,height=self.client_size()
+        return 128<=point[0]<=width-32 and 40<=point[1]<height-240
+
     def npc_click_point(self,draw):
         width,height=self.client_size()
         if not(32<=draw[0]<=width-32):return None
         for offset in (24,40,56,64):
             point=(draw[0],draw[1]+offset)
-            if not(8<point[0]<width-8 and 40<=point[1]<height-240):continue
+            if not self.npc_world_point_clear(point):continue
             if self.hero_covers((point[0]-8,point[1]-8,point[0]+8,point[1]+8)):continue
             return point
         return None
