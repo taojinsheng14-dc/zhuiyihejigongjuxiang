@@ -9,17 +9,40 @@ STONE_NAMES={'黑野猪','红野猪','白野猪','蝙蝠','角蝇','蝎蛇','楔
 def header(session):return session.read(session.uint(session.uint(session.base+0x2ba608))+4,52)
 
 
+class PanelOpen(RuntimeError):pass
+
+
 class StoneTomb:
+    panel_exception=PanelOpen
     header=STONE_HEADER
     names=STONE_NAMES
 
-    def guard(self,session):
+    def check_state(self,session):
         session.check()
         if session.login_stage()!='playing' or header(session)!=self.header:raise RuntimeError('当前地图挂机地图或角色状态变化，停止')
         if read_experience(session)['character']!='厚礼蟹':raise RuntimeError('当前地图法师仅授权厚礼蟹')
         if session.held_item() or session.sale_item() or session.inflight_item():raise RuntimeError('当前地图挂机物品操作状态不空')
-        if any(session.visible(k) for k in ('merchant','sell','bag')):raise RuntimeError('当前地图挂机面板打开，停止输入')
         if session.u.IsIconic(session.hwnd):raise RuntimeError('游戏已最小化，未挂机输入')
+
+    def guard(self,session):
+        self.check_state(session)
+        if any(session.visible(k) for k in ('merchant','sell','bag')):raise PanelOpen('当前地图挂机面板打开，暂停输入')
+
+    def wait_for_panels(self,session):
+        self.check_state(session)
+        if session.visible('merchant'):
+            # Hunting never opens NPC transactions: dismiss the ordinary activity
+            # window through its verified close control, never a content link.
+            if not getattr(session,'_hunt_activity_close_attempted',False) and not session.visible('sell') and not session.visible('bag'):
+                from fast_sale import button_center
+                close=session.control_info(0x5e4,'Button_MerchantDlgClose')
+                if close['visible']:
+                    session._hunt_activity_close_attempted=True
+                    session.click(button_center(session.bounds('merchant'),close['bounds']))
+                    session.pause(.3)
+                    self.check_state(session)
+        else:session._hunt_activity_close_attempted=False
+        return any(session.visible(k) for k in ('merchant','sell','bag'))
 
     def plan(self,session):
         from warrior_combat import patrol_plan
@@ -36,7 +59,7 @@ def run(session,progress=lambda message:None):
     current=header(session)
     if current==DUNGEON_HEADER:return mage_dungeon.run_bounded(session,progress,continuous=True)
     if current!=STONE_HEADER:raise RuntimeError('当前地图尚未核对，未启动挂机')
-    profile=StoneTomb();profile.guard(session)
+    profile=StoneTomb();profile.check_state(session)
     skills=mage_skills.inspect_current(session,'厚礼蟹')
     if not skills.get('f1_skill') or skills['f1_skill']['name']!='雷电术':raise RuntimeError('F1不是唯一雷电术，未挂机')
     progress('石墓五层：核对路网后在起点32格范围内巡逻，F1雷电术与名单拾取；不主动跨图')
@@ -47,7 +70,7 @@ def run(session,progress=lambda message:None):
 def inspect(session):
     import importlib,mage_skills,warrior_combat
     importlib.reload(mage_skills);importlib.reload(warrior_combat)
-    profile=StoneTomb();profile.guard(session)
+    profile=StoneTomb();profile.check_state(session)
     tilemap,plan=profile.plan(session)
     skills=mage_skills.inspect_current(session,'厚礼蟹')
     return {'map':tilemap.name,'plan':plan,'f1_skill':skills['f1_skill'],'game_input_sent':False}

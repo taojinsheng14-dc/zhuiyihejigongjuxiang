@@ -184,7 +184,7 @@ class App(tk.Tk):
             path=max((p for p in paths if p.exists()),key=lambda p:p.stat().st_mtime)
             data=json.loads(path.read_text(encoding='utf8'))
             route=data.get('route',{});position=data.get('position',[])
-            phase={'running':'运行中','stopped':'已停止','finished':'已结束'}.get(data.get('phase'),'记录')
+            phase={'running':'运行中','panel_wait':'面板打开，暂停输入等待关闭','stopped':'已停止','finished':'已结束'}.get(data.get('phase'),'记录')
             age=time.time()-data.get('observed_epoch',0)
             if age>5:phase=('状态待核对' if phase=='运行中' else phase)+'（最近记录）'
             text='{} · 坐标 {}\n施法 {} 次 · 死亡观察 {} 次 · 确认拾取 {} 件\n路点 {}/{} · 完成 {} 圈'.format(

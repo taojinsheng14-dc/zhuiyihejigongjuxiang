@@ -29,3 +29,34 @@ class CurrentMapTests(unittest.TestCase):
         s=self.session();s.held_item=lambda:'装备'
         with patch.object(hunt,'header',return_value=hunt.STONE_HEADER),patch.object(hunt,'read_experience',return_value={'character':'厚礼蟹'}):
             with self.assertRaisesRegex(RuntimeError,'物品'):hunt.StoneTomb().guard(s)
+
+    def test_known_panel_waits_without_input_and_does_not_override_item_checks(self):
+        s=self.session();s.visible=lambda key:key=='bag'
+        with patch.object(hunt,'header',return_value=hunt.STONE_HEADER),patch.object(hunt,'read_experience',return_value={'character':'厚礼蟹'}):
+            self.assertTrue(hunt.StoneTomb().wait_for_panels(s))
+            s.visible=lambda key:False
+            self.assertFalse(hunt.StoneTomb().wait_for_panels(s))
+            s.held_item=lambda:'物品'
+            with self.assertRaisesRegex(RuntimeError,'物品'):hunt.StoneTomb().wait_for_panels(s)
+
+    def test_message_popup_is_not_treated_as_normal_panel_wait(self):
+        s=self.session();s.login_stage=lambda:'message'
+        with self.assertRaisesRegex(RuntimeError,'状态变化'):hunt.StoneTomb().wait_for_panels(s)
+
+    def test_system_activity_window_closes_only_through_verified_close_control(self):
+        visible=[True];s=self.session();s.visible=lambda key:key=='merchant' and visible[0]
+        s.control_info=Mock(return_value={'visible':True,'bounds':(400,0,16,20)})
+        s.bounds=lambda key:(10,20,416,176)
+        s.click=Mock(side_effect=lambda point:visible.__setitem__(0,False));s.pause=Mock()
+        with patch.object(hunt,'header',return_value=hunt.STONE_HEADER),patch.object(hunt,'read_experience',return_value={'character':'厚礼蟹'}):
+            self.assertFalse(hunt.StoneTomb().wait_for_panels(s))
+        s.control_info.assert_called_once_with(0x5e4,'Button_MerchantDlgClose')
+        s.click.assert_called_once_with((418,30))
+
+    def test_activity_close_failure_does_not_spam_click_or_terminate_hunt(self):
+        s=self.session();s.visible=lambda key:key=='merchant'
+        s.control_info=Mock(return_value={'visible':True,'bounds':(400,0,16,20)})
+        s.bounds=lambda key:(0,0,416,176);s.click=Mock();s.pause=Mock()
+        with patch.object(hunt,'header',return_value=hunt.STONE_HEADER),patch.object(hunt,'read_experience',return_value={'character':'厚礼蟹'}):
+            for _ in range(3):self.assertTrue(hunt.StoneTomb().wait_for_panels(s))
+        s.click.assert_called_once()

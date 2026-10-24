@@ -182,7 +182,8 @@ def run_bounded(session,progress=lambda message:None,seconds=30,max_casts=6,cont
     from island_pickup_policy import filter_drops
     from warrior_combat import patrol_plan,patrol_move
     check_scene=profile.guard if profile else guard
-    check_scene(session);tilemap,plan=profile.plan(session) if profile else patrol_plan(session)
+    (profile.check_state(session) if profile else check_scene(session))
+    tilemap,plan=profile.plan(session) if profile else patrol_plan(session)
     expected_header=profile.header if profile else HEADER
     probe_options={'scene_guard':profile.guard,'target_names':profile.names,'target_classes':{'TCatMon'}} if profile else {}
     approach=profile.approach if profile else approach_once
@@ -215,110 +216,123 @@ def run_bounded(session,progress=lambda message:None,seconds=30,max_casts=6,cont
     locked=None;last_zero_health=False;casts=deaths=verified_pickups=unverified_losses=0;status='bounded_end';failed_aims=0;waypoint=1;pickup_attempts={};movement_segments=0;position_anchor=tuple(session.player())
     try:
         log('start',position=session.player(),max_casts=None if continuous else limit,seconds=43200 if continuous else seconds,continuous=continuous,waypoints=plan['waypoints'])
+        panel_wait=False
         while time.monotonic()<deadline and casts<limit:
-            check_scene(session)
-            state('running')
-            current_position=tuple(session.player())
-            if max(abs(current_position[i]-position_anchor[i]) for i in (0,1))>2:
-                status='external_position_change';log(status,previous=position_anchor,current=current_position);break
-            ensure_loot_capacity(session,progress);check_scene(session)
-            if locked:
-                sample=session.nearby_monsters(radius=12)
-                current=next((m for m in sample['monsters'] if m['address']==locked['address'] and m['name']==locked['name']),None)
-                if sample['read_errors']:raise RuntimeError('战斗场景读取不完整')
-                if current is None:
-                    if last_zero_health:
-                        deaths+=1;log('target_removed_after_zero_health',target=locked);locked=None
-                    else:
-                        unverified_losses+=1;log('target_disappeared_unverified',target=locked);locked=None;last_zero_health=False;failed_aims=0
-                elif current['dead']:
-                    deaths+=1;log('target_death_observed',target=current);locked=None
-            drops,_=filter_drops(ground_snapshot(session)['ground_maps'][0]['items'])
-            nearby=[d for d in drops if deferred_drops.get(d['id'],0)<=time.monotonic() and max(abs(d['x']-session.player()[0]),abs(d['y']-session.player()[1]))<=6]
-            from pickup_strategy import choose,context
-            loot_action,chosen=('clear',None)
-            if nearby:
-                scene=context(session)
-                loot_action,chosen=choose(nearby,scene['monsters'],scene['hero'],scene['position'])
-            if loot_action in ('pickup','lead_hero'):
-                if locked:log('target_interrupted_for_loot',target=locked)
-                locked=None;last_zero_health=False;failed_aims=0
-                pickup_attempts[chosen['id']]=pickup_attempts.get(chosen['id'],0)+1
-                if pickup_attempts[chosen['id']]>3:
-                    if continuous:
-                        deferred_drops[chosen['id']]=time.monotonic()+20;pickup_attempts[chosen['id']]=0
-                        log('drop_temporarily_blocked',id=chosen['id']);nearby=[]
-                    else:status='pickup_progress_unconfirmed';break
-                if not nearby:
-                    goal=route.next_goal(tuple(session.player()),time.monotonic())
-                    if goal is not None:patrol_move(session,tilemap,goal,allow_hold=False)
-                    position_anchor=tuple(session.player());session.pause(.2);continue
+            try:
+                if profile and profile.wait_for_panels(session):
+                    if not panel_wait:log('panel_open_wait');panel_wait=True
+                    state('panel_wait');session.pause(.2);continue
+                if panel_wait:
+                    position_anchor=tuple(session.player());locked=None;failed_aims=0
+                    log('panel_closed_resume');panel_wait=False
                 check_scene(session)
-                result=pickup_current_test(session,names=(chosen['name'],),radius=6,max_steps=2,cooperative=True,target_id=chosen['id'])
-                log('pickup',result=result)
-                if result.get('verified'):verified_pickups+=1
-                elif result.get('status') not in ('approaching','actor_occluded','blocked','no_target','combat_required','hero_moved','hero_wait'):
-                    status='pickup_unverified';break
-                if result.get('status') in ('combat_required','hero_moved','hero_wait'):pickup_attempts[chosen['id']]=0
-                position_anchor=tuple(session.player());session.pause(.2);continue
-            excluded={a:t for a,t in excluded.items() if t>time.monotonic()}
-            result=probe_once(session,progress,locked=locked,**probe_options,**({'excluded':set(excluded)} if continuous else {}));log('spell_probe',result=result)
-            if result.get('f1_sent'):
-                casts+=1;locked=result['target'];failed_aims=0
-                hp=result.get('target_vitals_after',{})
-                last_zero_health=hp.get('0x11a',0)>0 and hp.get('0x112')==0
-                session.pause(.6)
-            elif result.get('status') in ('no_verified_target','target_outside_input_area'):
+                state('running')
+                current_position=tuple(session.player())
+                if max(abs(current_position[i]-position_anchor[i]) for i in (0,1))>2:
+                    status='external_position_change';log(status,previous=position_anchor,current=current_position);break
+                ensure_loot_capacity(session,progress);check_scene(session)
                 if locked:
-                    if last_zero_health:
-                        session.pause(.15);continue
-                    if continuous:
-                        excluded[locked['address']]=time.monotonic()+15;locked=None;failed_aims=0
-                    else:status='locked_target_not_aimable';break
-                move={'movement':False} if continuous else approach(session,progress)
-                if not move.get('movement'):
-                    if not continuous and len(plan['waypoints'])<2:status='no_patrol_route';break
-                    if continuous:
+                    sample=session.nearby_monsters(radius=12)
+                    current=next((m for m in sample['monsters'] if m['address']==locked['address'] and m['name']==locked['name']),None)
+                    if sample['read_errors']:raise RuntimeError('战斗场景读取不完整')
+                    if current is None:
+                        if last_zero_health:
+                            deaths+=1;log('target_removed_after_zero_health',target=locked);locked=None
+                        else:
+                            unverified_losses+=1;log('target_disappeared_unverified',target=locked);locked=None;last_zero_health=False;failed_aims=0
+                    elif current['dead']:
+                        deaths+=1;log('target_death_observed',target=current);locked=None
+                drops,_=filter_drops(ground_snapshot(session)['ground_maps'][0]['items'])
+                nearby=[d for d in drops if deferred_drops.get(d['id'],0)<=time.monotonic() and max(abs(d['x']-session.player()[0]),abs(d['y']-session.player()[1]))<=6]
+                from pickup_strategy import choose,context
+                loot_action,chosen=('clear',None)
+                if nearby:
+                    scene=context(session)
+                    loot_action,chosen=choose(nearby,scene['monsters'],scene['hero'],scene['position'])
+                if loot_action in ('pickup','lead_hero'):
+                    if locked:log('target_interrupted_for_loot',target=locked)
+                    locked=None;last_zero_health=False;failed_aims=0
+                    pickup_attempts[chosen['id']]=pickup_attempts.get(chosen['id'],0)+1
+                    if pickup_attempts[chosen['id']]>3:
+                        if continuous:
+                            deferred_drops[chosen['id']]=time.monotonic()+20;pickup_attempts[chosen['id']]=0
+                            log('drop_temporarily_blocked',id=chosen['id']);nearby=[]
+                        else:status='pickup_progress_unconfirmed';break
+                    if not nearby:
                         goal=route.next_goal(tuple(session.player()),time.monotonic())
-                        if goal is None:session.pause(.3);continue
-                        try:move=patrol_move(session,tilemap,goal,allow_hold=False)
-                        except RuntimeError as error:
-                            if str(error)!='巡逻目标当前没有可走路径':raise
-                            route.defer_goal(time.monotonic());log('route_temporarily_blocked',goal=goal);continue
-                        moved=tuple(move.get('from',()))!=tuple(move.get('to',()))
-                        stalled=0 if moved else stalled+1
-                        if stalled>=3:route.defer_goal(time.monotonic());stalled=0
-                        progress('地牢持续清怪拾取：沿可达路线前往%s，已走访%d/%d个路点' % (goal,len(route.visited),len(route.points)))
-                    else:
-                        goal=tuple(plan['waypoints'][waypoint%len(plan['waypoints'])])
-                        if max(abs(session.player()[i]-goal[i]) for i in (0,1))<=2:
-                            waypoint+=1;goal=tuple(plan['waypoints'][waypoint%len(plan['waypoints'])])
-                        check_scene(session);move=patrol_move(session,tilemap,goal)
-                movement_segments+=1;log('movement',result=move)
-            elif result.get('status')=='target_death_observed':
-                deaths+=1;log('target_death_observed',target=result['target']);locked=None;last_zero_health=False;failed_aims=0
-                session.pause(.15)
-            elif result.get('status')=='locked_target_unavailable':
-                failed_aims+=1
-                if failed_aims>=2:
-                    if continuous:
-                        excluded[locked['address']]=time.monotonic()+15;locked=None;failed_aims=0
-                    else:status='locked_target_not_aimable';break
-                session.pause(.15)
-            else:
-                failed_aims+=1
-                if failed_aims>=2:
-                    if continuous:
-                        failed=locked or result.get('target')
-                        if failed:excluded[failed['address']]=time.monotonic()+15
-                        locked=None;failed_aims=0
-                        log('aim_deferred',target=failed);position_anchor=tuple(session.player());continue
-                    status='aim_unconfirmed_twice';break
-                if locked:
+                        if goal is not None:patrol_move(session,tilemap,goal,allow_hold=False)
+                        position_anchor=tuple(session.player());session.pause(.2);continue
+                    check_scene(session)
+                    result=pickup_current_test(session,names=(chosen['name'],),radius=6,max_steps=2,cooperative=True,target_id=chosen['id'])
+                    log('pickup',result=result)
+                    if result.get('verified'):verified_pickups+=1
+                    elif result.get('status') not in ('approaching','actor_occluded','blocked','no_target','combat_required','hero_moved','hero_wait'):
+                        status='pickup_unverified';break
+                    if result.get('status') in ('combat_required','hero_moved','hero_wait'):pickup_attempts[chosen['id']]=0
                     position_anchor=tuple(session.player());session.pause(.2);continue
-                move=approach(session,progress);movement_segments+=int(bool(move.get('movement')));log('aim_reposition',result=move)
-                session.pause(.3)
-            position_anchor=tuple(session.player())
+                excluded={a:t for a,t in excluded.items() if t>time.monotonic()}
+                try:result=probe_once(session,progress,locked=locked,**probe_options,**({'excluded':set(excluded)} if continuous else {}))
+                except (profile.panel_exception if profile else ()):
+                    locked=None;failed_aims=0;continue
+                log('spell_probe',result=result)
+                if result.get('f1_sent'):
+                    casts+=1;locked=result['target'];failed_aims=0
+                    hp=result.get('target_vitals_after',{})
+                    last_zero_health=hp.get('0x11a',0)>0 and hp.get('0x112')==0
+                    session.pause(.6)
+                elif result.get('status') in ('no_verified_target','target_outside_input_area'):
+                    if locked:
+                        if last_zero_health:
+                            session.pause(.15);continue
+                        if continuous:
+                            excluded[locked['address']]=time.monotonic()+15;locked=None;failed_aims=0
+                        else:status='locked_target_not_aimable';break
+                    move={'movement':False} if continuous else approach(session,progress)
+                    if not move.get('movement'):
+                        if not continuous and len(plan['waypoints'])<2:status='no_patrol_route';break
+                        if continuous:
+                            goal=route.next_goal(tuple(session.player()),time.monotonic())
+                            if goal is None:session.pause(.3);continue
+                            try:move=patrol_move(session,tilemap,goal,allow_hold=False)
+                            except RuntimeError as error:
+                                if str(error)!='巡逻目标当前没有可走路径':raise
+                                route.defer_goal(time.monotonic());log('route_temporarily_blocked',goal=goal);continue
+                            moved=tuple(move.get('from',()))!=tuple(move.get('to',()))
+                            stalled=0 if moved else stalled+1
+                            if stalled>=3:route.defer_goal(time.monotonic());stalled=0
+                            progress('地牢持续清怪拾取：沿可达路线前往%s，已走访%d/%d个路点' % (goal,len(route.visited),len(route.points)))
+                        else:
+                            goal=tuple(plan['waypoints'][waypoint%len(plan['waypoints'])])
+                            if max(abs(session.player()[i]-goal[i]) for i in (0,1))<=2:
+                                waypoint+=1;goal=tuple(plan['waypoints'][waypoint%len(plan['waypoints'])])
+                            check_scene(session);move=patrol_move(session,tilemap,goal)
+                    movement_segments+=1;log('movement',result=move)
+                elif result.get('status')=='target_death_observed':
+                    deaths+=1;log('target_death_observed',target=result['target']);locked=None;last_zero_health=False;failed_aims=0
+                    session.pause(.15)
+                elif result.get('status')=='locked_target_unavailable':
+                    failed_aims+=1
+                    if failed_aims>=2:
+                        if continuous:
+                            excluded[locked['address']]=time.monotonic()+15;locked=None;failed_aims=0
+                        else:status='locked_target_not_aimable';break
+                    session.pause(.15)
+                else:
+                    failed_aims+=1
+                    if failed_aims>=2:
+                        if continuous:
+                            failed=locked or result.get('target')
+                            if failed:excluded[failed['address']]=time.monotonic()+15
+                            locked=None;failed_aims=0
+                            log('aim_deferred',target=failed);position_anchor=tuple(session.player());continue
+                        status='aim_unconfirmed_twice';break
+                    if locked:
+                        position_anchor=tuple(session.player());session.pause(.2);continue
+                    move=approach(session,progress);movement_segments+=int(bool(move.get('movement')));log('aim_reposition',result=move)
+                    session.pause(.3)
+                position_anchor=tuple(session.player())
+            except (profile.panel_exception if profile else ()):
+                locked=None;failed_aims=0;continue
         summary={'status':status,'casts_sent':casts,'observed_deaths':deaths,
                  'verified_pickups':verified_pickups,'unverified_target_losses':unverified_losses,'movement_segments':movement_segments,
                  'elapsed_seconds':round(time.monotonic()-started,2),'unattended_acceptance':False,'position':session.player()}

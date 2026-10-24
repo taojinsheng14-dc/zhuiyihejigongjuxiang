@@ -87,7 +87,7 @@ class MageDungeonTests(unittest.TestCase):
 
 
 class BoundedMageTests(unittest.TestCase):
-    def run_case(self,spell,monsters=None,drops=None,pickup=None,max_casts=1,player=None,continuous=False):
+    def run_case(self,spell,monsters=None,drops=None,pickup=None,max_casts=1,player=None,continuous=False,profile=None):
         import tempfile
         from pathlib import Path
         from contextlib import ExitStack
@@ -107,9 +107,21 @@ class BoundedMageTests(unittest.TestCase):
             stack.enter_context(patch('island_pickup_policy.filter_drops',side_effect=lambda rows:(rows,[])))
             stack.enter_context(patch('ground_item_probe.pickup_current_test',**({'side_effect':pickup} if callable(pickup) else {'return_value':pickup})))
             stack.enter_context(patch('instance_context.runtime_root',return_value=Path(folder)))
-            result=run_bounded(s,max_casts=max_casts,continuous=continuous)
+            result=run_bounded(s,max_casts=max_casts,continuous=continuous,profile=profile)
         self.assertIs(s.navigation_map,original);s.clear_background_mouse.assert_called_once()
         return result
+
+    def test_activity_panel_opening_between_actions_does_not_end_command(self):
+        from current_map_hunt import PanelOpen
+        checks=[0]
+        def guard(session):
+            checks[0]+=1
+            if checks[0]==2:raise PanelOpen('system activity')
+        profile=SimpleNamespace(guard=guard,check_state=Mock(),header=HEADER,names={'蜈蚣'},panel_exception=PanelOpen,
+            wait_for_panels=lambda s:False,plan=lambda s:(object(),{'waypoints':[(20,20),(30,30)]}),approach=lambda *a:{'movement':False})
+        r=self.run_case(lambda *a,**k:{'f1_sent':True,'target':{'address':1,'name':'蜈蚣'}},profile=profile)
+        self.assertEqual(r['casts_sent'],1);self.assertEqual(r['status'],'bounded_end')
+        self.assertGreaterEqual(checks[0],4)
 
     def test_cast_limit_is_finite_and_not_a_kill_claim(self):
         r=self.run_case(lambda *a,**k:{'f1_sent':True,'target':{'address':1,'name':'蜈蚣'}})
