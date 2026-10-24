@@ -42,7 +42,7 @@ class CangyueAnchorTests(unittest.TestCase):
         s.npcs=lambda:[clothes,jewelry] if state['loaded'] else [clothes]
         s.inventory=lambda:state['items'].copy();s.close_panels=Mock()
         s.cangyue_sale_stand=Mock(side_effect=lambda:state.update(loaded=True))
-        s.open_npc=Mock();s.menu_click=Mock();s.visible=lambda key:True
+        s.open_cangyue_fixed_sale=Mock();s.visible=lambda key:True
         s.wait=lambda condition:self.assertTrue(condition())
         def sell(category,progress,merchant_name):
             item='重盔甲(女)' if category=='衣服' else '凤凰明珠'
@@ -53,7 +53,7 @@ class CangyueAnchorTests(unittest.TestCase):
         result=s.sell_cangyue_at_anchor()
         self.assertEqual(result['count'],2)
         self.assertEqual(s.cangyue_sale_stand.call_count,2)
-        self.assertEqual(s.open_npc.call_args_list[-1].args[0],jewelry)
+        self.assertEqual(s.open_cangyue_fixed_sale.call_args_list[-1].args[0],'首饰店老板')
 
 
 if __name__=='__main__':unittest.main()

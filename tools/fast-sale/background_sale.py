@@ -26,6 +26,12 @@ class GameSessionLost(RuntimeError):
     """A verified death or a login screen interrupted an active sale."""
 
 
+class SaleRouteIncomplete(RuntimeError):
+    def __init__(self, message, pending=None):
+        super().__init__(message)
+        self.pending = pending
+
+
 class WeaponShopExitBlocked(RuntimeError):
     """The verified shop route is obstructed; other safety failures propagate."""
 
@@ -794,7 +800,7 @@ class BackgroundSession(Session):
             self.cangyue_sale_stand()
             matches=[n for n in self.npcs() if n['name']==name and tuple(n['map'])==coordinate]
             if len(matches)!=1:raise RuntimeError('未唯一找到'+name)
-            self.open_npc(matches[0]);self.menu_click(menu)
+            self.open_cangyue_fixed_sale(name,progress)
             self.wait(lambda:self.visible('sell') and self.visible('bag'))
             for category in categories:
                 if any(CATEGORIES.get(item)==category for item in self.inventory()):
@@ -977,13 +983,91 @@ class BackgroundSession(Session):
             if after!=destination:break
         return actions
 
+    def open_cangyue_fixed_sale(self, merchant, progress=lambda message: None):
+        shops = {'服装店老板': ((147,328), 'cangyue_sell_clothes'),
+                 '首饰店老板': ((155,339), 'cangyue_sell_jewelry')}
+        if merchant not in shops: raise RuntimeError('未校准的苍月商人')
+        self.check()
+        if self.login_stage() != 'playing': raise RuntimeError('当前状态未确认正常，未打开出售')
+        if self.held_item() or self.sale_item() or self.inflight_item():
+            raise RuntimeError('手持、待售或传输物品未结束，未点击商人菜单')
+        before = self.state()
+        if before.get('map_identity', {}).get('name', '').lower() != '5.map':
+            raise RuntimeError('请先到苍月；本测试不自动跨城传送')
+        coordinate, menu = shops[merchant]
+        self.close_panels()
+        self.cangyue_sale_stand()
+        self.open_npc(self.unique_npc(merchant, coordinate))
+        if self.active_merchant != merchant or not self.visible('merchant'):
+            raise RuntimeError('未确认新打开的对应商人窗口，未点击')
+        entry = self.profile()['menus'][menu]
+        bounds = self.bounds('merchant'); standing = tuple(self.player())
+        point = (bounds[0]+entry['point'][0], bounds[1]+entry['point'][1])
+        if self.hero_covers((point[0]-3,point[1]-3,point[0]+3,point[1]+3)):
+            raise RuntimeError('英雄头像遮挡出售菜单，未点击')
+        self.check()
+        if not self.visible('merchant') or self.bounds('merchant') != bounds or tuple(self.player()) != standing:
+            raise RuntimeError('商人窗口或站位变化，未点击')
+        progress('内存确认'+merchant+'窗口，固定位置点击出售一次')
+        self.click(point)
+        self.wait(lambda:self.visible('sell') and self.visible('bag'), timeout=5)
+        if self.state().get('map_identity', {}).get('name', '').lower() != '5.map':
+            raise RuntimeError('打开出售时地图变化，停止')
+        self.unique_npc(merchant, coordinate)
+        report = {'merchant': merchant, 'menu': menu, 'point': point, 'menu_clicks': 1,
+                  'sell_visible': True, 'bag_visible': True, 'image_matching': False,
+                  'items_submitted': 0, 'entry_clicks': 0}
+        if getattr(self,'_stats_enabled',False):self.write_stats({'event':'cangyue_fixed_sale_open',**report})
+        return report
+
+    def pending_sale_snapshot(self):
+        self.check()
+        if self.login_stage() != 'playing': raise RuntimeError('状态不明，未确认清包完成')
+        if self.held_item() or self.sale_item() or self.inflight_item():
+            raise RuntimeError('手持、待售或传输尚未结束，不能重置出售状态')
+        if not self.hero_ready(): raise RuntimeError('英雄背包未就绪，不能确认清包完成')
+        main, hero = self.inventory(), self.hero_inventory()
+        if len(main) != 40 or len(hero) != 40: raise RuntimeError('双包槽位未完整读取')
+        return {'main':sale_plan(main), 'hero':sale_plan(hero),
+                'count':sum(name in CATEGORIES for name in main+hero)}
+
+    def verify_sale_complete(self):
+        first = self.pending_sale_snapshot()
+        self.pause(.25)
+        second = self.pending_sale_snapshot()
+        if first['count'] or second['count']:
+            raise SaleRouteIncomplete('流程显示结束但双包仍有白名单装备，需重新规划出售', second if second['count'] else first)
+        return second
+
+    def recover_incomplete_sale(self, progress, reason):
+        before = self.state(); map_name = before.get('map_identity',{}).get('name','').lower()
+        if map_name not in ('3.map','5.map','0159.map'):
+            raise RuntimeError('不在已核对的城镇或武器店，禁止清包故障小退')
+        self.pending_sale_snapshot()
+        result = self.recover_stalled_route(progress, reason)
+        after = self.state()
+        if (after.get('map_identity',{}).get('name','').lower() != map_name
+                or after.get('player') != before.get('player')):
+            raise RuntimeError('小退后地图或位置与原现场不符，停止，不猜测接续状态')
+        self.active_merchant = None
+        return result
+
+    def reconcile_before_reentry(self, progress):
+        try:self.verify_sale_complete()
+        except SaleRouteIncomplete as error:
+            progress('入场前复核仍有待售装备，回到双包清包阶段，不点击入场')
+            if getattr(self,'_stats_enabled',False):self.write_stats({'event':'sale_state_reset','phase':'before_reentry','pending':error.pending})
+            self.dual_sale_route(progress)
+            self.verify_sale_complete()
+
     def dual_sale_route(self,progress=lambda message:None,allow_recovery=True):
         if isinstance(self,ForegroundSession):self.focus_game()
         previous=getattr(self,'_selling_both_bags',False)
         previous_recovery=getattr(self,'_sale_recovery_enabled',False)
         self._selling_both_bags=True
         self._sale_recovery_enabled=allow_recovery
-        start=len(self.sales);recoveries=[]
+        self._requires_clean_bags_before_entry=True
+        start=len(self.sales);recoveries=[];state_resets=0
         stats_before=self.currency_snapshot() if getattr(self,'_stats_enabled',False) else None
         stats_started=time.monotonic();stats_status='interrupted'
         round_id=__import__('uuid').uuid4().hex[:12]
@@ -993,11 +1077,24 @@ class BackgroundSession(Session):
                 try:
                     self.check()
                     result=self._dual_sale_route(progress)
+                    self.verify_sale_complete()
                     result['count']=len(self.sales)-start
                     result['recoveries']=recoveries
+                    result['state_resets']=state_resets
                     result['foreground_used']=isinstance(self,ForegroundSession)
                     stats_status='complete'
                     return result
+                except SaleRouteIncomplete as error:
+                    if attempt == 2: raise
+                    self.pending_sale_snapshot()
+                    if attempt == 0:
+                        state_resets+=1
+                        self.close_panels(); self.active_merchant=None
+                        progress('双包仍有白名单装备，重置到当前地图的出售规划；不重复已成交物品')
+                        if getattr(self,'_stats_enabled',False):self.write_stats({'event':'sale_state_reset','phase':'sale_complete','pending':error.pending})
+                    elif allow_recovery:
+                        recoveries.append(self.recover_incomplete_sale(progress,str(error)))
+                    else: raise
                 except GameSessionLost:
                     if not allow_recovery:raise
                     if attempt==2:raise RuntimeError('本轮两次恢复后再次中断，停止出售')
@@ -1015,6 +1112,7 @@ class BackgroundSession(Session):
                 income=sum(row.get('gold_change',0) or 0 for row in sold)
                 net=(after['gold']-stats_before['gold']) if after['gold'] is not None and stats_before['gold'] is not None else None
                 self.write_stats({'event':'sale_round','round_id':round_id,'status':stats_status,
+                    'state_resets':state_resets,'recovery_count':len(recoveries),
                     'hunt_seconds':getattr(self,'_last_hunt_seconds',None),
                     'hunt_duration_basis':getattr(self,'_hunt_duration_basis','not_recorded'),
                     'sold_count':len(sold),'gold_before':stats_before['gold'],'gold_after':after['gold'],
@@ -1047,10 +1145,10 @@ class BackgroundSession(Session):
             if not sale_plan(self.inventory()):raise RuntimeError('人物包没有空格容纳英雄待卖装备，已停止')
             result=self.mixed_sale_route(progress)
             completed.append(result)
-            if not result['count']:raise RuntimeError('本轮没有成交，停止重复路线')
+            if not result['count']:raise SaleRouteIncomplete('本轮没有成交，需重新核对出售阶段')
             if sum(name in CATEGORIES for name in self.inventory()+self.hero_inventory())>=pending:
-                raise RuntimeError('待卖装备未减少，停止重复路线')
-        raise RuntimeError('双包清理超过三轮，请检查背包中的保留物品')
+                raise SaleRouteIncomplete('待卖装备未减少，需重新核对出售阶段')
+        raise SaleRouteIncomplete('双包清理超过三轮，重新核对剩余白名单装备')
 
     def mixed_sale_route(self,progress=lambda message:None,verify_only=False):
         plan=sale_plan(self.inventory())
@@ -1091,7 +1189,7 @@ class BackgroundSession(Session):
             if remaining:completed.append(self.sell_cangyue_at_anchor(progress))
             else:
                 for name,menu in [('服装店老板','cangyue_sell_clothes'),('首饰店老板','cangyue_sell_jewelry')]:
-                    self.close_panels();self.open_npc(self.unique_npc(name));self.menu_click(menu)
+                    self.open_cangyue_fixed_sale(name,progress)
                     self.wait(lambda:self.visible('sell') and self.visible('bag'))
                     self.close_panels()
         return {'count':sum(r['count'] for r in completed),'results':completed,
@@ -1729,6 +1827,8 @@ class BackgroundSession(Session):
             returned=self.restore_held_to_bag()
             return {'returned':returned,'moved_bag':self.arrange_sale_layout()}
         if categories==['老兵固定菜单点击测试（不传送）']:return self.test_veteran_fixed_menu(progress)
+        if categories==['苍月首饰出售菜单测试（不卖装备）']:return self.open_cangyue_fixed_sale('首饰店老板',progress)
+        if categories==['苍月衣服出售菜单测试（不卖装备）']:return self.open_cangyue_fixed_sale('服装店老板',progress)
         if categories==['固定位置传送武器店测试']:return self.test_fixed_veteran_transfer('weapon',progress)
         if categories==['固定位置传送苍月测试']:return self.test_fixed_veteran_transfer('cangyue',progress)
         if categories==['打开普通房间菜单']:return self.open_hunt_menu()
@@ -2385,6 +2485,7 @@ class BackgroundSession(Session):
             if getattr(self,'_stats_enabled',False):self.write_stats({'event':'town_sale_entry_test','report':report})
 
     def enter_ordinary_room(self,progress=lambda message:None):
+        if getattr(self,'_requires_clean_bags_before_entry',False):self.reconcile_before_reentry(progress)
         menu=self.prepare_ordinary_room_entry()
         header=self.read(self.uint(self.uint(self.base+0x2ba608))+4,52)
         progress('已识别普通房间，点击一次进入；不点第三排高级房间')
@@ -3406,7 +3507,10 @@ class BackgroundSession(Session):
             self.take_hero_sale_items(allowed,progress)
             self.close_panels()
             if merchant in {'服装店老板','首饰店老板'}:self.cangyue_sale_stand()
-            self.open_npc(self.unique_npc(merchant));self.menu_click(menu)
+            if merchant in {'服装店老板','首饰店老板'}:
+                self.open_cangyue_fixed_sale(merchant,progress)
+            else:
+                self.open_npc(self.unique_npc(merchant));self.menu_click(menu)
             self.wait(lambda:self.visible('sell') and self.visible('bag'))
             extra=self.sell_category(category,progress,merchant_name=merchant)
             if not extra['count']:raise RuntimeError('英雄装备取回后没有完成出售')

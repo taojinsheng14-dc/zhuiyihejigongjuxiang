@@ -165,6 +165,7 @@ class RecoveryTests(unittest.TestCase):
 
     def test_verified_death_rescans_bags_and_preserves_sale_count(self):
         s=RecoveryFake();s.sales=[];s.calls=0;s.check=lambda:None
+        s.hero_ready=lambda:True;s.inventory=s.hero_inventory=lambda:['']*40
         def route(progress):
             s.calls+=1;s.sales.append({'item':'木剑'})
             if s.calls==1:raise GameSessionLost('dead')

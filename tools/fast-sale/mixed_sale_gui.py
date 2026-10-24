@@ -22,7 +22,7 @@ from equipment import sale_plan
 from profit_tracker import ProfitTracker
 from random_hunt import load_settings,save_settings,RandomSettings
 
-BUILD='2026.10.24.6'
+BUILD='2026.10.24.7'
 
 def active_task(command,result,sample,now):
     step=command.get('step')
@@ -93,6 +93,10 @@ class App(tk.Tk):
         self.pickup_button=ttk.Button(test_tab,text='开始拾取测试（2分钟，仅附近6格木剑）',command=lambda:self.run('pickup'));self.pickup_button.pack(fill='x',pady=(0,7))
         self.bag_test_button=ttk.Button(test_tab,text='背包仅后台测试（不切前台／不动鼠标／不按F9）',command=lambda:self.run('bag_background'));self.bag_test_button.pack(fill='x',pady=(0,7))
         self.login_bag_test_button=ttk.Button(test_tab,text='登录后后台打开背包测试（登录页使用）',command=lambda:self.run('login_bag_test'));self.login_bag_test_button.pack(fill='x',pady=(0,7))
+        self.jewelry_menu_test_button=ttk.Button(test_tab,text='苍月首饰NPC（固定位置打开出售，不卖装备）',command=lambda:self.run('cangyue_jewelry_menu'))
+        self.jewelry_menu_test_button.pack(fill='x',pady=(0,7))
+        self.clothes_menu_test_button=ttk.Button(test_tab,text='苍月衣服NPC（固定位置打开出售，不卖装备）',command=lambda:self.run('cangyue_clothes_menu'))
+        self.clothes_menu_test_button.pack(fill='x',pady=(0,7))
         self.weapon_transfer_test_button=ttk.Button(test_tab,text='传送到武器店（固定位置测试）',command=lambda:self.run('fixed_weapon_transfer'))
         self.weapon_transfer_test_button.pack(fill='x',pady=(0,7))
         self.cangyue_transfer_test_button=ttk.Button(test_tab,text='传送到苍月（固定位置测试，2000金币）',command=lambda:self.run('fixed_cangyue_transfer'))
@@ -197,7 +201,7 @@ class App(tk.Tk):
         except (OSError,ValueError,TypeError):return
         if step is not None:
             self.attached_step=step
-            for button in (self.connect_button,self.start_button,self.inspect_button,self.recover_button,self.monitor_button,self.hunt_button,self.resume_hunt_button,self.pickup_button,self.bag_test_button,self.login_bag_test_button,self.town_test_button,self.weapon_transfer_test_button,self.cangyue_transfer_test_button):
+            for button in (self.connect_button,self.start_button,self.inspect_button,self.recover_button,self.monitor_button,self.hunt_button,self.resume_hunt_button,self.pickup_button,self.bag_test_button,self.login_bag_test_button,self.town_test_button,self.weapon_transfer_test_button,self.cangyue_transfer_test_button,self.jewelry_menu_test_button,self.clothes_menu_test_button):
                 button.configure(state='disabled')
             self.mode_box.configure(state='disabled');self.stop_button.configure(state='normal')
             for button in self.island_buttons:button.configure(state='disabled')
@@ -470,12 +474,18 @@ class App(tk.Tk):
         self.town_test_button.configure(state='disabled')
         self.weapon_transfer_test_button.configure(state='disabled')
         self.cangyue_transfer_test_button.configure(state='disabled')
+        self.jewelry_menu_test_button.configure(state='disabled')
+        self.clothes_menu_test_button.configure(state='disabled')
         self.start_button.configure(state='disabled');self.inspect_button.configure(state='disabled');self.mode_box.configure(state='disabled')
         self.stop_button.configure(state='normal');self.status.set('正在连接辅助进程…')
         def work():
             try:
                 if execute in ('island_start','island_resume','island_status'):
                     category={'island_start':'孤岛每日自动挑战','island_resume':'接续孤岛自动挑战','island_status':'孤岛自动状态只读'}[execute]
+                    response=drive([{'action':'shop_route','categories':[category],'foreground':False}],self.cancel)
+                    result=response.get('result',{})
+                elif execute in ('cangyue_jewelry_menu','cangyue_clothes_menu'):
+                    category='苍月首饰出售菜单测试（不卖装备）' if execute=='cangyue_jewelry_menu' else '苍月衣服出售菜单测试（不卖装备）'
                     response=drive([{'action':'shop_route','categories':[category],'foreground':False}],self.cancel)
                     result=response.get('result',{})
                 elif execute in ('fixed_weapon_transfer','fixed_cangyue_transfer'):
@@ -551,6 +561,8 @@ class App(tk.Tk):
         self.town_test_button.configure(state='normal')
         self.weapon_transfer_test_button.configure(state='normal')
         self.cangyue_transfer_test_button.configure(state='normal')
+        self.jewelry_menu_test_button.configure(state='normal')
+        self.clothes_menu_test_button.configure(state='normal')
         self.start_button.configure(state='normal');self.inspect_button.configure(state='normal');self.mode_box.configure(state='readonly');self.stop_button.configure(state='disabled')
         self.output.delete('1.0','end')
         self.output.insert('end',error if error else json.dumps(result,ensure_ascii=False,indent=2))

@@ -13,7 +13,7 @@ class TransferButtonTests(unittest.TestCase):
                 for callback in app.tk.call('after','info'): app.after_cancel(callback)
                 app.geometry('1120x760'); app.tabs.select(app.weapon_transfer_test_button.master); app.update()
                 app.run=Mock()
-                for button, action in [(app.weapon_transfer_test_button,'fixed_weapon_transfer'),(app.cangyue_transfer_test_button,'fixed_cangyue_transfer')]:
+                for button, action in [(app.weapon_transfer_test_button,'fixed_weapon_transfer'),(app.cangyue_transfer_test_button,'fixed_cangyue_transfer'),(app.jewelry_menu_test_button,'cangyue_jewelry_menu'),(app.clothes_menu_test_button,'cangyue_clothes_menu')]:
                     self.assertTrue(button.winfo_viewable())
                     self.assertGreater(button.winfo_height(),20)
                     self.assertLess(button.winfo_rooty()+button.winfo_height(),app.winfo_rooty()+app.winfo_height())
