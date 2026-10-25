@@ -311,6 +311,10 @@ def run_bounded(session,progress=lambda message:None,seconds=30,max_casts=6,cont
                             excluded[locked['address']]=time.monotonic()+15;locked=None;failed_aims=0
                         else:status='locked_target_not_aimable';break
                     move=approach(session,progress) if profile or not continuous else {'movement':False}
+                    if move.get('movement') and move.get('target'):
+                        address=move['target'].get('address')
+                        if address in excluded:
+                            excluded.pop(address);log('aim_retry_after_reposition',target=move['target'])
                     if move.get('nearby_combat') and not move.get('movement'):
                         log('nearby_combat_wait',result=move);session.pause(.3);continue
                     if not move.get('movement'):

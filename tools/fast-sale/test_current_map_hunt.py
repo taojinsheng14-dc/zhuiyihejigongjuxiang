@@ -76,6 +76,34 @@ class CurrentMapTests(unittest.TestCase):
         self.assertTrue(result['nearby_combat']);self.assertFalse(result['movement'])
         self.assertEqual(result['target']['name'],'黑色恶蛆');move.assert_not_called()
 
+    def test_nearby_reposition_does_not_bounce_between_equal_distance_tiles(self):
+        profile=hunt.StoneTomb();profile.guard=Mock()
+        profile.tilemap=SimpleNamespace(free=lambda xy:True)
+        state={'position':(321,189)};target={'address':1,'name':'黑野猪','class':'TCatMon','dead':False,'position':(325,190),'distance':4}
+        session=SimpleNamespace(player=lambda:state['position'],scene_actor_snapshot=lambda:[],
+            nearby_monsters=lambda **k:{'read_errors':0,'monsters':[target]})
+        def move(session,tilemap,goal,**kwargs):
+            before=state['position'];state['position']=goal;return {'from':before,'to':goal}
+        positions=[state['position']]
+        with patch('warrior_combat.patrol_move',side_effect=move),patch('time.monotonic',return_value=100):
+            for _ in range(5):
+                result=profile.approach(session,Mock())
+                if result['movement']:positions.append(state['position'])
+        self.assertEqual(len(positions),len(set(positions)));self.assertGreater(len(positions),2)
+
+    def test_nearby_reposition_prefers_interior_and_history_expires(self):
+        profile=hunt.StoneTomb();profile.guard=Mock()
+        profile.tilemap=SimpleNamespace(free=lambda xy:True,clearance={(11,10):4})
+        state={'position':(10,10)};target={'address':1,'name':'黑野猪','class':'TCatMon','dead':False,'position':(14,10),'distance':4}
+        session=SimpleNamespace(player=lambda:state['position'],scene_actor_snapshot=lambda:[],
+            nearby_monsters=lambda **k:{'read_errors':0,'monsters':[target]})
+        with patch('warrior_combat.patrol_move',return_value={'from':(10,10),'to':(11,10)}) as move,patch('time.monotonic',return_value=100):
+            profile.approach(session,Mock())
+            self.assertEqual(move.call_args.args[2],(11,10))
+        with patch('warrior_combat.patrol_move',return_value={'from':(10,10),'to':(11,10)}) as move,patch('time.monotonic',return_value=109):
+            profile.approach(session,Mock())
+            self.assertEqual(move.call_args.args[2],(11,10))
+
     def test_player_guard_queries_entire_loaded_scene(self):
         s=self.session();s.nearby_players=Mock(return_value=[{'position':[100,100]}])
         with patch.object(hunt,'header',return_value=hunt.STONE_HEADER),patch.object(hunt,'read_experience',return_value={'character':'厚礼蟹'}):

@@ -157,7 +157,7 @@ class StoneTomb:
         return {'allow_hold':True,'expected_header':self.header,'hold_guard':self.guard,'drop_check':self.has_loot}
 
     def approach(self,session,progress):
-        import struct
+        import struct,time
         from warrior_combat import patrol_move
         self.guard(session)
         scene=session.nearby_monsters(radius=8)
@@ -165,19 +165,28 @@ class StoneTomb:
         targets=[m for m in scene['monsters'] if self.is_target(m)]
         if not targets:return {'movement':False,'nearby_combat':False}
         target=min(targets,key=lambda m:m['distance']);current=tuple(session.player())
+        now=time.monotonic();key=(target.get('address'),target['name'])
+        previous=getattr(self,'_approach_history',{})
+        history=[(p,t) for p,t in previous.get('positions',[]) if now-t<8] if previous.get('target')==key else []
+        if not history or history[-1][0]!=current:history.append((current,now))
+        self._approach_history={'target':key,'positions':history}
+        recent={p for p,t in history}
         blocked={struct.unpack_from('<2i',raw,0x68) for address,raw in session.scene_actor_snapshot() if raw[0xac]==0}
         blocked.discard(current);options=[]
         for dx,dy in ((0,-1),(1,0),(0,1),(-1,0),(-1,-1),(1,-1),(1,1),(-1,1)):
             goal=(current[0]+dx,current[1]+dy)
             distance=max(abs(goal[i]-target['position'][i]) for i in (0,1))
-            if goal in blocked or not self.tilemap.free(goal) or not 2<=distance<=8:continue
+            if goal in recent or goal in blocked or not self.tilemap.free(goal) or not 2<=distance<=8:continue
             if dx and dy and (not self.tilemap.free((goal[0],current[1])) or not self.tilemap.free((current[0],goal[1]))):continue
-            options.append((abs(distance-4),goal))
-        if not options:return {'movement':False,'nearby_combat':True,'target':target}
-        goal=min(options)[1]
+            clearance=getattr(self.tilemap,'clearance',{}).get(goal,1)
+            options.append((max(0,4-clearance),abs(distance-4),goal))
+        if not options:return {'movement':False,'nearby_combat':True,'target':target,'reason':'no_unvisited_safe_standing_tile'}
+        goal=min(options)[-1]
         moved=patrol_move(session,self.tilemap,goal,allow_hold=False)
         self.guard(session)
-        return dict(moved,movement=tuple(moved['to'])!=current,nearby_combat=True,target=target)
+        changed=tuple(moved['to'])!=current
+        if changed:history.append((tuple(moved['to']),time.monotonic()))
+        return dict(moved,movement=changed,nearby_combat=True,target=target)
 
 
 

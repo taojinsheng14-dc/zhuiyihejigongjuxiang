@@ -132,6 +132,23 @@ class BoundedMageTests(unittest.TestCase):
         self.assertIs(s.navigation_map,original);s.clear_background_mouse.assert_called_once()
         return result
 
+    def test_changed_standing_position_retries_deferred_target_before_timeout(self):
+        from current_map_hunt import PanelOpen
+        target={'address':1,'name':'蜈蚣'};seen=[]
+        def spell(*args,**kwargs):
+            seen.append(set(kwargs.get('excluded',())))
+            index=len(seen)
+            if index in (1,5):return {'f1_sent':True,'target':target}
+            return {'status':'hover_target_unconfirmed' if index in (2,3) else 'no_verified_target','f1_sent':False,'target':target}
+        profile=SimpleNamespace(guard=Mock(),check_state=Mock(),header=HEADER,names={'蜈蚣'},panel_exception=PanelOpen,
+            wait_for_panels=lambda s:False,plan=lambda s:(object(),{'waypoints':[(20,20),(30,30)]}),
+            approach=Mock(return_value={'movement':True,'nearby_combat':True,'target':target,'from':(20,20),'to':(21,20)}))
+        with self.assertRaisesRegex(RuntimeError,'finished'):
+            self.run_case(spell,profile=profile,continuous=True,max_casts=2,
+                capacity_error=[None,None,None,None,None,RuntimeError('finished')])
+        self.assertIn(1,seen[3]);self.assertNotIn(1,seen[4])
+        self.assertGreaterEqual(profile.approach.call_count,1)
+
     def test_blocked_drop_route_defers_and_returns_to_fresh_combat(self):
         reads=[0]
         def drops(*args):
