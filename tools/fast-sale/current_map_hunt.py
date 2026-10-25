@@ -45,7 +45,7 @@ class StoneTomb:
     def __init__(self,avoid_players=None,map_header=STONE_HEADER,map_name='d715.map',map_stride=14):
         self.avoid_loaded_players=load_avoid_players() if avoid_players is None else avoid_players
         self.header=map_header;self.map_name=map_name;self.map_stride=map_stride
-        self.label={'d715.map':'石墓五层','d601.map':'地牢东一层','d2010.map':'纵横道'}.get(map_name,'当前地图')
+        self.label={'d715.map':'石墓五层','d601.map':'地牢东一层','d2010.map':'纵横道','d505.map':'祖玛五层'}.get(map_name,'当前地图')
 
     panel_exception=PanelOpen
     header=STONE_HEADER
@@ -163,9 +163,16 @@ class StoneTomb:
         self.tilemap=result[0]
         return result
 
+    def combat_classes(self):
+        return {'TCatMon','TSculptureMon','TBeeQueen','TGasKuDeGi','TArcherMon'}
+
     def is_target(self,monster):
         from random_hunt import target_monsters
-        return monster.get('class')=='TCatMon' and bool(target_monsters([monster],8))
+        kind=monster.get('class')
+        if kind=='TArcherMon':
+            if (self.map_name,monster.get('name')) not in {('d505.map','祖玛弓箭手'),('64.map','魔龙射手')}:return False
+            monster=dict(monster,**{'class':'TCatMon'})
+        return kind in self.combat_classes() and bool(target_monsters([monster],8))
 
     def target_names(self,session):
         scene=session.nearby_monsters(radius=8)
@@ -191,7 +198,9 @@ class StoneTomb:
         if scene['read_errors']:raise RuntimeError('近怪站位采样不完整')
         targets=[m for m in scene['monsters'] if self.is_target(m)]
         if not targets:return {'movement':False,'nearby_combat':False}
-        target=min(targets,key=lambda m:m['distance']);current=tuple(session.player())
+        target=min(targets,key=lambda m:m['distance'])
+        if target.get('class')=='TSculptureMon':return WarriorMap.approach(self,session,progress)
+        current=tuple(session.player())
         now=time.monotonic();key=(target.get('address'),target['name'])
         previous=getattr(self,'_approach_history',{})
         history=[(p,t) for p,t in previous.get('positions',[]) if now-t<8] if previous.get('target')==key else []

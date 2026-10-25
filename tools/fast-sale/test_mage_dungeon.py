@@ -46,6 +46,17 @@ class MageDungeonTests(unittest.TestCase):
             r=probe_once(s,locked=far,prefer_nearby=True)
         self.assertEqual(r['target']['address'],near['address']);self.assertTrue(r['f1_sent'])
 
+    def test_near_zuma_archer_is_selected_before_distant_bat(self):
+        import current_map_hunt
+        s,m=self.session();near=dict(s.nearby_monsters()['monsters'][0],name='祖玛弓箭手',**{'class':'TArcherMon'})
+        far=dict(near,name='蝙蝠',address=0xb0000,distance=7,**{'class':'TCatMon'})
+        rows=s.scene_actor_snapshot();s.scene_actor_snapshot=lambda:rows+[(far['address'],rows[0][1])]
+        s.nearby_monsters=lambda **k:{'read_errors':0,'monsters':[far,near]}
+        profile=current_map_hunt.StoneTomb(map_name='d505.map',avoid_players=False)
+        with patch('mage_dungeon.inspect_current',return_value={'f1_skill':{'name':'雷电术'}}):
+            result=probe_once(s,scene_guard=lambda s:None,target_names={'祖玛弓箭手','蝙蝠'},target_classes=profile.combat_classes(),prefer_nearby=True)
+        self.assertEqual(result['target']['name'],'祖玛弓箭手');self.assertTrue(result['f1_sent'])
+
     def test_moving_or_dead_candidate_cancels_cast_before_any_input(self):
         for changed in ('position','dead'):
             s,m=self.session();rows=s.scene_actor_snapshot();raw=bytearray(rows[0][1])

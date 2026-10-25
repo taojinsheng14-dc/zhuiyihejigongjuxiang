@@ -327,3 +327,22 @@ class WarriorApproachTests(unittest.TestCase):
         self.assertFalse(profile.is_target(dict(target,name='弓箭守卫',**{'class':'TArcherMon'})))
         profile.map_name='d2010.map'
         self.assertFalse(profile.is_target(dict(target,name='魔龙射手',**{'class':'TArcherMon'})))
+
+
+class ZumaMageTargetsTests(unittest.TestCase):
+    def test_zuma_monster_classes_are_not_filtered_down_to_bats(self):
+        profile=hunt.StoneTomb(map_name='d505.map',avoid_players=False)
+        for name,kind in (('祖玛卫士','TSculptureMon'),('祖玛雕像','TSculptureMon'),('祖玛弓箭手','TArcherMon'),('角蝇','TBeeQueen'),('楔蛾','TGasKuDeGi'),('蝙蝠','TCatMon')):
+            monster={'name':name,'class':kind,'distance':3,'dead':False}
+            self.assertTrue(profile.is_target(monster),(name,kind))
+            self.assertFalse(profile.is_target(dict(monster,dead=True)))
+        self.assertFalse(profile.is_target({'name':'弓箭守卫','class':'TArcherMon','distance':1,'dead':False}))
+        self.assertFalse(profile.is_target({'name':'祖玛雕像','class':'THumActor','distance':1,'dead':False}))
+
+    def test_mage_sculpture_reposition_uses_adjacent_activation_path(self):
+        profile=hunt.StoneTomb(map_name='d505.map',avoid_players=False);profile.guard=Mock()
+        target={'address':1,'name':'祖玛雕像','class':'TSculptureMon','distance':4,'position':(14,10),'dead':False}
+        session=SimpleNamespace(nearby_monsters=lambda **k:{'read_errors':0,'monsters':[target]})
+        with patch.object(hunt.WarriorMap,'approach',return_value={'nearby_combat':True}) as approach:
+            self.assertTrue(profile.approach(session,Mock())['nearby_combat'])
+        self.assertIs(approach.call_args.args[0],profile)
