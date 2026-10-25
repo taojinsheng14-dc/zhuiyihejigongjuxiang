@@ -57,6 +57,20 @@ class MageDungeonTests(unittest.TestCase):
             result=probe_once(s,scene_guard=lambda s:None,target_names={'祖玛弓箭手','蝙蝠'},target_classes=profile.combat_classes(),prefer_nearby=True)
         self.assertEqual(result['target']['name'],'祖玛弓箭手');self.assertTrue(result['f1_sent'])
 
+    def test_cast_gate_rejects_petrified_or_wall_blocked_target_without_key_input(self):
+        session,messages=self.session()
+        with patch('mage_dungeon.inspect_current',return_value={'f1_skill':{'name':'雷电术'}}):
+            result=probe_once(session,target_gate=lambda *args:False)
+        self.assertEqual(result['status'],'target_requires_approach');self.assertFalse(result['f1_sent'])
+        self.assertFalse(any(msg in (0x100,0x101) for msg,key,lp in messages))
+
+    def test_cast_gate_is_checked_again_after_hover_before_f1(self):
+        session,messages=self.session();gate=Mock(side_effect=[True,False])
+        with patch('mage_dungeon.inspect_current',return_value={'f1_skill':{'name':'雷电术'}}):
+            result=probe_once(session,target_gate=gate)
+        self.assertEqual(result['status'],'target_requires_approach');self.assertFalse(result['f1_sent'])
+        self.assertEqual(gate.call_count,2);self.assertFalse(any(msg==0x100 for msg,key,lp in messages))
+
     def test_moving_or_dead_candidate_cancels_cast_before_any_input(self):
         for changed in ('position','dead'):
             s,m=self.session();rows=s.scene_actor_snapshot();raw=bytearray(rows[0][1])

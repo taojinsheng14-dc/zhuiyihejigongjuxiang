@@ -174,6 +174,28 @@ class StoneTomb:
             monster=dict(monster,**{'class':'TCatMon'})
         return kind in self.combat_classes() and bool(target_monsters([monster],8))
 
+    def sculpture_active(self,session,monster,raw):
+        import struct,time
+        if monster.get('class')!='TSculptureMon':return True
+        identity=tuple(raw[a:b] for a,b in ((0,4),(12,16),(64,68)))
+        position=struct.unpack_from('<2i',raw,0x68)
+        hp=struct.unpack('<H',session.read(monster['address']+0x112,2))[0]
+        maximum=struct.unpack('<H',session.read(monster['address']+0x11a,2))[0]
+        now=time.monotonic();states=getattr(self,'_sculpture_states',{});old=states.get(monster['address'])
+        active_until=0
+        if old and old['identity']==identity:
+            active_until=old['active_until']
+            if position!=old['position'] or (hp>0 and old['hp']>0 and maximum>0 and old['maximum']>0 and hp!=old['hp']):active_until=now+5
+        states[monster['address']]={'identity':identity,'position':position,'hp':hp,'maximum':maximum,'active_until':active_until}
+        self._sculpture_states=states
+        return 0<hp<=maximum and active_until>now
+
+    def target_gate(self,session,monster,raw):
+        import struct
+        from warrior_combat import clear_terrain_line
+        active=self.sculpture_active(session,monster,raw)
+        return active and clear_terrain_line(self.tilemap,session.player(),struct.unpack_from('<2i',raw,0x68))
+
     def target_names(self,session):
         scene=session.nearby_monsters(radius=8)
         if scene['read_errors']:raise RuntimeError('当前地图目标采样不完整')
@@ -199,8 +221,19 @@ class StoneTomb:
         targets=[m for m in scene['monsters'] if self.is_target(m)]
         if not targets:return {'movement':False,'nearby_combat':False}
         target=min(targets,key=lambda m:m['distance'])
-        if target.get('class')=='TSculptureMon':return WarriorMap.approach(self,session,progress)
+        if target.get('class')=='TSculptureMon':
+            raw=dict(session.scene_actor_snapshot()).get(target['address'])
+            if raw is None:return {'movement':False,'nearby_combat':True,'reason':'target_changed'}
+            if not self.sculpture_active(session,target,raw):return WarriorMap.approach(self,session,progress)
         current=tuple(session.player())
+        from warrior_combat import clear_terrain_line,melee_approach_path
+        if not clear_terrain_line(self.tilemap,current,target['position']):
+            blocked={struct.unpack_from('<2i',row,0x68) for address,row in session.scene_actor_snapshot() if row[0xac]==0}-{current}
+            path=melee_approach_path(self.tilemap,current,target['position'],blocked,max_steps=getattr(self.tilemap,'width',256)*getattr(self.tilemap,'height',256),max_radius=max(getattr(self.tilemap,'width',256),getattr(self.tilemap,'height',256)),reach=8,require_line=True)
+            if not path or len(path)<2:return {'movement':False,'nearby_combat':True,'target':target,'reason':'no_line_of_fire_route'}
+            moved=patrol_move(session,self.tilemap,path[1],allow_hold=False)
+            self.guard(session)
+            return dict(moved,movement=tuple(moved['to'])!=current,nearby_combat=True,target=target,approach_style='around_wall')
         now=time.monotonic();key=(target.get('address'),target['name'])
         previous=getattr(self,'_approach_history',{})
         history=[(p,t) for p,t in previous.get('positions',[]) if now-t<8] if previous.get('target')==key else []

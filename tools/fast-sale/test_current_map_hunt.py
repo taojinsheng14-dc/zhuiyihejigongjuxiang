@@ -70,7 +70,7 @@ class CurrentMapTests(unittest.TestCase):
         self.assertEqual(options['hold_guard'],profile.guard)
 
     def test_near_black_maggot_prevents_leaving_for_patrol_if_local_route_blocked(self):
-        profile=hunt.StoneTomb();profile.guard=Mock();profile.tilemap=SimpleNamespace(free=lambda xy:False)
+        profile=hunt.StoneTomb();profile.guard=Mock();profile.tilemap=SimpleNamespace(free=lambda xy:xy==(50,50))
         target={'name':'黑色恶蛆','class':'TCatMon','dead':False,'position':(52,50),'distance':2}
         s=SimpleNamespace(nearby_monsters=lambda **k:{'read_errors':0,'monsters':[target]},player=lambda:(50,50),scene_actor_snapshot=lambda:[])
         with patch('warrior_combat.patrol_move') as move:
@@ -342,7 +342,31 @@ class ZumaMageTargetsTests(unittest.TestCase):
     def test_mage_sculpture_reposition_uses_adjacent_activation_path(self):
         profile=hunt.StoneTomb(map_name='d505.map',avoid_players=False);profile.guard=Mock()
         target={'address':1,'name':'祖玛雕像','class':'TSculptureMon','distance':4,'position':(14,10),'dead':False}
-        session=SimpleNamespace(nearby_monsters=lambda **k:{'read_errors':0,'monsters':[target]})
+        session=SimpleNamespace(nearby_monsters=lambda **k:{'read_errors':0,'monsters':[target]},scene_actor_snapshot=lambda:[(1,bytes(0x184))])
+        profile.sculpture_active=Mock(return_value=False)
         with patch.object(hunt.WarriorMap,'approach',return_value={'nearby_combat':True}) as approach:
             self.assertTrue(profile.approach(session,Mock())['nearby_combat'])
         self.assertIs(approach.call_args.args[0],profile)
+
+
+class CastSafetyGateTests(unittest.TestCase):
+    def test_wall_blocks_line_and_ranged_route_goes_around_opening(self):
+        from warrior_combat import clear_terrain_line,melee_approach_path
+        tilemap=SimpleNamespace(free=lambda p:0<=p[0]<9 and 0<=p[1]<9 and not(p[0]==4 and p[1]<7))
+        self.assertFalse(clear_terrain_line(tilemap,(2,2),(6,2)))
+        path=melee_approach_path(tilemap,(2,2),(6,2),reach=8,require_line=True,max_steps=81,max_radius=9)
+        self.assertIsNotNone(path);self.assertTrue(clear_terrain_line(tilemap,path[-1],(6,2)))
+        self.assertTrue(any(p[1]>=7 for p in path))
+        self.assertFalse(clear_terrain_line(SimpleNamespace(free=lambda p:p!=(1,0)),(0,0),(2,2)))
+
+    def test_sculpture_proximity_and_positive_health_alone_do_not_allow_cast(self):
+        import struct
+        profile=hunt.StoneTomb(avoid_players=False);raw=bytearray(0x184);struct.pack_into('<2i',raw,0x68,10,10)
+        monster={'class':'TSculptureMon','address':0x10000}
+        session=SimpleNamespace(read=lambda address,size:struct.pack('<H',100 if address==0x10112 else 200))
+        with patch('time.monotonic',return_value=100):
+            self.assertFalse(profile.sculpture_active(session,monster,raw));self.assertFalse(profile.sculpture_active(session,monster,raw))
+        struct.pack_into('<2i',raw,0x68,11,10)
+        with patch('time.monotonic',return_value=101):self.assertTrue(profile.sculpture_active(session,monster,raw))
+        raw[0]=1
+        with patch('time.monotonic',return_value=102):self.assertFalse(profile.sculpture_active(session,monster,raw))

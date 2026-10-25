@@ -157,7 +157,23 @@ def continuous_run(session,tilemap,current,direction,point,max_tiles,expected_he
     return {'from':current,'to':tuple(session.player()),'button':'right_hold','release_reason':reason}
 
 
-def melee_approach_path(tilemap,start,target,blocked=(),max_steps=24):
+def clear_terrain_line(tilemap,start,target):
+    """Conservative supercover: every crossed tile and diagonal side must be free."""
+    x,y=map(int,start);tx,ty=map(int,target)
+    if not tilemap.free((x,y)) or not tilemap.free((tx,ty)):return False
+    nx,ny=abs(tx-x),abs(ty-y);sx=1 if tx>x else -1;sy=1 if ty>y else -1;ix=iy=0
+    while ix<nx or iy<ny:
+        decision=(1+2*ix)*ny-(1+2*iy)*nx
+        if decision==0:
+            if not tilemap.free((x+sx,y)) or not tilemap.free((x,y+sy)):return False
+            x+=sx;y+=sy;ix+=1;iy+=1
+        elif decision<0:x+=sx;ix+=1
+        else:y+=sy;iy+=1
+        if not tilemap.free((x,y)):return False
+    return True
+
+
+def melee_approach_path(tilemap,start,target,blocked=(),max_steps=24,reach=1,require_line=False,max_radius=12):
     """Find a bounded local path to a free melee-adjacent tile, not onto the actor."""
     start,target=tuple(start),tuple(target);blocked=set(map(tuple,blocked))|{target};blocked.discard(start)
     if not tilemap.free(start):raise RuntimeError('近战起点不在已核对路网')
@@ -165,13 +181,13 @@ def melee_approach_path(tilemap,start,target,blocked=(),max_steps=24):
     while queue:
         at=queue.popleft()
         dx,dy=target[0]-at[0],target[1]-at[1]
-        adjacent=at!=target and max(abs(dx),abs(dy))<=1
-        if adjacent and dx and dy:adjacent=all(p not in blocked and tilemap.free(p) for p in ((at[0]+dx,at[1]),(at[0],at[1]+dy)))
-        if adjacent:found=at;break
+        adjacent=at!=target and max(abs(dx),abs(dy))<=reach
+        if adjacent and reach==1 and dx and dy:adjacent=all(p not in blocked and tilemap.free(p) for p in ((at[0]+dx,at[1]),(at[0],at[1]+dy)))
+        if adjacent and (not require_line or clear_terrain_line(tilemap,at,target)):found=at;break
         if distance[at]>=max_steps:continue
         for dx,dy in ((0,-1),(1,0),(0,1),(-1,0),(-1,-1),(1,-1),(1,1),(-1,1)):
             nxt=(at[0]+dx,at[1]+dy)
-            if max(abs(nxt[i]-start[i]) for i in (0,1))>12:continue
+            if max(abs(nxt[i]-start[i]) for i in (0,1))>max_radius:continue
             if nxt in parents or nxt in blocked or not tilemap.free(nxt):continue
             if dx and dy and any(p in blocked or not tilemap.free(p) for p in ((at[0]+dx,at[1]),(at[0],at[1]+dy))):continue
             parents[nxt]=at;distance[nxt]=distance[at]+1;queue.append(nxt)

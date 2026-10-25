@@ -38,7 +38,7 @@ def same_actor(before, after):
             and all(before[a:b] == after[a:b] for a,b in ((0,4),(0xc,0x10),(0x40,0x44))))
 
 
-def probe_once(session, progress=lambda message:None, locked=None, excluded=None, scene_guard=None, target_names=None, target_classes=None,prefer_nearby=False):
+def probe_once(session, progress=lambda message:None, locked=None, excluded=None, scene_guard=None, target_names=None, target_classes=None,prefer_nearby=False,target_gate=None):
     check_scene=scene_guard or guard
     names=NAMES if target_names is None else target_names
     classes={'TCatMon'} if target_classes is None else target_classes
@@ -55,6 +55,9 @@ def probe_once(session, progress=lambda message:None, locked=None, excluded=None
         and m['distance'] <= 8 and m['address'] not in (excluded or set())),key=lambda m:m['distance'])
     if not choices:return {'status':'no_verified_target','f1_sent':False}
     rows = dict(session.scene_actor_snapshot())
+    if target_gate:
+        choices=[m for m in choices if rows.get(m['address']) is not None and target_gate(session,m,rows[m['address']])]
+        if not choices:return {'status':'target_requires_approach','f1_sent':False}
     width,height=session.client_size()
     def aimable(m):
         raw=rows.get(m['address'])
@@ -143,6 +146,8 @@ def probe_once(session, progress=lambda message:None, locked=None, excluded=None
             result['status']='target_moved_out_of_range';return result
         if context()['0x1b8'] != target['address']:
             result['status']='hover_changed_before_key';return result
+        if target_gate and not target_gate(session,target,fresh):
+            result['status']='target_requires_approach';return result
         result['main_vitals_before']=vitals(own)
         result['target_vitals_before']=vitals(target['address'])
         progress('已只读核对后台指向同一怪物，按F1一次；不连按')
@@ -204,6 +209,7 @@ def run_bounded(session,progress=lambda message:None,seconds=30,max_casts=6,cont
     tilemap,plan=profile.plan(session) if profile else patrol_plan(session)
     expected_header=profile.header if profile else HEADER
     probe_options={'scene_guard':profile.guard,'target_names':profile.names,'target_classes':profile.combat_classes() if hasattr(profile,'combat_classes') else {'TCatMon'},'prefer_nearby':True} if profile else {}
+    if profile and not warrior and hasattr(profile,'target_gate'):probe_options['target_gate']=profile.target_gate
     approach=profile.approach if profile else approach_once
     started=time.monotonic();deadline=started+(43200 if continuous else min(120,max(1,seconds)));limit=float('inf') if continuous else min(60,max(1,max_casts))
     from dungeon_route import CoverageRoute,PatrolObstruction
@@ -322,7 +328,7 @@ def run_bounded(session,progress=lambda message:None,seconds=30,max_casts=6,cont
                     session.pause(getattr(profile,'post_cast_wait',.6))
                 elif result.get('status')=='native_attack_wait':
                     session.pause(.2)
-                elif result.get('status') in ('no_verified_target','target_outside_input_area'):
+                elif result.get('status') in ('no_verified_target','target_outside_input_area','target_requires_approach'):
                     if locked:
                         if last_zero_health:
                             session.pause(.15);continue
