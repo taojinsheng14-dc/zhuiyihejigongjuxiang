@@ -53,7 +53,7 @@ def click_target(session,target,scene_guard=None):
             before=struct.unpack('<HH',session.read(target['address']+0x112,2)+session.read(target['address']+0x11a,2))
             context_before={hex(o):session.uint(controller+o) for o in (0x1b8,0x1bc,0x1c0,0x1c4)}
             player_before=tuple(session.player())
-            session.background_mouse(point,'left',track_movement=False,dpi_scaled=True,move_settle=.05,button_hold=.08)
+            session.background_mouse(point,'left',track_movement=False,dpi_scaled=True,move_settle=.05,button_hold=.08,restore_client_focus=bool(scene_guard))
             session.pause(.3)
             return {'status':'single_attack_click','clicked':True,'target':target,'point':point,
                     'health_before':list(before),'context_before':context_before,
@@ -65,8 +65,8 @@ def click_target(session,target,scene_guard=None):
 
 
 class Melee:
-    def __init__(self,scene_guard=None):
-        self.scene_guard=scene_guard
+    def __init__(self,scene_guard=None,progress_timeout=20):
+        self.scene_guard=scene_guard;self.progress_timeout=progress_timeout
         self.locked=None;self.retry_at={};self.clicks=0;self.health=None;self.progress_at=0
 
     def reset(self):self.locked=None;self.health=None
@@ -83,7 +83,7 @@ class Melee:
                 moved=tuple(session.player())!=tuple(self.locked['position'])
                 changed=hp!=self.health or moved
                 if changed:self.health=hp;self.progress_at=now;self.locked['position']=list(session.player())
-                if now-self.progress_at<20:return {'status':'native_attack_wait','clicked':False,'engaged':True,'health_progress':changed,'health':hp}
+                if now-self.progress_at<self.progress_timeout:return {'status':'native_attack_wait','clicked':False,'engaged':True,'health_progress':changed,'health':hp}
                 self.retry_at[current['address']]=now+3
         self.reset()
         choices=[m for m in alive if m.get('class') in CLASSES and m.get('on_screen') and m.get('distance',99)<=8 and m['address'] not in self.retry_at]

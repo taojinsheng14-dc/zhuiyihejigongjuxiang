@@ -227,7 +227,7 @@ class WarriorProfileTests(unittest.TestCase):
             first=profile.probe(session);second=profile.probe(session)
             self.assertTrue(first['attack_sent']);self.assertFalse(first['f1_sent'])
             self.assertEqual(second['status'],'native_attack_wait');self.assertFalse(second['f1_sent'])
-            melee.assert_called_once_with(scene_guard=profile.guard)
+            melee.assert_called_once_with(scene_guard=profile.guard,progress_timeout=2)
 
     def test_warrior_guard_rejects_other_role_and_pending_items(self):
         profile=hunt.WarriorMap(avoid_players=False);session=CurrentMapTests().session()

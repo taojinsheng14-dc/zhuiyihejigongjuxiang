@@ -8,6 +8,18 @@ from warrior_combat import HEADER, NAMES
 AIM_OFFSETS=((0,32),(0,48),(0,16),(0,56),(-16,48),(16,48),(-24,64),(24,64),(0,72))
 
 
+def write_hunt_state(path,data):
+    """Bounded retry for Windows readers holding the destination JSON open."""
+    import json,time
+    temp=path.with_suffix('.tmp')
+    temp.write_text(json.dumps(data,ensure_ascii=False),encoding='utf8')
+    for attempt in range(50):
+        try:temp.replace(path);return
+        except PermissionError:
+            if attempt==49:raise
+            time.sleep(.02)
+
+
 def guard(session):
     session.check()
     if session.login_stage() != 'playing':raise RuntimeError('角色状态不是正常游戏')
@@ -231,7 +243,7 @@ def run_bounded(session,progress=lambda message:None,seconds=30,max_casts=6,cont
         data=dict(observed_epoch=time.time(),mode='continuous',map=plan.get('map'),phase=phase,position=session.player(),
                   casts=0 if warrior else casts,attack_clicks=casts if warrior else 0,combat_mode='warrior' if warrior else 'mage',observed_deaths=deaths,verified_pickups=verified_pickups,
                   route=route.snapshot(),**extra)
-        temp=status_path.with_suffix('.tmp');temp.write_text(json.dumps(data,ensure_ascii=False),encoding='utf-8');temp.replace(status_path)
+        write_hunt_state(status_path,data)
     before_navigation=session.navigation_map
     def navigation(header):
         if header!=expected_header:raise RuntimeError('拾取地图变化')
@@ -322,6 +334,7 @@ def run_bounded(session,progress=lambda message:None,seconds=30,max_casts=6,cont
                         address=move['target'].get('address')
                         if address in excluded:
                             excluded.pop(address);log('aim_retry_after_reposition',target=move['target'])
+                        if warrior:profile.repositioned(move['target'])
                     if move.get('nearby_combat') and not move.get('movement'):
                         log('nearby_combat_wait',result=move);session.pause(.3);continue
                     if not move.get('movement'):
@@ -393,13 +406,19 @@ def run_bounded(session,progress=lambda message:None,seconds=30,max_casts=6,cont
         log('end',**summary);return summary
     except DualBagsFull as error:
         if not getattr(profile,'return_when_full',False):
-            state('stopped',reason=str(error));log('stopped',reason=str(error));raise
+            log('stopped',reason=str(error))
+            try:state('stopped',reason=str(error))
+            except OSError as state_error:log('state_write_failed',reason=str(state_error))
+            raise
         summary={'status':'bags_full','casts_sent':0 if warrior else casts,'attack_clicks':casts if warrior else 0,'observed_deaths':deaths,
                  'verified_pickups':verified_pickups,'elapsed_seconds':round(time.monotonic()-started,2),
                  'unattended_acceptance':False,'position':session.player()}
         state('bags_full',result=summary);log('end',**summary);return summary
     except Exception as error:
-        state('stopped',reason=str(error));log('stopped',reason=str(error));raise
+        log('stopped',reason=str(error))
+        try:state('stopped',reason=str(error))
+        except OSError as state_error:log('state_write_failed',reason=str(state_error))
+        raise
     finally:
         session.navigation_map=before_navigation
         session.clear_background_mouse()

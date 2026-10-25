@@ -201,13 +201,16 @@ class WarriorMap(StoneTomb):
     def reset_combat(self):
         if hasattr(self,'_melee'):self._melee.reset()
 
+    def repositioned(self,target):
+        if hasattr(self,'_melee'):self._melee.retry_at.pop(target.get('address'),None)
+
     def probe(self,session,progress=lambda text:None,excluded=None,**options):
         from island_melee import Melee
         self.guard(session)
         scene=session.nearby_monsters(radius=8)
         if scene['read_errors']:raise RuntimeError('战士目标采样不完整')
         monsters=[m for m in scene['monsters'] if self.is_target(m) and m['address'] not in (excluded or set())]
-        if not hasattr(self,'_melee'):self._melee=Melee(scene_guard=self.guard)
+        if not hasattr(self,'_melee'):self._melee=Melee(scene_guard=self.guard,progress_timeout=2)
         result=self._melee.step(session,{'monsters':monsters,'drops':[]})
         if result.get('clicked'):return dict(result,attack_sent=True,f1_sent=False)
         if result.get('engaged'):return dict(result,f1_sent=False)

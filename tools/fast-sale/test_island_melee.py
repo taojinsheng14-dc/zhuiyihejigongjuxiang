@@ -52,6 +52,21 @@ class IslandMeleeTests(unittest.TestCase):
         self.assertTrue(result['clicked']);self.assertGreaterEqual(normal_guard.call_count,3)
         self.assertFalse(any(msg in (0x100,0x101) for msg in m))
 
+    def test_normal_map_two_second_no_progress_releases_instead_of_twenty_second_wait(self):
+        s,t,m=self.session();controller=Melee(scene_guard=Mock(),progress_timeout=2)
+        with patch('island_melee.time.monotonic',return_value=100):first=controller.step(s,{'monsters':[t],'drops':[]})
+        self.assertTrue(first['clicked'])
+        with patch('island_melee.time.monotonic',return_value=103):second=controller.step(s,{'monsters':[t],'drops':[]})
+        self.assertFalse(second['engaged']);self.assertFalse(second['clicked']);self.assertIsNone(controller.locked)
+        s.background_mouse.assert_called_once()
+
+    def test_health_progress_keeps_native_attack_without_another_click(self):
+        s,t,m=self.session();controller=Melee(scene_guard=Mock(),progress_timeout=2)
+        with patch('island_melee.time.monotonic',return_value=100):controller.step(s,{'monsters':[t],'drops':[]})
+        before=s.read;s.read=lambda address,size:struct.pack('<H',90) if address==t['address']+0x112 else before(address,size)
+        with patch('island_melee.time.monotonic',return_value=103):result=controller.step(s,{'monsters':[t],'drops':[]})
+        self.assertTrue(result['engaged']);self.assertTrue(result['health_progress']);s.background_mouse.assert_called_once()
+
     def test_wrong_map_stops_before_hover(self):
         s,t,m=self.session();s.check=lambda:None;s.login_stage=lambda:'playing'
         with patch('island_automation.header',return_value=b'wrong'):

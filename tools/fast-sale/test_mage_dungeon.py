@@ -334,3 +334,26 @@ class ActorIdentityTests(unittest.TestCase):
             changed=bytearray(after);changed[offset]=1
             self.assertFalse(same_actor(before,changed))
         self.assertFalse(same_actor(before,None))
+
+
+class HuntStateWriteTests(unittest.TestCase):
+    def test_temporary_windows_reader_lock_retries_and_preserves_json(self):
+        import tempfile,json
+        from pathlib import Path
+        from mage_dungeon import write_hunt_state
+        original=Path.replace;calls=[]
+        def replace(source,target):
+            calls.append(source)
+            if len(calls)<3:raise PermissionError('busy reader')
+            return original(source,target)
+        with tempfile.TemporaryDirectory() as folder,patch.object(Path,'replace',autospec=True,side_effect=replace),patch('time.sleep'):
+            path=Path(folder)/'state.json';write_hunt_state(path,{'phase':'running'})
+            self.assertEqual(json.loads(path.read_text()),{'phase':'running'});self.assertEqual(len(calls),3)
+
+    def test_persistent_state_write_failure_is_bounded(self):
+        import tempfile
+        from pathlib import Path
+        from mage_dungeon import write_hunt_state
+        with tempfile.TemporaryDirectory() as folder,patch.object(Path,'replace',side_effect=PermissionError('permanent')) as replace,patch('time.sleep'):
+            with self.assertRaisesRegex(PermissionError,'permanent'):write_hunt_state(Path(folder)/'state.json',{})
+            self.assertEqual(replace.call_count,50)
