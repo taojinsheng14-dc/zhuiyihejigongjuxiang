@@ -157,6 +157,30 @@ def continuous_run(session,tilemap,current,direction,point,max_tiles,expected_he
     return {'from':current,'to':tuple(session.player()),'button':'right_hold','release_reason':reason}
 
 
+def melee_approach_path(tilemap,start,target,blocked=(),max_steps=24):
+    """Find a bounded local path to a free melee-adjacent tile, not onto the actor."""
+    start,target=tuple(start),tuple(target);blocked=set(map(tuple,blocked))|{target};blocked.discard(start)
+    if not tilemap.free(start):raise RuntimeError('近战起点不在已核对路网')
+    queue=deque([start]);parents={start:None};distance={start:0};found=None
+    while queue:
+        at=queue.popleft()
+        dx,dy=target[0]-at[0],target[1]-at[1]
+        adjacent=at!=target and max(abs(dx),abs(dy))<=1
+        if adjacent and dx and dy:adjacent=all(p not in blocked and tilemap.free(p) for p in ((at[0]+dx,at[1]),(at[0],at[1]+dy)))
+        if adjacent:found=at;break
+        if distance[at]>=max_steps:continue
+        for dx,dy in ((0,-1),(1,0),(0,1),(-1,0),(-1,-1),(1,-1),(1,1),(-1,1)):
+            nxt=(at[0]+dx,at[1]+dy)
+            if max(abs(nxt[i]-start[i]) for i in (0,1))>12:continue
+            if nxt in parents or nxt in blocked or not tilemap.free(nxt):continue
+            if dx and dy and any(p in blocked or not tilemap.free(p) for p in ((at[0]+dx,at[1]),(at[0],at[1]+dy))):continue
+            parents[nxt]=at;distance[nxt]=distance[at]+1;queue.append(nxt)
+    if found is None:return None
+    path=[]
+    while found is not None:path.append(found);found=parents[found]
+    return path[::-1]
+
+
 def local_exits(session,tilemap):
     """Fresh physical exits, excluding actors but never policy-deferred tiles."""
     current=tuple(session.player())

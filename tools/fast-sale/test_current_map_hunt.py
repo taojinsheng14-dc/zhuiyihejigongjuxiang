@@ -230,7 +230,7 @@ class WarriorProfileTests(unittest.TestCase):
             first=profile.probe(session);second=profile.probe(session)
             self.assertTrue(first['attack_sent']);self.assertFalse(first['f1_sent'])
             self.assertEqual(second['status'],'native_attack_wait');self.assertFalse(second['f1_sent'])
-            melee.assert_called_once_with(scene_guard=profile.guard,progress_timeout=2)
+            melee.assert_called_once_with(scene_guard=profile.guard,progress_timeout=2,target_classes=profile.melee_classes())
 
     def test_warrior_guard_rejects_other_role_and_pending_items(self):
         profile=hunt.WarriorMap(avoid_players=False);session=CurrentMapTests().session()
@@ -281,3 +281,49 @@ class ManualBagPauseTests(unittest.TestCase):
         profile,session,state=self.setup_case();state.update(bag=False,held='装备')
         with patch.object(hunt,'header',return_value=hunt.STONE_HEADER),patch.object(hunt,'read_experience',return_value={'character':'厚礼蟹'}):
             with self.assertRaisesRegex(RuntimeError,'物品'):profile.wait_for_panels(session)
+
+
+class WarriorApproachTests(unittest.TestCase):
+    def case(self):
+        target={'address':1,'class':'TCatMon','name':'魔龙刀兵','position':(162,137),'distance':5,'dead':False,'on_screen':True}
+        profile=hunt.WarriorMap(avoid_players=False);profile.guard=Mock();profile.tilemap=SimpleNamespace(free=lambda p:True)
+        session=SimpleNamespace(player=lambda:(167,140),scene_actor_snapshot=lambda:[],nearby_monsters=lambda **k:{'read_errors':0,'monsters':[target]})
+        return profile,session,target
+
+    def test_warrior_approaches_adjacent_instead_of_mage_four_tile_ring(self):
+        from warrior_combat import melee_approach_path
+        profile,session,target=self.case()
+        path=melee_approach_path(profile.tilemap,(167,140),target['position'])
+        self.assertNotIn(tuple(target['position']),path)
+        self.assertLessEqual(max(abs(path[-1][i]-target['position'][i]) for i in (0,1)),1)
+        self.assertNotEqual(path[1],(168,140))
+        with patch('warrior_combat.patrol_move',return_value={'from':(167,140),'to':path[1],'planned_step':path[1]}) as move:
+            result=profile.approach(session,Mock())
+        self.assertTrue(result['movement']);self.assertEqual(move.call_args.args[2],path[1])
+
+    def test_failed_approach_first_step_is_avoided_across_retries(self):
+        profile,session,target=self.case();steps=[]
+        def move(session,tilemap,goal,**options):
+            steps.append(goal);return {'from':(167,140),'to':(167,140),'planned_step':goal}
+        with patch('warrior_combat.patrol_move',side_effect=move):
+            for _ in range(3):profile.approach(session,Mock())
+        self.assertEqual(steps[0],steps[1]);self.assertNotEqual(steps[0],steps[2])
+
+    def test_sculpture_is_live_candidate_and_npc_or_dead_is_not(self):
+        profile,session,target=self.case()
+        self.assertTrue(profile.is_target(dict(target,**{'class':'TSculptureMon'})))
+        self.assertFalse(profile.is_target(dict(target,**{'class':'THumActor'})))
+        self.assertFalse(profile.is_target(dict(target,dead=True)))
+
+    def test_melee_local_path_does_not_cross_occupied_diagonal_corner(self):
+        from warrior_combat import melee_approach_path
+        tilemap=SimpleNamespace(free=lambda p:p in {(10,10),(11,10),(10,11),(11,11),(12,11)})
+        path=melee_approach_path(tilemap,(10,10),(12,11),{(11,10)})
+        self.assertEqual(path[1],(10,11));self.assertNotIn((11,10),path)
+
+    def test_only_exact_dragon_archer_is_allowed_on_dragon_map(self):
+        profile,session,target=self.case();profile.map_name='64.map'
+        self.assertTrue(profile.is_target(dict(target,name='魔龙射手',**{'class':'TArcherMon'})))
+        self.assertFalse(profile.is_target(dict(target,name='弓箭守卫',**{'class':'TArcherMon'})))
+        profile.map_name='d2010.map'
+        self.assertFalse(profile.is_target(dict(target,name='魔龙射手',**{'class':'TArcherMon'})))
