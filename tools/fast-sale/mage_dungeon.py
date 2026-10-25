@@ -204,6 +204,8 @@ def run_bounded(session,progress=lambda message:None,seconds=30,max_casts=6,cont
         try:result=patrol_move(session,tilemap,goal,**options)
         except RuntimeError as error:
             if str(error)!='巡逻目标当前没有可走路径':raise
+            if profile and hasattr(profile,'confirm_dead_end') and profile.confirm_dead_end(session):
+                raise profile.dead_end_exception('重新采样确认周围无合法出口')
             route.defer_goal(time.monotonic());log('route_temporarily_blocked',goal=goal)
             session.pause(.3)
             position=tuple(session.player())
@@ -359,9 +361,11 @@ def run_bounded(session,progress=lambda message:None,seconds=30,max_casts=6,cont
                 position_anchor=tuple(session.player())
             except (profile.panel_exception if profile else ()):
                 locked=None;failed_aims=0;continue
-            except (getattr(profile,'player_exception',()) if profile else ()):
+            except tuple(t for t in (getattr(profile,'player_exception',None),getattr(profile,'dead_end_exception',None)) if isinstance(t,type)) as navigation_error:
                 session.clear_background_mouse()
-                result=profile.avoid_players(session,progress);log('player_avoidance',result=result)
+                trapped=isinstance(navigation_error,getattr(profile,'dead_end_exception',()))
+                result=profile.escape_dead_end(session,progress) if trapped else profile.avoid_players(session,progress)
+                log('dead_end_escape' if trapped else 'player_avoidance',result=result)
                 locked=None;last_zero_health=False;failed_aims=0;excluded.clear()
                 position_anchor=tuple(session.player())
                 if result.get('random_used'):

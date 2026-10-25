@@ -157,6 +157,22 @@ def continuous_run(session,tilemap,current,direction,point,max_tiles,expected_he
     return {'from':current,'to':tuple(session.player()),'button':'right_hold','release_reason':reason}
 
 
+def local_exits(session,tilemap):
+    """Fresh physical exits, excluding actors but never policy-deferred tiles."""
+    current=tuple(session.player())
+    if not tilemap.free(current):raise RuntimeError('当前位置不在已核对可走路网')
+    rows=session.scene_actor_snapshot()
+    blocked={struct.unpack_from('<2i',raw,0x68) for address,raw in rows if raw[0xac]==0}-{current}
+    exits=[]
+    for dx,dy in ((0,-1),(1,0),(0,1),(-1,0),(-1,-1),(1,-1),(1,1),(-1,1)):
+        nxt=(current[0]+dx,current[1]+dy)
+        if not tilemap.free(nxt) or nxt in blocked:continue
+        if dx and dy and any(not tilemap.free(p) or p in blocked for p in ((current[0]+dx,current[1]),(current[0],current[1]+dy))):continue
+        exits.append(nxt)
+    if tuple(session.player())!=current:raise RuntimeError('出口采样期间人物位置变化')
+    return {'position':current,'exits':exits,'occupied':sorted(blocked)}
+
+
 def patrol_move(session,tilemap,waypoint,allow_hold=True,expected_header=HEADER,hold_guard=None,drop_check=None,blocked_tiles=()):
     current=tuple(session.player());rows=session.scene_actor_snapshot()
     blocked={struct.unpack_from('<2i',raw,0x68) for address,raw in rows if raw[0xac]==0}

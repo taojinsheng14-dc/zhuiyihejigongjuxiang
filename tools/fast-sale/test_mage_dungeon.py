@@ -144,6 +144,22 @@ class BoundedMageTests(unittest.TestCase):
         spell.assert_called_once()
         self.assertEqual(reads[0],5)
 
+    def test_no_route_confirmed_dead_end_dispatches_escape_then_resamples(self):
+        from current_map_hunt import DeadEndDetected,PanelOpen
+        reads=[0]
+        def drops(*args):
+            reads[0]+=1
+            return {'ground_maps':[{'items':[{'id':7,'name':'金币','x':20,'y':20}] if reads[0]<=4 else []}]}
+        profile=SimpleNamespace(guard=Mock(),check_state=Mock(),header=HEADER,names={'蜈蚣'},panel_exception=PanelOpen,
+            dead_end_exception=DeadEndDetected,confirm_dead_end=Mock(return_value=True),
+            escape_dead_end=Mock(return_value={'random_used':True}),wait_for_panels=lambda s:False,
+            plan=lambda s:(object(),{'waypoints':[(20,20),(30,30)]}),approach=Mock())
+        spell=Mock(side_effect=RuntimeError('fresh sample after escape'))
+        with self.assertRaisesRegex(RuntimeError,'fresh sample after escape'):
+            self.run_case(spell,drops=drops,pickup={'status':'blocked','verified':False},continuous=True,
+                          profile=profile,movement_error=RuntimeError('巡逻目标当前没有可走路径'))
+        profile.escape_dead_end.assert_called_once();spell.assert_called_once()
+
     def test_blocked_drop_route_does_not_swallow_independent_guard_error(self):
         with self.assertRaisesRegex(RuntimeError,'map identity changed'):
             self.run_case(Mock(),drops=[{'id':7,'name':'金币','x':20,'y':20}],

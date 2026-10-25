@@ -110,6 +110,47 @@ class CurrentMapTests(unittest.TestCase):
         with self.assertRaisesRegex(RuntimeError,'缺少'):p.avoid_players(s,Mock())
         s.press_named_hotkey.assert_not_called()
 
+    def test_occupied_goal_with_local_exit_is_not_dead_end(self):
+        import struct
+        from warrior_combat import local_exits
+        from dungeon_route import CenterPathMap
+        raw=bytearray(0x200);struct.pack_into('<2i',raw,0x68,52,50)
+        p,s=self.random_session();s.scene_actor_snapshot=lambda:[(1,raw)]
+        p.tilemap=SimpleNamespace(free=lambda xy:48<=xy[0]<=54 and 48<=xy[1]<=54)
+        with self.assertRaisesRegex(RuntimeError,'没有可走路径'):
+            CenterPathMap(p.tilemap,{}).path((50,50),(52,50),{(52,50)})
+        self.assertTrue(local_exits(s,p.tilemap)['exits'])
+        p.guard=Mock();self.assertFalse(p.confirm_dead_end(s));s.press_named_hotkey.assert_not_called()
+
+    def test_hero_blocks_only_corridor_exit_and_diagonal_cannot_cut_corner(self):
+        import struct
+        from warrior_combat import local_exits
+        raw=bytearray(0x200);struct.pack_into('<2i',raw,0x68,51,50)
+        p,s=self.random_session();s.scene_actor_snapshot=lambda:[(1,raw)]
+        p.tilemap=SimpleNamespace(free=lambda xy:xy in {(50,50),(51,50),(51,51)})
+        self.assertEqual(local_exits(s,p.tilemap)['exits'],[])
+
+    def test_confirmed_dead_end_random_once_and_reopened_exit_never_random(self):
+        p,s=self.random_session();p.guard=Mock();s.pause=Mock()
+        empty={'position':(50,50),'exits':[]};opened={'position':(50,50),'exits':[(51,50)]}
+        with patch('warrior_combat.local_exits',side_effect=[empty,opened]):
+            self.assertFalse(p.escape_dead_end(s,Mock())['random_used'])
+        s.press_named_hotkey.assert_not_called()
+        with patch('warrior_combat.local_exits',return_value=empty):
+            result=p.escape_dead_end(s,Mock())
+        self.assertTrue(result['random_used']);self.assertEqual(result['reason'],'dead_end')
+        s.press_named_hotkey.assert_called_once()
+
+    def test_dead_end_unknown_state_and_missing_stone_never_input(self):
+        p,s=self.random_session();p.guard=Mock(side_effect=RuntimeError('map changed'))
+        with self.assertRaisesRegex(RuntimeError,'map changed'):p.escape_dead_end(s,Mock())
+        s.press_named_hotkey.assert_not_called()
+        p.guard=Mock();s.pause=Mock();s.shortcut_inventory=lambda:[]
+        with patch('warrior_combat.local_exits',return_value={'position':(50,50),'exits':[]}):
+            with self.assertRaisesRegex(RuntimeError,'缺少'):p.escape_dead_end(s,Mock())
+        s.press_named_hotkey.assert_not_called()
+
+
 
 class GenericProfileTests(unittest.TestCase):
     def test_supported_formats_resolve_same_shared_profile(self):

@@ -1,4 +1,4 @@
-"""Explicitly verified normal-map mage profiles; no teleport or paid entry."""
+"""Verified normal-map mage profiles; named random stones only when authorized."""
 import json
 from instance_context import runtime_root
 from combat_metrics import read_experience
@@ -33,8 +33,12 @@ class PlayersDetected(RuntimeError):pass
 class PanelOpen(RuntimeError):pass
 
 
+class DeadEndDetected(RuntimeError):pass
+
+
 class StoneTomb:
     player_exception=PlayersDetected
+    dead_end_exception=DeadEndDetected
 
     def __init__(self,avoid_players=None,map_header=STONE_HEADER,map_name='d715.map',map_stride=14):
         self.avoid_loaded_players=load_avoid_players() if avoid_players is None else avoid_players
@@ -81,12 +85,32 @@ class StoneTomb:
         if any(session.visible(k) for k in ('merchant','sell','bag')):return {'random_used':False,'reason':'panel_wait'}
         players=session.nearby_players(None)
         if not players:return {'random_used':False,'reason':'players_no_longer_loaded'}
+        return self.random_escape(session,progress,'loaded_players',player_count=len(players))
+
+    def confirm_dead_end(self,session):
+        from warrior_combat import local_exits
+        self.guard(session)
+        first=local_exits(session,self.tilemap)
+        if first['exits']:return False
+        session.clear_background_mouse();session.pause(.3);self.guard(session)
+        second=local_exits(session,self.tilemap)
+        confirmed=first['position']==second['position'] and not second['exits']
+        session.write_stats({'event':'dead_end_check','confirmed':confirmed,'first':first,'second':second})
+        return confirmed
+
+    def escape_dead_end(self,session,progress):
+        if not self.confirm_dead_end(session):return {'random_used':False,'reason':'exit_reopened'}
+        return self.random_escape(session,progress,'dead_end')
+
+    def random_escape(self,session,progress,reason,**details):
+        self.guard(session) if reason=='dead_end' else self.check_state(session)
         before=tuple(session.player());wallet_before=session.currency_snapshot()
         # A failed/uncertain attempt ends this command; never press another key blindly.
-        if not any(row['name']=='随机传送石' and row.get('raw_98',1)>0 for row in session.shortcut_inventory()):raise RuntimeError('避人随机缺少可用随机传送石，未购买或使用随机卷')
-        session.clear_background_mouse();self.check_state(session)
-        session.write_stats({'event':'random_attempt','reason':'loaded_players','scope':'client_loaded','position':before,'player_count':len(players)})
-        progress('已加载范围发现其他玩家，使用随机传送石避开；不要求无怪')
+        if not any(row['name']=='随机传送石' and row.get('raw_98',1)>0 for row in session.shortcut_inventory()):raise RuntimeError('随机脱困缺少可用随机传送石，未购买或使用随机卷')
+        session.clear_background_mouse()
+        self.guard(session) if reason=='dead_end' else self.check_state(session)
+        session.write_stats({'event':'random_attempt','reason':reason,'scope':'client_loaded','position':before,**details})
+        progress('确认周围无合法出口，使用随机传送石脱困' if reason=='dead_end' else '已加载范围发现其他玩家，使用随机传送石避开；不要求无怪')
         session.press_named_hotkey(('随机传送石',),'random')
         try:
             session.wait(lambda:tuple(session.player())!=before,timeout=5)
@@ -94,11 +118,11 @@ class StoneTomb:
             after=tuple(session.stable_player())
             if not self.tilemap.free(after):raise RuntimeError('随机落点不在已核对可走路网')
         except RuntimeError as error:
-            session.write_stats({'event':'random_result','confirmed':False,'reason':'loaded_players','error':str(error)})
-            raise RuntimeError('避人随机落点未确认，停止且不重复按键：'+str(error)) from error
+            session.write_stats({'event':'random_result','confirmed':False,'reason':reason,'error':str(error)})
+            raise RuntimeError('随机落点未确认，停止且不重复按键：'+str(error)) from error
         wallet_after=session.currency_snapshot()
-        session.write_stats({'event':'random_result','confirmed':True,'reason':'loaded_players','before':before,'position':after})
-        return {'random_used':True,'scope':'client_loaded','player_count':len(players),'before':before,'after':after,'wallet_before':wallet_before,'wallet_after':wallet_after}
+        session.write_stats({'event':'random_result','confirmed':True,'reason':reason,'before':before,'position':after})
+        return {'random_used':True,'scope':'client_loaded','reason':reason,**details,'before':before,'after':after,'wallet_before':wallet_before,'wallet_after':wallet_after}
 
     def plan(self,session):
         from warrior_combat import patrol_plan
