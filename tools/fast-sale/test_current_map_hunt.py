@@ -214,9 +214,10 @@ class GenericProfileTests(unittest.TestCase):
 class WarriorProfileTests(unittest.TestCase):
     def test_warrior_run_never_inspects_or_sends_f1(self):
         profile=hunt.WarriorMap(avoid_players=False);profile.check_state=Mock()
-        with patch.object(hunt,'read_experience',return_value={'character':'微笑'}),patch.object(hunt,'profile_for',return_value=profile),patch('importlib.reload',side_effect=lambda m:m),patch('mage_skills.inspect_current') as skills,patch('mage_dungeon.run_bounded',return_value={'status':'test'}) as run:
+        with patch.object(hunt,'read_experience',return_value={'character':'微笑'}),patch.object(hunt,'profile_for',return_value=profile),patch('importlib.reload',side_effect=lambda m:m) as reload,patch('mage_skills.inspect_current') as skills,patch('mage_dungeon.run_bounded',return_value={'status':'test'}) as run:
             self.assertEqual(hunt.run(object())['status'],'test')
         skills.assert_not_called();self.assertIs(run.call_args.kwargs['profile'],profile)
+        self.assertIn('island_melee',[call.args[0].__name__ for call in reload.call_args_list])
 
     def test_warrior_probe_uses_scoped_map_guard_and_preserves_native_wait(self):
         profile=hunt.WarriorMap(avoid_players=False);profile.guard=Mock()

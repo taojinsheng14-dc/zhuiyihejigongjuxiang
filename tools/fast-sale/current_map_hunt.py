@@ -218,8 +218,8 @@ class WarriorMap(StoneTomb):
 
 
 def run(session,progress=lambda message:None,allow_cycle=True,return_when_full=False):
-    import importlib,mage_skills,mage_dungeon,dungeon_route,warrior_combat,ground_item_probe
-    for module in (mage_skills,dungeon_route,warrior_combat,ground_item_probe,mage_dungeon):importlib.reload(module)
+    import importlib,mage_skills,mage_dungeon,dungeon_route,warrior_combat,ground_item_probe,island_melee
+    for module in (mage_skills,dungeon_route,warrior_combat,ground_item_probe,island_melee,mage_dungeon):importlib.reload(module)
     character=read_experience(session)['character']
     if character not in ('厚礼蟹','微笑'):raise RuntimeError('当前地图未授权此角色')
     if allow_cycle and character=='厚礼蟹':
