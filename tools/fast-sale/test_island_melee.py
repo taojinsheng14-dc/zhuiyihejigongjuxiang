@@ -45,6 +45,13 @@ class IslandMeleeTests(unittest.TestCase):
         self.assertTrue(first['clicked']);self.assertTrue(second['engaged']);self.assertFalse(second['clicked'])
         self.assertEqual(s.background_mouse.call_count,1)
 
+    def test_explicit_normal_map_guard_does_not_use_island_guard_or_skill_key(self):
+        s,t,m=self.session();normal_guard=Mock()
+        with patch('island_melee.guard',side_effect=AssertionError('island guard must remain local')):
+            result=click_target(s,t,scene_guard=normal_guard)
+        self.assertTrue(result['clicked']);self.assertGreaterEqual(normal_guard.call_count,3)
+        self.assertFalse(any(msg in (0x100,0x101) for msg in m))
+
     def test_wrong_map_stops_before_hover(self):
         s,t,m=self.session();s.check=lambda:None;s.login_stage=lambda:'playing'
         with patch('island_automation.header',return_value=b'wrong'):

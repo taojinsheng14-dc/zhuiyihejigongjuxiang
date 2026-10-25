@@ -1759,7 +1759,7 @@ class BackgroundSession(Session):
             import current_map_hunt
             importlib.reload(current_map_hunt)
             return current_map_hunt.inspect(self)
-        if categories in (['法师地牢持续清怪拾取'],['法师当前地图持续挂机']):
+        if categories in (['法师地牢持续清怪拾取'],['法师当前地图持续挂机'],['当前地图持续挂机'],['战士当前地图持续挂机']):
             import current_map_hunt
             importlib.reload(current_map_hunt)
             return current_map_hunt.run(self,progress)

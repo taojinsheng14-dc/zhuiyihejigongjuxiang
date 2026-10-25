@@ -5,9 +5,9 @@ from unittest.mock import Mock,patch
 
 
 class DungeonGuiTests(unittest.TestCase):
-    def test_start_button_dispatches_background_command_and_shares_stop(self):
+    def check_start(self,character):
         import mixed_sale_gui as gui
-        with tempfile.TemporaryDirectory() as folder,patch.object(gui,'ROOT',Path(folder)),patch.object(gui,'HELPER',Path(folder)),patch.object(gui.instance_context,'binding',return_value={'character':'厚礼蟹','pid':1,'title':'厚礼蟹'}),patch.object(gui,'drive',return_value={'result':{'status':'test'}}) as drive:
+        with tempfile.TemporaryDirectory() as folder,patch.object(gui,'ROOT',Path(folder)),patch.object(gui,'HELPER',Path(folder)),patch.object(gui.instance_context,'binding',return_value={'character':character,'pid':1,'title':character}),patch.object(gui,'drive',return_value={'result':{'status':'test'}}) as drive:
             app=gui.App()
             try:
                 for callback in app.tk.call('after','info'):app.after_cancel(callback)
@@ -17,12 +17,16 @@ class DungeonGuiTests(unittest.TestCase):
                 app.foreground.set(True);app.dungeon_start_button.invoke()
                 result,error=app.messages.get(timeout=2)
                 self.assertIsNone(error)
-                drive.assert_called_once_with([{'action':'shop_route','categories':['法师当前地图持续挂机'],'foreground':False}],app.cancel)
+                drive.assert_called_once_with([{'action':'shop_route','categories':['当前地图持续挂机'],'foreground':False}],app.cancel)
                 self.assertEqual(str(app.stop_button['state']),'normal')
                 self.assertEqual(str(app.dungeon_start_button['state']),'disabled')
                 app.finished(result,None)
                 self.assertEqual(str(app.dungeon_start_button['state']),'normal')
             finally:app.destroy()
+
+    def test_start_button_dispatches_background_command_and_shares_stop(self):
+        for character in ('微笑','厚礼蟹'):
+            with self.subTest(character=character):self.check_start(character)
 
     def test_wrong_character_does_not_dispatch(self):
         import mixed_sale_gui as gui

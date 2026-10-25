@@ -20,8 +20,9 @@ def same_actor(before,after):
     return after is not None and len(after)>=0x184 and all(before[a:b]==after[a:b] for a,b in ((0,4),(12,16),(64,68)))
 
 
-def click_target(session,target):
-    guard(session)
+def click_target(session,target,scene_guard=None):
+    check_scene=scene_guard or guard
+    check_scene(session)
     if target.get('class') not in CLASSES:raise RuntimeError('主体近战目标不是已核对怪物类型')
     raw=dict(session.scene_actor_snapshot()).get(target['address'])
     if raw is None or raw[0xac]!=0:return {'status':'target_unavailable','clicked':False}
@@ -43,9 +44,9 @@ def click_target(session,target):
             if not(70<point[0]<width-70 and 60<point[1]<height-180):continue
             mx,my=(round(point[0]*physical[0]/width),round(point[1]*physical[1]/height))
             if getattr(session,'_ui_logical_messages',False):mx,my=point
-            guard(session);send(0x200,0,(my<<16)|(mx&65535));session.pause(.12)
+            check_scene(session);send(0x200,0,(my<<16)|(mx&65535));session.pause(.12)
             if session.uint(controller+0x1b8)!=target['address']:continue
-            guard(session)
+            check_scene(session)
             fresh=dict(session.scene_actor_snapshot()).get(target['address'])
             if not same_actor(raw,fresh) or fresh[0xac]!=0:return {'status':'target_changed','clicked':False}
             if session.uint(controller+0x1b8)!=target['address']:continue
@@ -64,7 +65,8 @@ def click_target(session,target):
 
 
 class Melee:
-    def __init__(self):
+    def __init__(self,scene_guard=None):
+        self.scene_guard=scene_guard
         self.locked=None;self.retry_at={};self.clicks=0;self.health=None;self.progress_at=0
 
     def reset(self):self.locked=None;self.health=None
@@ -88,7 +90,7 @@ class Melee:
         if not choices:return {'status':'no_clickable_target','clicked':False,'engaged':False}
         drop_tiles={(d['x'],d['y']) for d in sample['drops']}
         target=min(choices,key=lambda m:(tuple(m['position']) not in drop_tiles,m.get('distance',99)))
-        result=click_target(session,target)
+        result=click_target(session,target,scene_guard=self.scene_guard) if self.scene_guard else click_target(session,target)
         if result.get('clicked'):
             self.clicks+=1;self.locked=dict(target,actor_identity=result['actor_identity'],position=list(session.player()))
             self.health=result['health_before'][0];self.progress_at=now;result['engaged']=True

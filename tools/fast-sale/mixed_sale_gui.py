@@ -22,12 +22,12 @@ from equipment import sale_plan
 from profit_tracker import ProfitTracker
 from random_hunt import load_settings,save_settings,RandomSettings
 
-BUILD='2026.10.24.11'
+BUILD='2026.10.25.12'
 
 def active_task(command,result,sample,now):
     step=command.get('step')
     if not isinstance(step,int) or step<=result.get('step',0):return None
-    if command.get('categories') not in (['挂机清包循环'],['接续当前挂机图循环'],['监测并回城出售'],['监测双包'],['孤岛每日自动挑战'],['接续孤岛自动挑战'],['法师地牢持续清怪拾取'],['法师当前地图持续挂机']):return None
+    if command.get('categories') not in (['挂机清包循环'],['接续当前挂机图循环'],['监测并回城出售'],['监测双包'],['孤岛每日自动挑战'],['接续孤岛自动挑战'],['法师地牢持续清怪拾取'],['法师当前地图持续挂机'],['当前地图持续挂机'],['战士当前地图持续挂机']):return None
     if not sample.get('ok') or not 0<=now-sample.get('observed_epoch',0)<=3:return None
     if sample.get('game_pid')!=result.get('state',{}).get('game_pid'):return None
     return step
@@ -63,8 +63,8 @@ class App(tk.Tk):
         self.tabs.insert(1,island_tab)
         settings_tab=ttk.Frame(self.tabs,padding=10);self.tabs.insert(2,settings_tab,text='角色设置')
         dungeon_tab=ttk.Frame(self.tabs,padding=10);self.tabs.insert(2,dungeon_tab,text='地图挂机')
-        ttk.Label(dungeon_tab,text='法师主体 · 当前已核对地图',font=('Microsoft YaHei UI',14,'bold')).pack(anchor='w')
-        ttk.Label(dungeon_tab,text='厚礼蟹 · F1雷电术 · 后台沿可达路线清怪、按名单拾取。\n当前地图自动识别并校验路网；需自行到图，启动不购买或付费入场；开启避人会使用随机石。',wraplength=560,style='Subtitle.TLabel').pack(anchor='w',pady=(8,12))
+        ttk.Label(dungeon_tab,text='战士／法师主体 · 当前已核对地图',font=('Microsoft YaHei UI',14,'bold')).pack(anchor='w')
+        ttk.Label(dungeon_tab,text='微笑战士：主体后台单击选怪后追砍；厚礼蟹法师：F1雷电术。\n当前地图自动识别并校验路网；需自行到图，启动不购买或付费入场；开启避人会使用随机石。',wraplength=560,style='Subtitle.TLabel').pack(anchor='w',pady=(8,12))
         import current_map_hunt
         self.map_avoid_players=tk.BooleanVar(value=current_map_hunt.load_avoid_players())
         ttk.Checkbutton(dungeon_tab,text='当前地图：全部已加载范围内见人就随机（消耗随机石，新任务生效）',variable=self.map_avoid_players,command=lambda:current_map_hunt.save_avoid_players(self.map_avoid_players.get())).pack(anchor='w',pady=(0,8))
@@ -193,8 +193,8 @@ class App(tk.Tk):
             phase={'running':'运行中','panel_wait':'面板打开，暂停输入等待关闭','stopped':'已停止','finished':'已结束'}.get(data.get('phase'),'记录')
             age=time.time()-data.get('observed_epoch',0)
             if age>5:phase=('状态待核对' if phase=='运行中' else phase)+'（最近记录）'
-            text='{} · 坐标 {}\n施法 {} 次 · 死亡观察 {} 次 · 确认拾取 {} 件\n路点 {}/{} · 完成 {} 圈'.format(
-                phase,position,data.get('casts',0),data.get('observed_deaths',0),data.get('verified_pickups',0),
+            text=('{} · 坐标 {}\n'+('单击选怪' if data.get('combat_mode')=='warrior' else '施法')+' {} 次 · 死亡观察 {} 次 · 确认拾取 {} 件\n路点 {}/{} · 完成 {} 圈').format(
+                phase,position,data.get('attack_clicks',0) if data.get('combat_mode')=='warrior' else data.get('casts',0),data.get('observed_deaths',0),data.get('verified_pickups',0),
                 route.get('visited',0),route.get('total',0),route.get('laps',0))
             if data.get('reason'):text+='\n停止原因：'+str(data['reason'])
             self.dungeon_status.set(text)
@@ -534,8 +534,8 @@ class App(tk.Tk):
             self.profit_auto=True
         if execute=='mage_dungeon':
             selected=instance_context.binding()
-            if not selected or selected.get('character')!='厚礼蟹':
-                self.status.set('地牢法师目前仅支持已绑定的厚礼蟹，请先核对本号角色');return
+            if not selected or selected.get('character') not in ('厚礼蟹','微笑'):
+                self.status.set('当前地图支持微笑战士／厚礼蟹法师，请先核对本号角色');return
         self.busy=True;self.cancel.clear()
         self.dungeon_start_button.configure(state='disabled')
         for button in self.island_buttons:button.configure(state='disabled')
@@ -558,7 +558,7 @@ class App(tk.Tk):
         def work():
             try:
                 if execute=='mage_dungeon':
-                    response=drive([{'action':'shop_route','categories':['法师当前地图持续挂机'],'foreground':False}],self.cancel)
+                    response=drive([{'action':'shop_route','categories':['当前地图持续挂机'],'foreground':False}],self.cancel)
                     result=response.get('result',{})
                 elif execute in ('island_start','island_resume','island_status'):
                     category={'island_start':'孤岛每日自动挑战','island_resume':'接续孤岛自动挑战','island_status':'孤岛自动状态只读'}[execute]

@@ -209,3 +209,30 @@ class GenericProfileTests(unittest.TestCase):
         self.assertFalse(profile.is_target(dict(monster,name='神兽(其他玩家)')))
         self.assertFalse(profile.is_target(dict(monster,**{'class':'TMerchant'})))
         self.assertFalse(profile.is_target(dict(monster,dead=True)))
+
+
+class WarriorProfileTests(unittest.TestCase):
+    def test_warrior_run_never_inspects_or_sends_f1(self):
+        profile=hunt.WarriorMap(avoid_players=False);profile.check_state=Mock()
+        with patch.object(hunt,'read_experience',return_value={'character':'微笑'}),patch.object(hunt,'profile_for',return_value=profile),patch('importlib.reload',side_effect=lambda m:m),patch('mage_skills.inspect_current') as skills,patch('mage_dungeon.run_bounded',return_value={'status':'test'}) as run:
+            self.assertEqual(hunt.run(object())['status'],'test')
+        skills.assert_not_called();self.assertIs(run.call_args.kwargs['profile'],profile)
+
+    def test_warrior_probe_uses_scoped_map_guard_and_preserves_native_wait(self):
+        profile=hunt.WarriorMap(avoid_players=False);profile.guard=Mock()
+        target={'address':1,'class':'TCatMon','name':'黑野猪','dead':False,'distance':3,'on_screen':True}
+        session=SimpleNamespace(nearby_monsters=lambda **k:{'read_errors':0,'monsters':[target]})
+        with patch('island_melee.Melee') as melee:
+            melee.return_value.step.side_effect=[{'clicked':True,'target':target},{'clicked':False,'engaged':True,'status':'native_attack_wait'}]
+            first=profile.probe(session);second=profile.probe(session)
+            self.assertTrue(first['attack_sent']);self.assertFalse(first['f1_sent'])
+            self.assertEqual(second['status'],'native_attack_wait');self.assertFalse(second['f1_sent'])
+            melee.assert_called_once_with(scene_guard=profile.guard)
+
+    def test_warrior_guard_rejects_other_role_and_pending_items(self):
+        profile=hunt.WarriorMap(avoid_players=False);session=CurrentMapTests().session()
+        with patch.object(hunt,'header',return_value=profile.header),patch.object(hunt,'read_experience',return_value={'character':'厚礼蟹'}):
+            with self.assertRaisesRegex(RuntimeError,'授权'):profile.guard(session)
+        session.held_item=lambda:'装备'
+        with patch.object(hunt,'header',return_value=profile.header),patch.object(hunt,'read_experience',return_value={'character':'微笑'}):
+            with self.assertRaisesRegex(RuntimeError,'物品'):profile.guard(session)

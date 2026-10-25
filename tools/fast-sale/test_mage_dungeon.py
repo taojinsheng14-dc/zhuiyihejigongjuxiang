@@ -132,6 +132,18 @@ class BoundedMageTests(unittest.TestCase):
         self.assertIs(s.navigation_map,original);s.clear_background_mouse.assert_called_once()
         return result
 
+    def test_warrior_native_attack_wait_does_not_reclick_or_move(self):
+        from current_map_hunt import PanelOpen
+        probe=Mock(side_effect=[{'attack_sent':True,'target':{'address':1,'name':'蜈蚣'}},
+            {'status':'native_attack_wait','engaged':True},RuntimeError('finished warrior wait')])
+        profile=SimpleNamespace(combat_mode='warrior',probe=probe,guard=Mock(),check_state=Mock(),header=HEADER,
+            names={'蜈蚣'},panel_exception=PanelOpen,wait_for_panels=lambda s:False,
+            plan=lambda s:(object(),{'waypoints':[(20,20),(30,30)]}),approach=Mock(),reset_combat=Mock())
+        spell=Mock(side_effect=AssertionError('warrior must not use mage F1'))
+        with self.assertRaisesRegex(RuntimeError,'finished warrior wait'):
+            self.run_case(spell,profile=profile,continuous=True)
+        spell.assert_not_called();profile.approach.assert_not_called();self.assertEqual(probe.call_count,3)
+
     def test_changed_standing_position_retries_deferred_target_before_timeout(self):
         from current_map_hunt import PanelOpen
         target={'address':1,'name':'蜈蚣'};seen=[]

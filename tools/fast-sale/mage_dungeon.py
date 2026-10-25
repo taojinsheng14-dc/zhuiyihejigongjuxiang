@@ -186,6 +186,8 @@ def run_bounded(session,progress=lambda message:None,seconds=30,max_casts=6,cont
     from island_pickup_policy import filter_drops
     from warrior_combat import patrol_plan,patrol_move
     check_scene=profile.guard if profile else guard
+    warrior=getattr(profile,'combat_mode','mage')=='warrior'
+    combat_probe=profile.probe if warrior else probe_once
     (profile.check_state(session) if profile else check_scene(session))
     tilemap,plan=profile.plan(session) if profile else patrol_plan(session)
     expected_header=profile.header if profile else HEADER
@@ -227,7 +229,7 @@ def run_bounded(session,progress=lambda message:None,seconds=30,max_casts=6,cont
     def state(phase,**extra):
         if not continuous:return
         data=dict(observed_epoch=time.time(),mode='continuous',map=plan.get('map'),phase=phase,position=session.player(),
-                  casts=casts,observed_deaths=deaths,verified_pickups=verified_pickups,
+                  casts=0 if warrior else casts,attack_clicks=casts if warrior else 0,combat_mode='warrior' if warrior else 'mage',observed_deaths=deaths,verified_pickups=verified_pickups,
                   route=route.snapshot(),**extra)
         temp=status_path.with_suffix('.tmp');temp.write_text(json.dumps(data,ensure_ascii=False),encoding='utf-8');temp.replace(status_path)
     before_navigation=session.navigation_map
@@ -242,7 +244,9 @@ def run_bounded(session,progress=lambda message:None,seconds=30,max_casts=6,cont
         while time.monotonic()<deadline and casts<limit:
             try:
                 if profile and profile.wait_for_panels(session):
-                    if not panel_wait:log('panel_open_wait');panel_wait=True
+                    if not panel_wait:
+                        log('panel_open_wait');panel_wait=True
+                        if warrior:profile.reset_combat()
                     state('panel_wait');session.pause(.2);continue
                 if panel_wait:
                     position_anchor=tuple(session.player());locked=None;failed_aims=0
@@ -250,7 +254,7 @@ def run_bounded(session,progress=lambda message:None,seconds=30,max_casts=6,cont
                 check_scene(session)
                 state('running')
                 current_position=tuple(session.player())
-                if max(abs(current_position[i]-position_anchor[i]) for i in (0,1))>2:
+                if max(abs(current_position[i]-position_anchor[i]) for i in (0,1))>2 and not (warrior and locked and tilemap.free(current_position) and max(abs(current_position[i]-position_anchor[i]) for i in (0,1))<=8):
                     status='external_position_change';log(status,previous=position_anchor,current=current_position);break
                 ensure_loot_capacity(session,progress);check_scene(session)
                 if locked:
@@ -273,6 +277,7 @@ def run_bounded(session,progress=lambda message:None,seconds=30,max_casts=6,cont
                     loot_action,chosen=choose(nearby,scene['monsters'],scene['hero'],scene['position'])
                 if loot_action in ('pickup','lead_hero'):
                     if locked:log('target_interrupted_for_loot',target=locked)
+                    if warrior:profile.reset_combat()
                     locked=None;last_zero_health=False;failed_aims=0
                     pickup_attempts[chosen['id']]=pickup_attempts.get(chosen['id'],0)+1
                     if pickup_attempts[chosen['id']]>3:
@@ -294,15 +299,17 @@ def run_bounded(session,progress=lambda message:None,seconds=30,max_casts=6,cont
                     position_anchor=tuple(session.player());session.pause(.2);continue
                 excluded={a:t for a,t in excluded.items() if t>time.monotonic()}
                 if profile and hasattr(profile,'target_names'):probe_options['target_names']=profile.target_names(session)
-                try:result=probe_once(session,progress,locked=locked,**probe_options,**({'excluded':set(excluded)} if continuous else {}))
+                try:result=combat_probe(session,progress,locked=locked,**probe_options,**({'excluded':set(excluded)} if continuous else {}))
                 except (profile.panel_exception if profile else ()):
                     locked=None;failed_aims=0;continue
-                log('spell_probe',result=result)
-                if result.get('f1_sent'):
+                log('combat_probe' if warrior else 'spell_probe',result=result)
+                if result.get('f1_sent') or result.get('attack_sent'):
                     casts+=1;locked=result['target'];failed_aims=0
                     hp=result.get('target_vitals_after',{})
                     last_zero_health=hp.get('0x11a',0)>0 and hp.get('0x112')==0
                     session.pause(getattr(profile,'post_cast_wait',.6))
+                elif result.get('status')=='native_attack_wait':
+                    session.pause(.2)
                 elif result.get('status') in ('no_verified_target','target_outside_input_area'):
                     if locked:
                         if last_zero_health:
@@ -371,6 +378,7 @@ def run_bounded(session,progress=lambda message:None,seconds=30,max_casts=6,cont
                 result=profile.escape_dead_end(session,progress) if trapped else profile.avoid_players(session,progress)
                 log('dead_end_escape' if trapped else 'player_avoidance',result=result)
                 locked=None;last_zero_health=False;failed_aims=0;excluded.clear()
+                if warrior:profile.reset_combat()
                 position_anchor=tuple(session.player())
                 if result.get('random_used'):
                     obstruction=PatrolObstruction()
@@ -378,7 +386,7 @@ def run_bounded(session,progress=lambda message:None,seconds=30,max_casts=6,cont
                     if getattr(profile,'center_route',False):
                         tilemap=route.navigation_map();profile.tilemap=tilemap
                 continue
-        summary={'status':status,'casts_sent':casts,'observed_deaths':deaths,
+        summary={'status':status,'casts_sent':0 if warrior else casts,'attack_clicks':casts if warrior else 0,'observed_deaths':deaths,
                  'verified_pickups':verified_pickups,'unverified_target_losses':unverified_losses,'movement_segments':movement_segments,
                  'elapsed_seconds':round(time.monotonic()-started,2),'unattended_acceptance':False,'position':session.player()}
         state('finished',result=summary)
@@ -386,7 +394,7 @@ def run_bounded(session,progress=lambda message:None,seconds=30,max_casts=6,cont
     except DualBagsFull as error:
         if not getattr(profile,'return_when_full',False):
             state('stopped',reason=str(error));log('stopped',reason=str(error));raise
-        summary={'status':'bags_full','casts_sent':casts,'observed_deaths':deaths,
+        summary={'status':'bags_full','casts_sent':0 if warrior else casts,'attack_clicks':casts if warrior else 0,'observed_deaths':deaths,
                  'verified_pickups':verified_pickups,'elapsed_seconds':round(time.monotonic()-started,2),
                  'unattended_acceptance':False,'position':session.player()}
         state('bags_full',result=summary);log('end',**summary);return summary

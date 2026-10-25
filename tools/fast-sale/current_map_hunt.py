@@ -37,13 +37,15 @@ class DeadEndDetected(RuntimeError):pass
 
 
 class StoneTomb:
+    character='厚礼蟹'
+    combat_mode='mage'
     player_exception=PlayersDetected
     dead_end_exception=DeadEndDetected
 
     def __init__(self,avoid_players=None,map_header=STONE_HEADER,map_name='d715.map',map_stride=14):
         self.avoid_loaded_players=load_avoid_players() if avoid_players is None else avoid_players
         self.header=map_header;self.map_name=map_name;self.map_stride=map_stride
-        self.label={'d715.map':'石墓五层','d601.map':'地牢东一层'}.get(map_name,'当前地图')
+        self.label={'d715.map':'石墓五层','d601.map':'地牢东一层','d2010.map':'纵横道'}.get(map_name,'当前地图')
 
     panel_exception=PanelOpen
     header=STONE_HEADER
@@ -55,7 +57,7 @@ class StoneTomb:
     def check_state(self,session):
         session.check()
         if session.login_stage()!='playing' or header(session)!=self.header:raise RuntimeError('当前地图挂机地图或角色状态变化，停止')
-        if read_experience(session)['character']!='厚礼蟹':raise RuntimeError('当前地图法师仅授权厚礼蟹')
+        if read_experience(session)['character']!=self.character:raise RuntimeError('当前地图角色与授权职业绑定不符')
         if session.held_item() or session.sale_item() or session.inflight_item():raise RuntimeError('当前地图挂机物品操作状态不空')
         if session.u.IsIconic(session.hwnd):raise RuntimeError('游戏已最小化，未挂机输入')
 
@@ -190,26 +192,52 @@ class StoneTomb:
 
 
 
+class WarriorMap(StoneTomb):
+    character='微笑'
+    combat_mode='warrior'
+    native_chase=True
+    post_cast_wait=.2
+
+    def reset_combat(self):
+        if hasattr(self,'_melee'):self._melee.reset()
+
+    def probe(self,session,progress=lambda text:None,excluded=None,**options):
+        from island_melee import Melee
+        self.guard(session)
+        scene=session.nearby_monsters(radius=8)
+        if scene['read_errors']:raise RuntimeError('战士目标采样不完整')
+        monsters=[m for m in scene['monsters'] if self.is_target(m) and m['address'] not in (excluded or set())]
+        if not hasattr(self,'_melee'):self._melee=Melee(scene_guard=self.guard)
+        result=self._melee.step(session,{'monsters':monsters,'drops':[]})
+        if result.get('clicked'):return dict(result,attack_sent=True,f1_sent=False)
+        if result.get('engaged'):return dict(result,f1_sent=False)
+        return dict(result,status='no_verified_target',f1_sent=False)
+
+
 def run(session,progress=lambda message:None,allow_cycle=True,return_when_full=False):
     import importlib,mage_skills,mage_dungeon,dungeon_route,warrior_combat,ground_item_probe
     for module in (mage_skills,dungeon_route,warrior_combat,ground_item_probe,mage_dungeon):importlib.reload(module)
-    if allow_cycle:
+    character=read_experience(session)['character']
+    if character not in ('厚礼蟹','微笑'):raise RuntimeError('当前地图未授权此角色')
+    if allow_cycle and character=='厚礼蟹':
         import stone_hunt_cycle
         importlib.reload(stone_hunt_cycle)
         if stone_hunt_cycle.enabled():return stone_hunt_cycle.run(session,progress)
-    profile=profile_for(session);profile.check_state(session)
+    profile=profile_for(session,character=character);profile.check_state(session)
     profile.return_when_full=return_when_full
-    skills=mage_skills.inspect_current(session,'厚礼蟹')
-    if not skills.get('f1_skill') or skills['f1_skill']['name']!='雷电术':raise RuntimeError('F1不是唯一雷电术，未挂机')
-    progress(profile.label+'：按通道中线覆盖整张可达地图，连续跑动、F1雷电术与名单拾取；不主动跨图')
+    if profile.combat_mode=='mage':
+        skills=mage_skills.inspect_current(session,'厚礼蟹')
+        if not skills.get('f1_skill') or skills['f1_skill']['name']!='雷电术':raise RuntimeError('F1不是唯一雷电术，未挂机')
+    progress(profile.label+'：按通道中线覆盖可达地图，'+('主体单击选怪后由游戏追砍' if profile.combat_mode=='warrior' else 'F1雷电术')+'与名单拾取；不主动跨图')
     def report(message):progress(message.replace('地牢持续清怪拾取',profile.label+'清怪拾取'))
     return mage_dungeon.run_bounded(session,report,continuous=True,profile=profile)
 
 
 def inspect(session):
+    character=read_experience(session)['character']
     import importlib,mage_skills,warrior_combat,dungeon_route
     importlib.reload(mage_skills);importlib.reload(warrior_combat);importlib.reload(dungeon_route)
-    profile=profile_for(session);profile.check_state(session)
+    profile=profile_for(session,character=character);profile.check_state(session)
     tilemap,plan=profile.plan(session)
     from dungeon_route import CoverageRoute
     import time
@@ -217,15 +245,15 @@ def inspect(session):
     goal=route.next_goal(session.player(),time.monotonic())
     path=route.navigation_map().path(session.player(),goal) if goal else []
     center={'reachable_cells':len(route.clearance),'waypoints':sorted(route.points),'snapshot':route.snapshot(),'first_path':path,'planning_seconds':round(time.monotonic()-started,3)}
-    skills=mage_skills.inspect_current(session,'厚礼蟹')
-    return {'map':tilemap.name,'plan':plan,'center_route':center,'f1_skill':skills['f1_skill'],'game_input_sent':False}
+    skill=mage_skills.inspect_current(session,'厚礼蟹')['f1_skill'] if profile.combat_mode=='mage' else None
+    return {'map':tilemap.name,'plan':plan,'center_route':center,'combat_mode':profile.combat_mode,'character':profile.character,'f1_skill':skill,'game_input_sent':False}
 
 
 # Map data changes; combat, pickup, player avoidance and pacing share this profile.
 NormalMap=StoneTomb
 
 
-def profile_for(session):
+def profile_for(session,character='厚礼蟹'):
     import struct
     from map_navigation import matching_map_file
     current=header(session);file=matching_map_file(current,getattr(session,'_map_directory',None))
@@ -235,4 +263,6 @@ def profile_for(session):
     if not width or not height or size%(width*height):raise RuntimeError('当前地图文件尺寸不符')
     stride=size//(width*height)
     if stride not in (12,14):raise RuntimeError('当前地图格子格式尚未支持')
-    return NormalMap(map_header=current,map_name=name,map_stride=stride)
+    if character not in ('厚礼蟹','微笑'):raise RuntimeError('当前地图角色未授权')
+    cls=WarriorMap if character=='微笑' else NormalMap
+    return cls(map_header=current,map_name=name,map_stride=stride)

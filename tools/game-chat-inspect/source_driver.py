@@ -82,7 +82,7 @@ def _drive_locked(actions,cancel=None,helper_pid=None):
             except PermissionError:
                 if attempt==49:raise
                 time.sleep(.02)
-        monitoring=action.get('categories') in (['监测双包'],['监测并回城出售'],['挂机清包循环'],['接续当前挂机图循环'],['孤岛每日自动挑战'],['接续孤岛自动挑战'],['法师地牢持续清怪拾取'])
+        monitoring=action.get('categories') in (['监测双包'],['监测并回城出售'],['挂机清包循环'],['接续当前挂机图循环'],['孤岛每日自动挑战'],['接续孤岛自动挑战'],['法师地牢持续清怪拾取'],['法师当前地图持续挂机'],['当前地图持续挂机'],['战士当前地图持续挂机'])
         deadline=time.monotonic()+(43300 if monitoring else 600 if action['action']=='shop_route' else 50)
         while time.monotonic()<deadline:
             if action['action']=='stop' and helper_pid and not _helper_running(helper_pid):
