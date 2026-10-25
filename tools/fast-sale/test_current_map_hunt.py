@@ -41,7 +41,8 @@ class CurrentMapTests(unittest.TestCase):
 
     def test_message_popup_is_not_treated_as_normal_panel_wait(self):
         s=self.session();s.login_stage=lambda:'message'
-        with self.assertRaisesRegex(RuntimeError,'状态变化'):hunt.StoneTomb().wait_for_panels(s)
+        with patch.object(hunt,'header',return_value=hunt.STONE_HEADER),patch.object(hunt,'read_experience',return_value={'character':'厚礼蟹'}):
+            with self.assertRaisesRegex(RuntimeError,'状态变化'):hunt.StoneTomb().wait_for_panels(s)
 
     def test_system_activity_window_closes_only_through_verified_close_control(self):
         visible=[True];s=self.session();s.visible=lambda key:key=='merchant' and visible[0]
@@ -50,7 +51,8 @@ class CurrentMapTests(unittest.TestCase):
         s.click=Mock(side_effect=lambda point:visible.__setitem__(0,False));s.pause=Mock()
         with patch.object(hunt,'header',return_value=hunt.STONE_HEADER),patch.object(hunt,'read_experience',return_value={'character':'厚礼蟹'}):
             self.assertFalse(hunt.StoneTomb().wait_for_panels(s))
-        s.control_info.assert_called_once_with(0x5e4,'Button_MerchantDlgClose')
+        s.control_info.assert_any_call(0x5e4,'Button_MerchantDlgClose')
+        self.assertEqual(sum(call.args[0]==0x5e4 for call in s.control_info.call_args_list),1)
         s.click.assert_called_once_with((418,30))
 
     def test_activity_close_failure_does_not_spam_click_or_terminate_hunt(self):
@@ -237,3 +239,45 @@ class WarriorProfileTests(unittest.TestCase):
         session.held_item=lambda:'装备'
         with patch.object(hunt,'header',return_value=profile.header),patch.object(hunt,'read_experience',return_value={'character':'微笑'}):
             with self.assertRaisesRegex(RuntimeError,'物品'):profile.guard(session)
+
+
+class ManualBagPauseTests(unittest.TestCase):
+    def setup_case(self):
+        state={'bag':True,'hero':False,'message':False,'held':'','dead':False,'login':False}
+        session=CurrentMapTests().session();session.visible=lambda key:key=='bag' and state['bag']
+        session.login_stage=lambda:'message' if state['message'] else 'playing'
+        session.held_item=lambda:state['held'];session.read=lambda address,size:b'\1' if state['dead'] else b'\0'
+        session.control_info=lambda offset,name:{'object':1,'visible':state['hero'] if name=='Window_HeroItemBag' else state['login'] if name=='Window_Login' else False}
+        session.click=Mock();session.background_mouse=Mock()
+        return hunt.StoneTomb(avoid_players=False),session,state
+
+    def test_bag_message_held_item_pause_until_all_settled_then_resume_without_click(self):
+        profile,session,state=self.setup_case()
+        with patch.object(hunt,'header',return_value=hunt.STONE_HEADER),patch.object(hunt,'read_experience',return_value={'character':'厚礼蟹','main':{'actor':0x10000}}):
+            self.assertTrue(profile.wait_for_panels(session))
+            state.update(message=True,held='装备')
+            self.assertTrue(profile.wait_for_panels(session))
+            with self.assertRaises(hunt.PanelOpen):profile.guard(session)
+            state['bag']=False;self.assertTrue(profile.wait_for_panels(session))
+            state['message']=False;self.assertTrue(profile.wait_for_panels(session))
+            state['held']='';self.assertFalse(profile.wait_for_panels(session));profile.guard(session)
+        session.click.assert_not_called();session.background_mouse.assert_not_called()
+
+    def test_hero_bag_alone_pauses(self):
+        profile,session,state=self.setup_case();state.update(bag=False,hero=True)
+        with patch.object(hunt,'header',return_value=hunt.STONE_HEADER),patch.object(hunt,'read_experience',return_value={'character':'厚礼蟹'}):
+            self.assertTrue(profile.wait_for_panels(session))
+            state['hero']=False;self.assertFalse(profile.wait_for_panels(session))
+
+    def test_manual_message_never_masks_death_login_or_map_change(self):
+        for kind in ('dead','login','map'):
+            profile,session,state=self.setup_case();state.update(message=True)
+            if kind!='map':state[kind]=True
+            with patch.object(hunt,'header',return_value=bytes(52) if kind=='map' else hunt.STONE_HEADER),patch.object(hunt,'read_experience',return_value={'character':'厚礼蟹','main':{'actor':0x10000}}):
+                with self.assertRaisesRegex(RuntimeError,'状态变化'):profile.wait_for_panels(session)
+            session.click.assert_not_called()
+
+    def test_pending_item_without_manual_panel_still_stops(self):
+        profile,session,state=self.setup_case();state.update(bag=False,held='装备')
+        with patch.object(hunt,'header',return_value=hunt.STONE_HEADER),patch.object(hunt,'read_experience',return_value={'character':'厚礼蟹'}):
+            with self.assertRaisesRegex(RuntimeError,'物品'):profile.wait_for_panels(session)

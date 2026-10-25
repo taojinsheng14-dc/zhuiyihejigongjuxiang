@@ -54,23 +54,48 @@ class StoneTomb:
     route_spacing=24
     post_cast_wait=.05
 
+    def manual_panels(self,session):
+        if session.visible('bag'):return True
+        if hasattr(session,'control_info'):
+            hero=session.control_info(0x7b4,'Window_HeroItemBag')
+            return bool(hero.get('object') and hero['visible'])
+        return False
+
+    def manual_waiting(self,session):
+        return bool(getattr(self,'_manual_pause',False) and (self.manual_panels(session)
+            or session.login_stage()=='message' or session.held_item() or session.sale_item() or session.inflight_item()))
+
     def check_state(self,session):
         session.check()
-        if session.login_stage()!='playing' or header(session)!=self.header:raise RuntimeError('当前地图挂机地图或角色状态变化，停止')
-        if read_experience(session)['character']!=self.character:raise RuntimeError('当前地图角色与授权职业绑定不符')
-        if session.held_item() or session.sale_item() or session.inflight_item():raise RuntimeError('当前地图挂机物品操作状态不空')
+        if header(session)!=self.header:raise RuntimeError('当前地图挂机地图或角色状态变化，停止')
+        if self.manual_panels(session):self._manual_pause=True
+        stage=session.login_stage()
+        sample=read_experience(session)
+        if sample['character']!=self.character:raise RuntimeError('当前地图角色与授权职业绑定不符')
+        if stage!='playing':
+            manual_message=stage=='message' and getattr(self,'_manual_pause',False)
+            if manual_message:
+                # A message masks login_stage's actor check: verify life and login windows independently.
+                actor=sample['main']['actor']
+                manual_message=(session.read(actor+0xac,1)==b'\0' and not any(session.control_info(offset,name)['visible']
+                    for offset,name in ((0x3b0,'Window_Login'),(0x3fc,'Window_SelServer'),(0x41c,'Window_SelectChr'))))
+            if not manual_message:raise RuntimeError('当前地图挂机地图或角色状态变化，停止')
+        if (session.held_item() or session.sale_item() or session.inflight_item()) and not getattr(self,'_manual_pause',False):
+            raise RuntimeError('当前地图挂机物品操作状态不空')
         if session.u.IsIconic(session.hwnd):raise RuntimeError('游戏已最小化，未挂机输入')
 
     def guard(self,session):
         self.check_state(session)
-        if any(session.visible(k) for k in ('merchant','sell','bag')):raise PanelOpen('当前地图挂机面板打开，暂停输入')
+        if self.manual_waiting(session) or any(session.visible(k) for k in ('merchant','sell','bag')):
+            raise PanelOpen('当前地图挂机人工面板或物品操作中，暂停输入')
         if self.avoid_loaded_players and session.nearby_players(None):raise PlayersDetected('已加载范围内发现其他玩家')
 
     def wait_for_panels(self,session):
         self.check_state(session)
+        if self.manual_waiting(session):return True
+        self._manual_pause=False
         if session.visible('merchant'):
-            # Hunting never opens NPC transactions: dismiss the ordinary activity
-            # window through its verified close control, never a content link.
+            # Hunting never opens NPC transactions: dismiss only its verified close control.
             if not getattr(session,'_hunt_activity_close_attempted',False) and not session.visible('sell') and not session.visible('bag'):
                 from fast_sale import button_center
                 close=session.control_info(0x5e4,'Button_MerchantDlgClose')
