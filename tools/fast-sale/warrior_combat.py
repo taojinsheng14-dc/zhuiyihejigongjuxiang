@@ -225,6 +225,8 @@ def patrol_move(session,tilemap,waypoint,allow_hold=True,expected_header=HEADER,
     for reach in (3,2) if run else (1,):
         aim=(current[0]+dx*reach,current[1]+dy*reach)
         if not all(tilemap.free((current[0]+dx*n,current[1]+dy*n)) and (current[0]+dx*n,current[1]+dy*n) not in blocked for n in range(1,reach+1)):continue
+        if dx and dy and any(not tilemap.free(side) or side in blocked for n in range(1,reach+1)
+                             for side in ((current[0]+dx*n,current[1]+dy*(n-1)),(current[0]+dx*(n-1),current[1]+dy*n))):continue
         p=(draw[0]+dx*48*reach,draw[1]+64+dy*32*reach)
         if not (80<=p[0]<width-80 and 60<=p[1]<height-180):continue
         if any(ax-28<=p[0]<=ax+28 and ay-16<=p[1]<=ay+80

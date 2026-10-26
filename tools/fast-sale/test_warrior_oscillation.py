@@ -53,6 +53,15 @@ class OscillationTests(unittest.TestCase):
             self.assertEqual(r['reason'],'bounded_approach_no_progress')
             move.assert_not_called()
 
+    def test_actual_input_rejects_corner_even_if_path_provider_allows_it(self):
+        import struct
+        from warrior_combat import patrol_move
+        tilemap=SimpleNamespace(free=lambda p:p!=(1,0),path=lambda *a:[(0,0),(1,1)])
+        s=SimpleNamespace(player=lambda:(0,0),scene_actor_snapshot=lambda:[],uint=lambda a:0,base=0,
+                          read=lambda a,n:struct.pack('<2i',600,200),client_size=lambda:(1280,800),background_mouse=Mock())
+        r=patrol_move(s,tilemap,(1,1),allow_hold=False)
+        self.assertTrue(r['occluded']);s.background_mouse.assert_not_called()
+
     def test_stone_blocks_diagonal_corner_and_path_routes_around(self):
         stone=(1,0);tilemap=SimpleNamespace(free=lambda p:0<=p[0]<=5 and 0<=p[1]<=5 and p!=stone)
         path=melee_approach_path(tilemap,(0,0),(3,1))
