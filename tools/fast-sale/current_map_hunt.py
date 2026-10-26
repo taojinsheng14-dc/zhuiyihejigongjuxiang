@@ -275,6 +275,15 @@ class WarriorMap(StoneTomb):
             monster=dict(monster,**{'class':'TCatMon'})
         return monster.get('class') in ('TCatMon','TSculptureMon') and bool(target_monsters([monster],8))
 
+    def select_melee_targets(self,monsters,now):
+        deferred=getattr(self,'_melee_deferred',{})
+        targets=sorted((m for m in monsters if deferred.get(m['address'],0)<=now),key=lambda m:m['distance'])
+        locked=getattr(getattr(self,'_melee',None),'locked',None) or getattr(self,'_approach_target',None)
+        if locked:
+            same=next((m for m in targets if all(m.get(k)==locked.get(k) for k in ('address','name','class'))),None)
+            if same:targets=[same]
+        return targets
+
     def approach(self,session,progress):
         import struct,time
         from dungeon_route import PatrolObstruction
@@ -283,16 +292,30 @@ class WarriorMap(StoneTomb):
         scene=session.nearby_monsters(radius=8)
         if scene['read_errors']:raise RuntimeError('近战靠近目标采样不完整')
         self._melee_deferred={a:t for a,t in getattr(self,'_melee_deferred',{}).items() if t>now}
-        targets=sorted((m for m in scene['monsters'] if self.is_target(m) and m['address'] not in self._melee_deferred),key=lambda m:m['distance'])
+        targets=WarriorMap.select_melee_targets(self,(m for m in scene['monsters'] if self.is_target(m) and m['address'] not in self._melee_deferred),now)
         if not targets:return {'movement':False,'nearby_combat':False}
         if not hasattr(self,'_melee_obstruction'):self._melee_obstruction=PatrolObstruction()
         obstruction=self._melee_obstruction
         occupied={struct.unpack_from('<2i',raw,0x68) for address,raw in session.scene_actor_snapshot() if raw[0xac]==0}
         occupied.discard(current)
+        history=[(t,p) for t,p in getattr(self,'_melee_positions',[]) if now-t<8]
+        history.append((now,current));self._melee_positions=history[-64:]
+        recent={p for t,p in history if p!=current}
         for target in targets:
-            path=melee_approach_path(self.tilemap,current,target['position'],occupied|obstruction.blocked(now))
+            key=(target['address'],target['name'],target['class'])
+            budget=getattr(self,'_approach_budget',None)
+            if budget is None or budget['key']!=key:
+                budget={'key':key,'since':now,'best':float('inf')};self._approach_budget=budget
+            self._approach_target=dict(target)
+            path=melee_approach_path(self.tilemap,current,target['position'],occupied|obstruction.blocked(now)|recent)
+            if path is not None and len(path)<budget['best']:
+                budget['best']=len(path);budget['since']=now
+            if now-budget['since']>=6:
+                self._melee_deferred[target['address']]=now+3;self._approach_target=None
+                return {'movement':False,'nearby_combat':True,'target':target,'reason':'bounded_approach_no_progress','approach_style':'melee_adjacent'}
+
             if path is None:
-                self._melee_deferred[target['address']]=now+3;continue
+                return {'movement':False,'nearby_combat':True,'target':target,'reason':'recent_path_or_terrain_blocked','approach_style':'melee_adjacent'}
             if len(path)<2:
                 key=(target['address'],current)
                 if getattr(self,'_activation_wait_key',None)!=key:self._activation_wait_key=key;self._activation_wait_since=now
@@ -300,27 +323,29 @@ class WarriorMap(StoneTomb):
                     self._melee_deferred[target['address']]=now+3;continue
                 return {'movement':False,'nearby_combat':True,'target':target,'reason':'adjacent_activation_wait'}
             self._activation_wait_key=None
-            moved=patrol_move(session,self.tilemap,path[1],allow_hold=False,blocked_tiles=obstruction.blocked(now))
+            moved=patrol_move(session,self.tilemap,path[1],allow_hold=False,blocked_tiles=obstruction.blocked(now)|recent)
             self.guard(session);obstruction.observe(moved,time.monotonic())
-            return dict(moved,movement=tuple(moved['to'])!=current,nearby_combat=True,target=target,approach_style='melee_adjacent')
+            return dict(moved,movement=tuple(moved['to'])!=current,nearby_combat=True,target=target,approach_style='melee_adjacent',remaining_path=len(path)-1,avoided_recent_positions=sorted(recent))
         if self.confirm_dead_end(session):raise self.dead_end_exception('近战靠近时重新采样确认周围无合法出口')
         return {'movement':False,'nearby_combat':False,'reason':'nearby_targets_temporarily_deferred'}
 
     def reset_combat(self):
         if hasattr(self,'_melee'):self._melee.reset()
         if hasattr(self,'_melee_obstruction'):del self._melee_obstruction
-        self._melee_deferred={};self._activation_wait_key=None
+        self._melee_deferred={};self._activation_wait_key=None;self._approach_target=None;self._approach_budget=None;self._melee_positions=[]
 
     def repositioned(self,target):
         if hasattr(self,'_melee'):self._melee.retry_at.pop(target.get('address'),None)
 
     def probe(self,session,progress=lambda text:None,excluded=None,**options):
         from island_melee import Melee
+        import time
         self.guard(session)
         scene=session.nearby_monsters(radius=8)
         if scene['read_errors']:raise RuntimeError('战士目标采样不完整')
         monsters=[m for m in scene['monsters'] if self.is_target(m) and m['address'] not in (excluded or set())]
-        if not hasattr(self,'_melee'):self._melee=Melee(scene_guard=self.guard,progress_timeout=2,target_classes=self.melee_classes())
+        if not hasattr(self,'_melee'):self._melee=Melee(scene_guard=self.guard,progress_timeout=2,target_classes=self.melee_classes(),strict_chase=True)
+        monsters=WarriorMap.select_melee_targets(self,monsters,time.monotonic())
         result=self._melee.step(session,{'monsters':monsters,'drops':[]})
         if result.get('clicked'):return dict(result,attack_sent=True,f1_sent=False)
         if result.get('engaged'):return dict(result,f1_sent=False)

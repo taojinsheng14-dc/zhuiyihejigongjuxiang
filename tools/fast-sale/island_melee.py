@@ -65,8 +65,9 @@ def click_target(session,target,scene_guard=None,target_classes=None):
 
 
 class Melee:
-    def __init__(self,scene_guard=None,progress_timeout=20,target_classes=None):
+    def __init__(self,scene_guard=None,progress_timeout=20,target_classes=None,strict_chase=False):
         self.scene_guard=scene_guard;self.progress_timeout=progress_timeout;self.target_classes=CLASSES if target_classes is None else set(target_classes)
+        self.strict_chase=strict_chase;self.best_distance=None;self.chase_positions=set()
         self.locked=None;self.retry_at={};self.clicks=0;self.health=None;self.progress_at=0
 
     def reset(self):self.locked=None;self.health=None
@@ -80,10 +81,18 @@ class Melee:
             identity=[raw[a:b].hex() for a,b in ((0,4),(12,16),(64,68))] if raw else None
             if raw and raw[0xac]==0 and identity==self.locked['actor_identity']:
                 hp=struct.unpack('<H',session.read(current['address']+0x112,2))[0]
-                moved=tuple(session.player())!=tuple(self.locked['position'])
-                changed=hp!=self.health or moved
-                if changed:self.health=hp;self.progress_at=now;self.locked['position']=list(session.player())
-                if now-self.progress_at<self.progress_timeout:return {'status':'native_attack_wait','clicked':False,'engaged':True,'health_progress':changed,'health':hp}
+                position=tuple(session.player());previous=tuple(self.locked['position'])
+                health_progress=0<hp<self.health if self.health is not None else False
+                distance=max(abs(position[i]-current['position'][i]) for i in (0,1))
+                chase_progress=position not in self.chase_positions and (self.best_distance is None or distance<self.best_distance)
+                changed=(health_progress or chase_progress) if self.strict_chase else (hp!=self.health or position!=previous)
+                self.chase_positions.add(position);self.best_distance=min(distance,self.best_distance) if self.best_distance is not None else distance
+                self.health=hp;self.locked['position']=list(position)
+                if changed:self.progress_at=now
+                if now-self.progress_at<self.progress_timeout:
+                    return {'status':'native_attack_wait','clicked':False,'engaged':True,'health_progress':health_progress,
+                            'chase_progress':chase_progress,'health':hp,'target':current,'from':previous,'to':position,
+                            'planned_step':None,'approach_style':'native_chase','no_progress_seconds':now-self.progress_at}
                 self.retry_at[current['address']]=now+3
         self.reset()
         choices=[m for m in alive if m.get('class') in self.target_classes and m.get('on_screen') and m.get('distance',99)<=8 and m['address'] not in self.retry_at]
@@ -94,5 +103,7 @@ class Melee:
         if result.get('clicked'):
             self.clicks+=1;self.locked=dict(target,actor_identity=result['actor_identity'],position=list(session.player()))
             self.health=result['health_before'][0];self.progress_at=now;result['engaged']=True
+            position=tuple(session.player());self.chase_positions={position}
+            self.best_distance=max(abs(position[i]-target['position'][i]) for i in (0,1))
         else:self.retry_at[target['address']]=now+2
         return result
