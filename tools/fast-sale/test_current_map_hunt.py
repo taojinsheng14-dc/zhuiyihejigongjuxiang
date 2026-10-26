@@ -71,7 +71,7 @@ class CurrentMapTests(unittest.TestCase):
 
     def test_near_black_maggot_prevents_leaving_for_patrol_if_local_route_blocked(self):
         profile=hunt.StoneTomb();profile.guard=Mock();profile.tilemap=SimpleNamespace(free=lambda xy:xy==(50,50))
-        target={'name':'黑色恶蛆','class':'TCatMon','dead':False,'position':(52,50),'distance':2}
+        target={'address':1,'name':'黑色恶蛆','class':'TCatMon','dead':False,'position':(52,50),'distance':2}
         s=SimpleNamespace(nearby_monsters=lambda **k:{'read_errors':0,'monsters':[target]},player=lambda:(50,50),scene_actor_snapshot=lambda:[])
         with patch('warrior_combat.patrol_move') as move:
             result=profile.approach(s,Mock())
@@ -390,3 +390,26 @@ class ApproachFailureScopeTests(unittest.TestCase):
         with patch('time.monotonic',return_value=100):
             result=profile.approach(session,Mock())
         self.assertFalse(result['nearby_combat'])
+
+
+class RangedObstructionTests(unittest.TestCase):
+    def test_failed_ranged_step_is_avoided_after_two_attempts(self):
+        target={'address':1,'class':'TArcherMon','name':'祖玛弓箭手','position':(45,110),'distance':8,'dead':False}
+        profile=hunt.StoneTomb(map_name='d505.map',avoid_players=False);profile.guard=Mock();profile.tilemap=SimpleNamespace(free=lambda p:True)
+        session=SimpleNamespace(player=lambda:(53,118),nearby_monsters=lambda **k:{'read_errors':0,'monsters':[target]},scene_actor_snapshot=lambda:[])
+        blocked=[]
+        def path(tilemap,start,target,occupied,**kw):
+            blocked.append(set(occupied));return [start,(52,118)] if (52,118) not in occupied else [start,(53,117)]
+        def move(session,tilemap,goal,**kw):return {'from':(53,118),'to':(53,118),'planned_step':goal}
+        with patch('warrior_combat.clear_terrain_line',return_value=False),patch('warrior_combat.melee_approach_path',side_effect=path),patch('warrior_combat.patrol_move',side_effect=move):
+            for _ in range(3):profile.approach(session,Mock())
+        self.assertNotIn((52,118),blocked[0]);self.assertIn((52,118),blocked[2])
+
+    def test_ranged_no_route_defers_movement_but_does_not_disable_spell_candidates(self):
+        target={'address':1,'class':'TCatMon','name':'蝙蝠','position':(45,110),'distance':8,'dead':False}
+        profile=hunt.StoneTomb(avoid_players=False);profile.guard=Mock();profile.tilemap=SimpleNamespace(free=lambda p:True)
+        session=SimpleNamespace(player=lambda:(53,118),nearby_monsters=lambda **k:{'read_errors':0,'monsters':[target]},scene_actor_snapshot=lambda:[])
+        with patch('warrior_combat.clear_terrain_line',return_value=False),patch('warrior_combat.melee_approach_path',return_value=None):
+            result=profile.approach(session,Mock());again=profile.approach(session,Mock())
+        self.assertEqual(result['reason'],'no_line_of_fire_route');self.assertFalse(again['nearby_combat'])
+        self.assertIn('蝙蝠',profile.target_names(session))

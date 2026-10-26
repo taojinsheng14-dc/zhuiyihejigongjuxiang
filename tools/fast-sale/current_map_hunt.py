@@ -233,7 +233,7 @@ class StoneTomb:
         self.guard(session)
         scene=session.nearby_monsters(radius=8)
         if scene['read_errors']:raise RuntimeError('近怪站位采样不完整')
-        targets=[m for m in scene['monsters'] if self.is_target(m) and getattr(self,'_melee_deferred',{}).get(m.get('address'),0)<=time.monotonic()]
+        targets=[m for m in scene['monsters'] if self.is_target(m) and getattr(self,'_melee_deferred',{}).get(m.get('address'),0)<=time.monotonic() and getattr(self,'_ranged_deferred',{}).get(m.get('address'),0)<=time.monotonic()]
         if not targets:return {'movement':False,'nearby_combat':False}
         target=min(targets,key=lambda m:m['distance'])
         if target.get('class')=='TSculptureMon':
@@ -243,11 +243,25 @@ class StoneTomb:
         current=tuple(session.player())
         from warrior_combat import clear_terrain_line,melee_approach_path
         if not clear_terrain_line(self.tilemap,current,target['position']):
+            from dungeon_route import PatrolObstruction,PatrolStalled
+            now=time.monotonic()
+            if not hasattr(self,'_ranged_obstruction'):self._ranged_obstruction=PatrolObstruction()
+            obstruction=self._ranged_obstruction
+            deferred={a:t for a,t in getattr(self,'_ranged_deferred',{}).items() if t>now}
+            self._ranged_deferred=deferred
             blocked={struct.unpack_from('<2i',row,0x68) for address,row in session.scene_actor_snapshot() if row[0xac]==0}-{current}
+            blocked|=obstruction.blocked(now)
             path=melee_approach_path(self.tilemap,current,target['position'],blocked,max_steps=getattr(self.tilemap,'width',256)*getattr(self.tilemap,'height',256),max_radius=max(getattr(self.tilemap,'width',256),getattr(self.tilemap,'height',256)),reach=8,require_line=True)
-            if not path or len(path)<2:return {'movement':False,'nearby_combat':True,'target':target,'reason':'no_line_of_fire_route'}
-            moved=patrol_move(session,self.tilemap,path[1],allow_hold=False)
+            if not path or len(path)<2:
+                deferred[target['address']]=now+3
+                return {'movement':False,'nearby_combat':True,'target':target,'reason':'no_line_of_fire_route'}
+            moved=patrol_move(session,self.tilemap,path[1],allow_hold=False,blocked_tiles=blocked)
             self.guard(session)
+            try:obstruction.observe(moved,time.monotonic())
+            except PatrolStalled:
+                deferred[target['address']]=time.monotonic()+20
+                obstruction.failures=0;obstruction.repeats.clear()
+                return dict(moved,movement=False,nearby_combat=True,target=target,reason='ranged_approach_stalled_target_deferred',approach_style='around_wall')
             return dict(moved,movement=tuple(moved['to'])!=current,nearby_combat=True,target=target,approach_style='around_wall')
         now=time.monotonic();key=(target.get('address'),target['name'])
         previous=getattr(self,'_approach_history',{})
