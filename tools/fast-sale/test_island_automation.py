@@ -360,3 +360,34 @@ class CornerRetryTests(unittest.TestCase):
 
 
 if __name__=='__main__':unittest.main()
+
+
+class CombatApproachSchedulingTests(unittest.TestCase):
+    def target(self,uid,x):return dict(monster(x),address=uid,name='怪物'+str(uid))
+
+    def test_nearer_candidate_does_not_flip_active_approach_each_sample(self):
+        s=island.Scheduler();a=self.target(1,25);b=self.target(2,26)
+        self.assertEqual(s.choose(snapshot(monsters=[a,b]),0)[1]['address'],1)
+        b['position']=(22,18)
+        self.assertEqual(s.choose(snapshot(monsters=[a,b]),1)[1]['address'],1)
+
+    def test_adjacent_approached_target_gets_bounded_hero_wait_before_new_chase(self):
+        s=island.Scheduler();a=self.target(1,25);b=self.target(2,27)
+        s.choose(snapshot(monsters=[a,b]),0)
+        a['position']=(20,18)
+        self.assertEqual(s.choose(snapshot(monsters=[a,b]),1)[0],'wait')
+        self.assertEqual(s.choose(snapshot(monsters=[a,b]),8)[1]['address'],2)
+
+    def test_backtracking_does_not_renew_distance_progress_budget(self):
+        s=island.Scheduler();a=self.target(1,25);b=self.target(2,27)
+        s.choose(snapshot(monsters=[a,b]),0)
+        s.choose(snapshot(monsters=[a,b],position=(20,18)),1)
+        s.choose(snapshot(monsters=[a,b],position=(19,18)),3)
+        self.assertEqual(s.choose(snapshot(monsters=[a,b],position=(20,18)),7)[1]['address'],2)
+
+    def test_new_identity_and_pickup_interrupt_release_old_approach(self):
+        s=island.Scheduler();a=self.target(1,25);b=self.target(2,27)
+        s.choose(snapshot(monsters=[a]),0)
+        self.assertEqual(s.choose(snapshot(monsters=[b]),1)[1]['address'],2)
+        self.assertEqual(s.choose(snapshot(drops=[drop(3)],monsters=[b]),2)[0],'pickup')
+        self.assertIsNone(s.combat_target)

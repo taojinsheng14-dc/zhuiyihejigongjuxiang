@@ -75,6 +75,7 @@ class Scheduler:
     def __init__(self):
         self.target=None;self.failures={};self.retry_at={};self.empty_since=None
         self.empty_samples=0;self.progress_at=None;self.last_fingerprint=None
+        self.combat_target=None;self.combat_since=0;self.combat_best=None;self.combat_retry={}
 
     def choose(self,sample,now):
         if sample.get('town'):return ('completed',None)
@@ -92,20 +93,33 @@ class Scheduler:
         from pickup_strategy import choose
         loot_action,selected=choose(eligible,alive,sample.get('hero'),position,preferred=self.target)
         if loot_action in ('pickup','lead_hero'):
-            self.target=selected['id'];return ('pickup',selected)
+            self.target=selected['id'];self.combat_target=None;return ('pickup',selected)
         if alive:
             # Drop blockers first, then unactivated sculpture, then a distant live monster.
             drop_tiles={(d['x'],d['y']) for d in drops}
-            candidates=[m for m in alive if max(abs(m['position'][i]-position[i]) for i in (0,1))>2]
+            self.combat_retry={k:t for k,t in self.combat_retry.items() if t>now}
+            def identity(m):return (m.get('address'),m.get('name'),m.get('class'))
+            def distance(m):return max(abs(m['position'][i]-position[i]) for i in (0,1))
+            current=next((m for m in alive if identity(m)==self.combat_target),None)
+            if current is not None:
+                remaining=distance(current)
+                if remaining<self.combat_best:
+                    self.combat_best=remaining;self.combat_since=now
+                if now-self.combat_since<6:
+                    return ('approach',current) if remaining>2 else ('wait',None)
+                self.combat_retry[self.combat_target]=now+3
+            self.combat_target=None
+            candidates=[m for m in alive if distance(m)>2 and identity(m) not in self.combat_retry]
             if candidates:
                 target=min(candidates,key=lambda m:(tuple(m['position']) not in drop_tiles,
-                    m.get('class')!='TSculptureMon',max(abs(m['position'][i]-position[i]) for i in (0,1))))
+                    m.get('class')!='TSculptureMon',distance(m)))
+                self.combat_target=identity(target);self.combat_best=distance(target);self.combat_since=now
                 return ('approach',target)
             return ('wait',None)
         if drops:
             if any(self.failures.get(d['id'],0)>=3 for d in drops):return ('stop','同一掉落三次受阻，保留现场，不盲目换关')
             return ('wait',None)
-        self.target=None
+        self.target=None;self.combat_target=None;self.combat_retry.clear()
         self.empty_samples+=1
         if self.empty_since is None:self.empty_since=now
         return ('advance',None) if self.empty_samples>=3 and now-self.empty_since>=1 else ('wait',None)
