@@ -38,12 +38,12 @@ def same_actor(before, after):
             and all(before[a:b] == after[a:b] for a,b in ((0,4),(0xc,0x10),(0x40,0x44))))
 
 
-def probe_once(session, progress=lambda message:None, locked=None, excluded=None, scene_guard=None, target_names=None, target_classes=None,prefer_nearby=False,target_gate=None):
+def probe_once(session, progress=lambda message:None, locked=None, excluded=None, scene_guard=None, target_names=None, target_classes=None,prefer_nearby=False,target_gate=None,expected_character="厚礼蟹"):
     check_scene=scene_guard or guard
     names=NAMES if target_names is None else target_names
     classes={'TCatMon'} if target_classes is None else target_classes
     check_scene(session)
-    skills = inspect_current(session,'厚礼蟹')
+    skills = inspect_current(session,expected_character)
     if not skills.get('f1_skill') or skills['f1_skill']['name'] != '雷电术':
         raise RuntimeError('F1实际绑定不是唯一雷电术，未施法')
     session.wait_shortcut_modifiers_released()

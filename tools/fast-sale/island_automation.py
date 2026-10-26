@@ -266,7 +266,7 @@ def run_loop(session,progress=lambda text:None,seconds=7200,transitions=0,on_tra
             if session.visible('merchant') or session.visible('bag'):session.close_panels()
             result=melee.step(session,sample)
             if result.get('f1_sent'):
-                progress('孤岛：厚礼蟹主体F1雷电术，目标已核对');log('main_lightning_cast',result=result);scheduler.progress_at=time.monotonic()
+                progress('孤岛：%s主体F1雷电术，目标已核对'%getattr(melee,'character','已绑定角色'));log('main_lightning_cast',result=result);scheduler.progress_at=time.monotonic()
             if result.get('clicked'):progress('孤岛：微笑主体单击选怪近战，等待游戏持续攻击');log('main_melee_click',result=result)
             if result.get('clicked') or result.get('health_progress'):scheduler.progress_at=now
             if result.get('engaged'):session.pause(.2);continue
@@ -439,14 +439,15 @@ def run(session,progress=lambda text:None,resume=False,manual_request=False):
             importlib.reload(island_melee)
             melee=island_melee.Melee()
             progress('孤岛微笑战士：主体后台单击选怪近战＋英雄，沿用本轮入场与拾取换关记录')
-        elif key.rsplit('|',1)[0]=='厚礼蟹':
+        elif key.rsplit('|',1)[0] in ('厚礼蟹','大鱼'):
             import mage_skills,mage_dungeon,island_mage
             importlib.reload(mage_skills);importlib.reload(mage_dungeon);importlib.reload(island_mage)
-            melee=island_mage.Mage()
-            island_mage.guard(session)
-            skills=mage_skills.inspect_current(session,'厚礼蟹')
+            role=key.rsplit('|',1)[0]
+            melee=island_mage.Mage(role)
+            island_mage.guard(session,role)
+            skills=mage_skills.inspect_current(session,role)
             if not skills.get('f1_skill') or skills['f1_skill']['name']!='雷电术':raise RuntimeError('F1不是唯一雷电术，未启动孤岛法师')
-            progress('孤岛厚礼蟹：主体后台F1雷电术＋英雄，沿用本轮入场与拾取换关记录')
+            progress('孤岛%s：主体后台F1雷电术＋英雄，沿用本轮入场与拾取换关记录'%role)
         result=run_loop(session,progress,transitions=old.get('transitions',0),on_transition=transitioned,melee=melee)
         old.update(status='completed',completion_verified=True,updated=time.time());save();log('completed',result=result);return result
     except Exception as error:
@@ -460,5 +461,5 @@ def status(session):
     return {'game_input_sent':False,'instance':instance_context.slot(),'in_island':current==ISLAND_HEADER,
             'today_entry':saved.get(key),'native_autoplay_in_island_verified':False,
             'scripted_main_melee_enabled':key.rsplit('|',1)[0]=='微笑',
-            'scripted_main_lightning_enabled':key.rsplit('|',1)[0]=='厚礼蟹',
-            'mode':('微笑主体后台单击近战＋英雄＋掉落优先，不发送玩家F1' if key.rsplit('|',1)[0]=='微笑' else '厚礼蟹主体F1雷电术＋英雄＋掉落优先' if key.rsplit('|',1)[0]=='厚礼蟹' else '英雄战斗＋掉落优先分步调度，未发送玩家F1')}
+            'scripted_main_lightning_enabled':key.rsplit('|',1)[0] in ('厚礼蟹','大鱼'),
+            'mode':('微笑主体后台单击近战＋英雄＋掉落优先，不发送玩家F1' if key.rsplit('|',1)[0]=='微笑' else key.rsplit('|',1)[0]+'主体F1雷电术＋英雄＋掉落优先' if key.rsplit('|',1)[0] in ('厚礼蟹','大鱼') else '英雄战斗＋掉落优先分步调度，未发送玩家F1')}

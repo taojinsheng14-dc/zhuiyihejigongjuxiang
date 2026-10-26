@@ -53,3 +53,18 @@ class IslandMageTests(unittest.TestCase):
         r=self.invoke(s)
         self.assertFalse(r['f1_sent']);self.assertFalse(r['engaged'])
         self.assertFalse(any(msg==0x100 for msg,key,lp in m))
+
+
+class FishMageAuthorizationTests(unittest.TestCase):
+    fixture=IslandMageTests.fixture
+    invoke=IslandMageTests.invoke
+    def test_fish_authorization_uses_fish_skill_identity(self):
+        s,m=self.fixture();mage=island_mage.Mage('大鱼')
+        with patch('island_automation.role_key',return_value='大鱼|today'),patch('island_automation.header',return_value=island_automation.ISLAND_HEADER),patch('mage_dungeon.inspect_current',return_value={'f1_skill':{'name':'雷电术'}}) as skills:
+            result=mage.step(s,{'monsters':s.nearby_monsters()['monsters']})
+        self.assertTrue(result['f1_sent']);skills.assert_called_once_with(s,'大鱼')
+
+    def test_fish_config_does_not_authorize_another_bound_role(self):
+        s,m=self.fixture()
+        with self.assertRaises(RuntimeError):self.invoke(s,island_mage.Mage('大鱼'),role='厚礼蟹')
+        self.assertEqual(m,[])
