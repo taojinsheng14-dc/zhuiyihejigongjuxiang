@@ -311,6 +311,10 @@ def run_bounded(session,progress=lambda message:None,seconds=30,max_casts=6,cont
                     result=pickup_current_test(session,names=(chosen['name'],),radius=6,max_steps=2,cooperative=True,target_id=chosen['id'])
                     log('pickup',result=result)
                     if result.get('verified'):verified_pickups+=1
+                    elif continuous and pickup_disappeared_unverified(result):
+                        log('pickup_disappeared_unverified',result=result)
+                        pickup_attempts.pop(chosen['id'],None)
+                        deferred_drops.pop(chosen['id'],None)
                     elif result.get('status') not in ('approaching','actor_occluded','blocked','no_target','combat_required','hero_moved','hero_wait'):
                         status='pickup_unverified';break
                     if result.get('status') in ('combat_required','hero_moved','hero_wait'):pickup_attempts[chosen['id']]=0
@@ -428,3 +432,10 @@ def run_bounded(session,progress=lambda message:None,seconds=30,max_casts=6,cont
     finally:
         session.navigation_map=before_navigation
         session.clear_background_mouse()
+
+
+def pickup_disappeared_unverified(result):
+    """Missing drop without gain is not a continuous-hunt failure or a success."""
+    return (result.get("status") in ("unverified","removed_at_target")
+            and result.get("ground_remaining") is False
+            and result.get("verified") is False)

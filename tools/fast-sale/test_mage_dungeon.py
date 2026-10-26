@@ -382,3 +382,12 @@ class HuntStateWriteTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as folder,patch.object(Path,'replace',side_effect=PermissionError('permanent')) as replace,patch('time.sleep'):
             with self.assertRaisesRegex(PermissionError,'permanent'):write_hunt_state(Path(folder)/'state.json',{})
             self.assertEqual(replace.call_count,50)
+
+
+class MissingDropTests(unittest.TestCase):
+    def test_disappeared_drop_yields_without_counting_success(self):
+        from mage_dungeon import pickup_disappeared_unverified
+        for status in ('unverified','removed_at_target'):
+            self.assertTrue(pickup_disappeared_unverified(dict(status=status,ground_remaining=False,verified=False)))
+        for result in (dict(status='unverified',ground_remaining=True,verified=False),dict(status='completed',ground_remaining=False,verified=True),dict(status='read_error',ground_remaining=False,verified=False),{}):
+            self.assertFalse(pickup_disappeared_unverified(result))
