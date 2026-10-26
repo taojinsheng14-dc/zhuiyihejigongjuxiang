@@ -61,8 +61,21 @@ class StoneTomb:
             return bool(hero.get('object') and hero['visible'])
         return False
 
+    def informational_message(self,session):
+        # Exact local OCR allowlist; never confirms the dialog or transmits screenshots.
+        if not hasattr(session,'capture_client') or not hasattr(session,'control_info'):return False
+        box=session.control_info(0x3d8,'Window_MsgDlg')
+        if not box['visible'] or tuple(box['bounds'][2:])!=(452,179):return False
+        x,y,w,h=box['bounds'];cw,ch=session.client_size()
+        if not (0<=x<x+w<=cw and 0<=y<y+h<=ch):return False
+        from stone_hunt_cycle import recognize
+        rows=recognize(session.capture_client().crop((x+20,y+34,x+420,y+64)))
+        if len(rows)!=1 or rows[0]['score']<.95:return False
+        text=''.join(rows[0]['text'].split()).rstrip('!！')
+        return text=='您还没有加入行会'
+
     def manual_waiting(self,session):
-        return bool(getattr(self,'_manual_pause',False) and (self.manual_panels(session)
+        return bool(getattr(self,'_info_message_pause',False) or getattr(self,'_manual_pause',False) and (self.manual_panels(session)
             or session.login_stage()=='message' or session.held_item() or session.sale_item() or session.inflight_item()))
 
     def check_state(self,session):
@@ -70,10 +83,12 @@ class StoneTomb:
         if header(session)!=self.header:raise RuntimeError('当前地图挂机地图或角色状态变化，停止')
         if self.manual_panels(session):self._manual_pause=True
         stage=session.login_stage()
+        self._info_message_pause=False
         sample=read_experience(session)
         if sample['character']!=self.character:raise RuntimeError('当前地图角色与授权职业绑定不符')
         if stage!='playing':
-            manual_message=stage=='message' and getattr(self,'_manual_pause',False)
+            manual_message=stage=='message' and (getattr(self,'_manual_pause',False) or self.informational_message(session))
+            self._info_message_pause=manual_message and not getattr(self,'_manual_pause',False)
             if manual_message:
                 # A message masks login_stage's actor check: verify life and login windows independently.
                 actor=sample['main']['actor']
