@@ -24,6 +24,7 @@ class FinishHuntTests(unittest.TestCase):
         s.close_panels=Mock();s.currency_snapshot=lambda:{'gold':100,'yuanbao':20}
         s.base=0;s.uint=lambda address:0;s.read=lambda address,size:b'town'
         s.player=lambda:(330,330)
+        s.ensure_ordinary_entry_town=Mock()
         s.prepare_ordinary_room_entry=Mock(return_value={'points':[(10,20)]})
         s.enter_ordinary_room=Mock()
 

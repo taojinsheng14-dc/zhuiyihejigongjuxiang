@@ -2509,6 +2509,7 @@ class BackgroundSession(Session):
             if bags['main_free']<=1 and bags['hero_free']<=1:raise RuntimeError('双包均已达39格，请先出售再进图')
         elif '' not in self.inventory():
             raise RuntimeError('人物包满且英雄尚未加载，请先清包再进图')
+        self.ensure_ordinary_entry_town()
         menu=self.open_hunt_menu()
         if not menu.get('points'):raise RuntimeError('未识别普通房间入口，停止')
         return menu
@@ -2536,6 +2537,7 @@ class BackgroundSession(Session):
             if self.held_item() or self.sale_item() or self.inflight_item():raise RuntimeError('出售后物品操作未稳定，未打开入场菜单')
             if not report['sale_verified']:stage('双包没有白名单装备：跳过出售，成交环节本次未验证')
             stage('2/3 清包结束，按正式流程检查回城石及背包，打开挂机菜单')
+            self.ensure_ordinary_entry_town()
             header=self.read(self.uint(self.uint(self.base+0x2ba608))+4,52)
             menu=self.prepare_ordinary_room_entry()
             if self.read(self.uint(self.uint(self.base+0x2ba608))+4,52)!=header:raise RuntimeError('打开菜单时地图意外变化，测试停止')
@@ -2557,6 +2559,21 @@ class BackgroundSession(Session):
                 directory=instance_context.runtime_root()/'outputs'/'挂机统计'
                 (directory/'城内完整流程测试.json').write_text(json.dumps(report,ensure_ascii=False,indent=2),encoding='utf8')
             if getattr(self,'_stats_enabled',False):self.write_stats({'event':'town_sale_entry_test','report':report})
+
+    def ensure_ordinary_entry_town(self,progress=lambda message:None):
+        if self.login_stage()!='playing':raise RuntimeError('角色状态不明，未准备普通房间入场地点')
+        if self.held_item() or self.sale_item() or self.inflight_item():
+            raise RuntimeError('物品操作未结束，未准备普通房间入场地点')
+        if self.in_mengzhong_return_area():return
+        header=self.read(self.uint(self.uint(self.base+0x2ba608))+4,52)
+        name=self.current_map_name(header).lower()
+        expected={'5.map':('苍月老兵',(139,333)), '0159.map':('铁匠铺老板',(5,9))}
+        if name not in expected:raise RuntimeError('普通房间入场地点未核对，请先回盟重；未发送回城或入场操作')
+        npc,position=expected[name]
+        self.unique_npc(npc,position)
+        progress('清包后仍在已核对商店城镇，先回盟重再准备普通房间入口')
+        self.return_with_hotkey(progress,reason='ordinary_reentry')
+        if not self.in_mengzhong_return_area():raise RuntimeError('重新入场前未确认回到盟重，停止')
 
     def enter_ordinary_room(self,progress=lambda message:None):
         if getattr(self,'_requires_clean_bags_before_entry',False):self.reconcile_before_reentry(progress)
@@ -2606,6 +2623,7 @@ class BackgroundSession(Session):
             raise RuntimeError('清包后物品操作未稳定，未继续入场菜单')
         self.close_panels()
         before=self.currency_snapshot()
+        self.ensure_ordinary_entry_town(progress)
         header=self.read(self.uint(self.uint(self.base+0x2ba608))+4,52)
         menu=self.prepare_ordinary_room_entry()
         after=self.currency_snapshot()
