@@ -100,6 +100,11 @@ class CenterPathMap:
         return path[::-1]
 
 
+class PatrolStalled(RuntimeError):
+    """A bounded movement budget was exhausted; callers decide its scope."""
+    pass
+
+
 class PatrolObstruction:
     """Remember failed first steps across goals; never infer the game's cause."""
     def __init__(self):self.until={};self.repeats={};self.failures=0
@@ -114,4 +119,4 @@ class PatrolObstruction:
         if step is None:return
         step=tuple(step);self.failures+=1;self.repeats[step]=self.repeats.get(step,0)+1
         if self.repeats[step]>=2:self.until[step]=now+20
-        if self.failures>=12:raise RuntimeError('巡逻多方向有限尝试仍无位移，保留现场停止；未自动重登')
+        if self.failures>=12:raise PatrolStalled('巡逻多方向有限尝试仍无位移，保留现场停止；未自动重登')

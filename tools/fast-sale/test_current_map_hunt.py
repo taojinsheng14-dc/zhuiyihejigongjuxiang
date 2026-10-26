@@ -370,3 +370,23 @@ class CastSafetyGateTests(unittest.TestCase):
         with patch('time.monotonic',return_value=101):self.assertTrue(profile.sculpture_active(session,monster,raw))
         raw[0]=1
         with patch('time.monotonic',return_value=102):self.assertFalse(profile.sculpture_active(session,monster,raw))
+
+
+class ApproachFailureScopeTests(unittest.TestCase):
+    def test_melee_stall_defers_target_instead_of_stopping_shared_loop(self):
+        from dungeon_route import PatrolObstruction
+        profile,session,target=WarriorApproachTests().case()
+        profile._melee_obstruction=PatrolObstruction();profile._melee_obstruction.failures=11
+        result={'from':(167,140),'to':(167,140),'planned_step':(166,140)}
+        with patch('warrior_combat.patrol_move',return_value=result):
+            move=profile.approach(session,Mock())
+        self.assertEqual(move['reason'],'approach_stalled_target_deferred')
+        self.assertTrue(move['nearby_combat']);self.assertFalse(move['movement'])
+        self.assertIn(target['address'],profile._melee_deferred)
+
+    def test_mage_does_not_keep_approaching_deferred_sculpture(self):
+        profile=hunt.StoneTomb(avoid_players=False);profile.guard=Mock();profile._melee_deferred={1:200}
+        session=SimpleNamespace(nearby_monsters=lambda **k:{'read_errors':0,'monsters':[{'address':1,'class':'TSculptureMon','name':'祖玛雕像','dead':False,'distance':1}]})
+        with patch('time.monotonic',return_value=100):
+            result=profile.approach(session,Mock())
+        self.assertFalse(result['nearby_combat'])

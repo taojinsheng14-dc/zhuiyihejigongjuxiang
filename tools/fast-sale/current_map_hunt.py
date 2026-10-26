@@ -218,7 +218,7 @@ class StoneTomb:
         self.guard(session)
         scene=session.nearby_monsters(radius=8)
         if scene['read_errors']:raise RuntimeError('近怪站位采样不完整')
-        targets=[m for m in scene['monsters'] if self.is_target(m)]
+        targets=[m for m in scene['monsters'] if self.is_target(m) and getattr(self,'_melee_deferred',{}).get(m.get('address'),0)<=time.monotonic()]
         if not targets:return {'movement':False,'nearby_combat':False}
         target=min(targets,key=lambda m:m['distance'])
         if target.get('class')=='TSculptureMon':
@@ -286,7 +286,7 @@ class WarriorMap(StoneTomb):
 
     def approach(self,session,progress):
         import struct,time
-        from dungeon_route import PatrolObstruction
+        from dungeon_route import PatrolObstruction,PatrolStalled
         from warrior_combat import melee_approach_path,patrol_move
         self.guard(session);now=time.monotonic();current=tuple(session.player())
         scene=session.nearby_monsters(radius=8)
@@ -324,7 +324,13 @@ class WarriorMap(StoneTomb):
                 return {'movement':False,'nearby_combat':True,'target':target,'reason':'adjacent_activation_wait'}
             self._activation_wait_key=None
             moved=patrol_move(session,self.tilemap,path[1],allow_hold=False,blocked_tiles=obstruction.blocked(now)|recent)
-            self.guard(session);obstruction.observe(moved,time.monotonic())
+            self.guard(session)
+            try:obstruction.observe(moved,time.monotonic())
+            except PatrolStalled:
+                self._melee_deferred[target['address']]=time.monotonic()+20
+                self._approach_target=None;self._approach_budget=None
+                obstruction.failures=0;obstruction.repeats.clear()
+                return dict(moved,movement=False,nearby_combat=True,target=target,reason='approach_stalled_target_deferred',approach_style='melee_adjacent')
             return dict(moved,movement=tuple(moved['to'])!=current,nearby_combat=True,target=target,approach_style='melee_adjacent',remaining_path=len(path)-1,avoided_recent_positions=sorted(recent))
         if self.confirm_dead_end(session):raise self.dead_end_exception('近战靠近时重新采样确认周围无合法出口')
         return {'movement':False,'nearby_combat':False,'reason':'nearby_targets_temporarily_deferred'}
