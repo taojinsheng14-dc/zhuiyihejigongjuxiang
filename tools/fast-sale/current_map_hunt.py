@@ -189,9 +189,14 @@ class StoneTomb:
             monster=dict(monster,**{'class':'TCatMon'})
         return kind in self.combat_classes() and bool(target_monsters([monster],8))
 
+    def needs_activation_evidence(self,monster):
+        return (monster.get('class')=='TSculptureMon' or
+                (self.map_name=='64.map' and monster.get('class') in self.combat_classes()
+                 and monster.get('name','').startswith('魔龙')))
+
     def sculpture_active(self,session,monster,raw):
         import struct,time
-        if monster.get('class')!='TSculptureMon':return True
+        if not self.needs_activation_evidence(monster):return True
         identity=tuple(raw[a:b] for a,b in ((0,4),(12,16),(64,68)))
         position=struct.unpack_from('<2i',raw,0x68)
         hp=struct.unpack('<H',session.read(monster['address']+0x112,2))[0]
@@ -236,7 +241,7 @@ class StoneTomb:
         targets=[m for m in scene['monsters'] if self.is_target(m) and getattr(self,'_melee_deferred',{}).get(m.get('address'),0)<=time.monotonic() and getattr(self,'_ranged_deferred',{}).get(m.get('address'),0)<=time.monotonic()]
         if not targets:return {'movement':False,'nearby_combat':False}
         target=min(targets,key=lambda m:m['distance'])
-        if target.get('class')=='TSculptureMon':
+        if self.needs_activation_evidence(target):
             raw=dict(session.scene_actor_snapshot()).get(target['address'])
             if raw is None:return {'movement':False,'nearby_combat':True,'reason':'target_changed'}
             if not self.sculpture_active(session,target,raw):return WarriorMap.approach(self,session,progress)

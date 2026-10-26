@@ -413,3 +413,26 @@ class RangedObstructionTests(unittest.TestCase):
             result=profile.approach(session,Mock());again=profile.approach(session,Mock())
         self.assertEqual(result['reason'],'no_line_of_fire_route');self.assertFalse(again['nearby_combat'])
         self.assertIn('蝙蝠',profile.target_names(session))
+
+
+class DragonMageActivationTests(unittest.TestCase):
+    def test_dragon_catmon_requires_activity_even_when_hoverable(self):
+        import struct
+        profile=hunt.StoneTomb(map_name='64.map',avoid_players=False)
+        monster={'address':0x10000,'class':'TCatMon','name':'魔龙刀兵'}
+        raw=bytearray(0x184);struct.pack_into('<2i',raw,0x68,10,10)
+        session=SimpleNamespace(read=lambda address,size:struct.pack('<H',100 if address==0x10112 else 200))
+        self.assertTrue(profile.needs_activation_evidence(monster))
+        self.assertFalse(profile.sculpture_active(session,monster,raw))
+        struct.pack_into('<2i',raw,0x68,11,10)
+        self.assertTrue(profile.sculpture_active(session,monster,raw))
+        profile.map_name='d505.map';self.assertFalse(profile.needs_activation_evidence(monster))
+
+    def test_inactive_dragon_catmon_approaches_adjacent_without_cast(self):
+        profile=hunt.StoneTomb(map_name='64.map',avoid_players=False);profile.guard=Mock()
+        target={'address':1,'class':'TCatMon','name':'魔龙刀兵','position':(93,87),'distance':8,'dead':False}
+        session=SimpleNamespace(nearby_monsters=lambda **k:{'read_errors':0,'monsters':[target]},scene_actor_snapshot=lambda:[(1,bytes(0x184))])
+        profile.sculpture_active=Mock(return_value=False)
+        with patch.object(hunt.WarriorMap,'approach',return_value={'movement':True}) as approach:
+            self.assertTrue(profile.approach(session,Mock())['movement'])
+        approach.assert_called_once()
