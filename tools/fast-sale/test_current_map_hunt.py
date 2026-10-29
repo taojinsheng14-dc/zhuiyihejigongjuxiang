@@ -216,9 +216,9 @@ class GenericProfileTests(unittest.TestCase):
 class WarriorProfileTests(unittest.TestCase):
     def test_warrior_run_never_inspects_or_sends_f1(self):
         profile=hunt.WarriorMap(avoid_players=False);profile.check_state=Mock()
-        with patch.object(hunt,'read_experience',return_value={'character':'微笑'}),patch.object(hunt,'profile_for',return_value=profile),patch('importlib.reload',side_effect=lambda m:m) as reload,patch('mage_skills.inspect_current') as skills,patch('mage_dungeon.run_bounded',return_value={'status':'test'}) as run:
+        with patch.object(hunt,'read_experience',return_value={'character':'微笑'}),patch.object(hunt,'profile_for',return_value=profile),patch('importlib.reload',side_effect=lambda m:m) as reload,patch('mage_skills.inspect_current',return_value={'skills':[{'name':'刺杀剑术'}],'f1_skill':None}) as skills,patch('mage_dungeon.run_bounded',return_value={'status':'test'}) as run:
             self.assertEqual(hunt.run(object())['status'],'test')
-        skills.assert_not_called();self.assertIs(run.call_args.kwargs['profile'],profile)
+        skills.assert_called_once();self.assertIs(run.call_args.kwargs['profile'],profile)
         self.assertIn('island_melee',[call.args[0].__name__ for call in reload.call_args_list])
 
     def test_warrior_probe_uses_scoped_map_guard_and_preserves_native_wait(self):
@@ -436,3 +436,12 @@ class DragonMageActivationTests(unittest.TestCase):
         with patch.object(hunt.WarriorMap,'approach',return_value={'movement':True}) as approach:
             self.assertTrue(profile.approach(session,Mock())['movement'])
         approach.assert_called_once()
+
+
+class DynamicRoleTests(unittest.TestCase):
+    def test_skill_detection_uses_current_role_not_name_allowlist(self):
+        with patch('mage_skills.inspect_current',return_value={'f1_skill':{'name':'雷电术'},'skills':[]}) as read:
+            self.assertEqual(hunt.detect_combat_mode(object(),'大鱼'),'mage')
+            self.assertEqual(read.call_args.args[1],'大鱼')
+        with patch('mage_skills.inspect_current',return_value={'f1_skill':None,'skills':[{'name':'雷电术'}]}):
+            with self.assertRaises(RuntimeError):hunt.detect_combat_mode(object(),'新角色')

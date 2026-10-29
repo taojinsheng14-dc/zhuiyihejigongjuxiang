@@ -209,6 +209,7 @@ def run_bounded(session,progress=lambda message:None,seconds=30,max_casts=6,cont
     tilemap,plan=profile.plan(session) if profile else patrol_plan(session)
     expected_header=profile.header if profile else HEADER
     probe_options={'scene_guard':profile.guard,'target_names':profile.names,'target_classes':profile.combat_classes() if hasattr(profile,'combat_classes') else {'TCatMon'},'prefer_nearby':True} if profile else {}
+    if profile and not warrior:probe_options['expected_character']=getattr(profile,'character','厚礼蟹')
     if profile and not warrior and hasattr(profile,'target_gate'):probe_options['target_gate']=profile.target_gate
     approach=profile.approach if profile else approach_once
     started=time.monotonic();deadline=started+(43200 if continuous else min(120,max(1,seconds)));limit=float('inf') if continuous else min(60,max(1,max_casts))

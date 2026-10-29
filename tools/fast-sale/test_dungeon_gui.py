@@ -25,15 +25,15 @@ class DungeonGuiTests(unittest.TestCase):
             finally:app.destroy()
 
     def test_start_button_dispatches_background_command_and_shares_stop(self):
-        for character in ('微笑','厚礼蟹'):
+        for character in ('微笑','厚礼蟹','大鱼','新绑定角色'):
             with self.subTest(character=character):self.check_start(character)
 
     def test_wrong_character_does_not_dispatch(self):
         import mixed_sale_gui as gui
         app=SimpleNamespace(busy=False,attached_step=None,status=Mock())
-        with patch.object(gui.instance_context,'binding',return_value={'character':'大鱼'}),patch.object(gui,'drive') as drive:
+        with patch.object(gui.instance_context,'binding',return_value={}),patch.object(gui,'drive') as drive:
             gui.App.run(app,'mage_dungeon')
-        drive.assert_not_called();self.assertIn('厚礼蟹',app.status.set.call_args.args[0])
+        drive.assert_not_called();self.assertIn('连接',app.status.set.call_args.args[0])
 
     def test_panel_stop_reason_and_non_kill_counts_are_visible(self):
         import mixed_sale_gui as gui

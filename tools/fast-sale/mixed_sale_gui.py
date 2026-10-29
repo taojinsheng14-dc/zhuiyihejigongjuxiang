@@ -534,8 +534,8 @@ class App(tk.Tk):
             self.profit_auto=True
         if execute=='mage_dungeon':
             selected=instance_context.binding()
-            if not selected or selected.get('character') not in ('厚礼蟹','微笑'):
-                self.status.set('当前地图支持微笑战士／厚礼蟹法师，请先核对本号角色');return
+            if not selected or not selected.get('character'):
+                self.status.set('请先连接并核对本号角色；职业按实时技能确认');return
         self.busy=True;self.cancel.clear()
         self.dungeon_start_button.configure(state='disabled')
         for button in self.island_buttons:button.configure(state='disabled')

@@ -396,15 +396,15 @@ def run(session,progress=lambda message:None,allow_cycle=True,return_when_full=F
     import importlib,mage_skills,mage_dungeon,dungeon_route,warrior_combat,ground_item_probe,island_melee
     for module in (mage_skills,dungeon_route,warrior_combat,ground_item_probe,island_melee,mage_dungeon):importlib.reload(module)
     character=read_experience(session)['character']
-    if character not in ('厚礼蟹','微笑'):raise RuntimeError('当前地图未授权此角色')
+    combat_mode=detect_combat_mode(session,character)
     if allow_cycle and character=='厚礼蟹':
         import stone_hunt_cycle
         importlib.reload(stone_hunt_cycle)
         if stone_hunt_cycle.enabled():return stone_hunt_cycle.run(session,progress)
-    profile=profile_for(session,character=character);profile.check_state(session)
+    profile=profile_for(session,character=character,combat_mode=combat_mode);profile.check_state(session)
     profile.return_when_full=return_when_full
     if profile.combat_mode=='mage':
-        skills=mage_skills.inspect_current(session,'厚礼蟹')
+        skills=mage_skills.inspect_current(session,character)
         if not skills.get('f1_skill') or skills['f1_skill']['name']!='雷电术':raise RuntimeError('F1不是唯一雷电术，未挂机')
     progress(profile.label+'：按通道中线覆盖可达地图，'+('主体单击选怪后由游戏追砍' if profile.combat_mode=='warrior' else 'F1雷电术')+'与名单拾取；不主动跨图')
     def report(message):progress(message.replace('地牢持续清怪拾取',profile.label+'清怪拾取'))
@@ -415,7 +415,7 @@ def inspect(session):
     character=read_experience(session)['character']
     import importlib,mage_skills,warrior_combat,dungeon_route
     importlib.reload(mage_skills);importlib.reload(warrior_combat);importlib.reload(dungeon_route)
-    profile=profile_for(session,character=character);profile.check_state(session)
+    profile=profile_for(session,character=character,combat_mode=detect_combat_mode(session,character));profile.check_state(session)
     tilemap,plan=profile.plan(session)
     from dungeon_route import CoverageRoute
     import time
@@ -423,7 +423,7 @@ def inspect(session):
     goal=route.next_goal(session.player(),time.monotonic())
     path=route.navigation_map().path(session.player(),goal) if goal else []
     center={'reachable_cells':len(route.clearance),'waypoints':sorted(route.points),'snapshot':route.snapshot(),'first_path':path,'planning_seconds':round(time.monotonic()-started,3)}
-    skill=mage_skills.inspect_current(session,'厚礼蟹')['f1_skill'] if profile.combat_mode=='mage' else None
+    skill=mage_skills.inspect_current(session,character)['f1_skill'] if profile.combat_mode=='mage' else None
     return {'map':tilemap.name,'plan':plan,'center_route':center,'combat_mode':profile.combat_mode,'character':profile.character,'f1_skill':skill,'game_input_sent':False}
 
 
@@ -431,7 +431,7 @@ def inspect(session):
 NormalMap=StoneTomb
 
 
-def profile_for(session,character='厚礼蟹'):
+def profile_for(session,character='厚礼蟹',combat_mode=None):
     import struct
     from map_navigation import matching_map_file
     current=header(session);file=matching_map_file(current,getattr(session,'_map_directory',None))
@@ -441,6 +441,21 @@ def profile_for(session,character='厚礼蟹'):
     if not width or not height or size%(width*height):raise RuntimeError('当前地图文件尺寸不符')
     stride=size//(width*height)
     if stride not in (12,14):raise RuntimeError('当前地图格子格式尚未支持')
-    if character not in ('厚礼蟹','微笑'):raise RuntimeError('当前地图角色未授权')
-    cls=WarriorMap if character=='微笑' else NormalMap
-    return cls(map_header=current,map_name=name,map_stride=stride)
+    if combat_mode is None:
+        if character not in ('厚礼蟹','微笑'):raise RuntimeError('当前地图职业尚未核对')
+        combat_mode='warrior' if character=='微笑' else 'mage'
+    if combat_mode not in ('mage','warrior'):raise RuntimeError('当前地图职业尚未支持')
+    cls=WarriorMap if combat_mode=='warrior' else NormalMap
+    profile=cls(map_header=current,map_name=name,map_stride=stride);profile.character=character
+    return profile
+
+
+def detect_combat_mode(session,character):
+    from mage_skills import inspect_current
+    skills=inspect_current(session,character)
+    names={r['name'] for r in skills.get('skills',[])}
+    f1=skills.get('f1_skill') or {}
+    if f1.get('name')=='雷电术':return 'mage'
+    if '雷电术' in names:raise RuntimeError('法师F1未绑定唯一雷电术，未挂机')
+    if names & {'基本剑术','攻杀剑术','刺杀剑术','半月弯刀','烈火剑法'}:return 'warrior'
+    raise RuntimeError('当前技能无法确认受支持职业，未挂机')
